@@ -1,10 +1,10 @@
-build-server:
-  cargo build --bin game --release --target wasm32-unknown-unknown
-
 build-game:
-  cargo build --bin server --release
+  cargo build --package game --release --target wasm32-unknown-unknown
+
+build-server:
+  cargo build --package server --release
 
 build:build-game build-server
 
-run: build-game
-  cargo run --bin server --release
+run: build
+  cargo run --package server --release

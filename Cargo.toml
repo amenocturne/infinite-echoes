@@ -1,10 +1,3 @@
-[package]
-name = "infinite_echoes"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-macroquad = "0.4.14"
-maud = "0.27.0"
-miniquad = {version = "0.4.8", features = ["log-impl"]}
-wasm-bindgen = "0.2.100"
+[workspace]
+members = ["game", "server"]
+resolver = "2"  # For independent dependency resolution
