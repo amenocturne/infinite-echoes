@@ -26,6 +26,7 @@ async fn main() {
             dragging = false;
         }
 
+
         if dragging {
             rect_pos = mouse_pos - drag_offset;
         }
