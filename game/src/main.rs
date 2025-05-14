@@ -1,147 +1,221 @@
+use std::cell::{Cell, RefCell};
+use std::collections::VecDeque;
+
 use macroquad::prelude::*;
-use wasm_bindgen::prelude::*;
+
+use wasm_bindgen::JsValue;
 use web_sys::{AudioContext, OscillatorNode, OscillatorType};
 
-#[derive(Debug, Clone)]
+trait Render {
+    fn render(&self) -> ();
+}
+
+trait RenderAudio {
+    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue>;
+}
+
 struct Rectangle {
     position: Vec2,
     size: Vec2,
+    color: Color,
 }
 
 impl Rectangle {
-    fn contains(&self, point: Vec2) -> bool {
-        point.x >= self.position.x &&
-        point.x <= self.position.x + self.size.x &&
-        point.y >= self.position.y &&
-        point.y <= self.position.y + self.size.y
-    }
-
-    fn draw(&self, color: Color) {
-        draw_rectangle(self.position.x, self.position.y, self.size.x, self.size.y, color);
+    fn new(position: Vec2, size: Vec2, color: Color) -> Rectangle {
+        Rectangle {
+            position,
+            size,
+            color,
+        }
     }
 }
 
-#[derive(Default)]
-struct DragState {
-    active: bool,
-    offset: Vec2,
-    start_x: f32,
-}
-
-impl DragState {
-    fn start(&mut self, click_pos: Vec2, rect_pos: Vec2) {
-        self.active = true;
-        self.offset = click_pos - rect_pos;
-        self.start_x = click_pos.x;
-    }
-
-    fn stop(&mut self) {
-        self.active = false;
-    }
-
-    fn horizontal_drag(&self, current_x: f32) -> f32 {
-        current_x - self.start_x
+impl Render for Rectangle {
+    fn render(&self) -> () {
+        draw_rectangle(
+            self.position.x,
+            self.position.y,
+            self.size.x,
+            self.size.y,
+            self.color,
+        );
     }
 }
 
 struct GameState {
-    rectangle: Rectangle,
-    drag_state: DragState,
-    audio_ctx: AudioContext,
-    oscillator: Option<OscillatorNode>,
-    base_freq: f32,
+    audio_context: AudioContext,
+    oscillator: Oscillator,
+    is_dragging: bool,
 }
 
 impl GameState {
-    fn new() -> Result<Self, JsValue> {
-        let audio_ctx = AudioContext::new()?;
-        Ok(Self {
-            rectangle: Rectangle {
-                position: vec2(100.0, 100.0),
-                size: vec2(150.0, 100.0),
-            },
-            drag_state: DragState::default(),
-            audio_ctx,
-            oscillator: None,
-            base_freq: 440.0,
-        })
-    }
-
-    fn handle_input(&mut self, mouse_pos: Vec2) {
-        match (
-            is_mouse_button_pressed(MouseButton::Left),
-            is_mouse_button_released(MouseButton::Left),
-        ) {
-            (true, _) if self.rectangle.contains(mouse_pos) => {
-                self.start_drag(mouse_pos);
-            },
-            (_, true) => {
-                self.stop_drag();
-            },
-            _ => (),
-        }
-
-        if self.drag_state.active {
-            self.update_drag(mouse_pos);
+    fn new(audio_context: AudioContext, oscillator: Oscillator) -> GameState {
+        GameState {
+            audio_context,
+            oscillator,
+            is_dragging: false,
         }
     }
+}
 
-    fn start_drag(&mut self, mouse_pos: Vec2) {
-        self.drag_state.start(mouse_pos, self.rectangle.position);
-        self.create_oscillator().expect("Failed to start sound");
+impl Render for GameState {
+    fn render(&self) -> () {
+        self.oscillator.rectangle.render();
     }
+}
 
-    fn stop_drag(&mut self) {
-        self.drag_state.stop();
-        self.cleanup_oscillator();
+impl RenderAudio for GameState {
+    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
+        self.oscillator.render_audio(audio_context)
     }
+}
 
-    fn update_drag(&mut self, mouse_pos: Vec2) {
-        // Update rectangle position
-        self.rectangle.position = mouse_pos - self.drag_state.offset;
+enum OscillatorState {
+    On,
+    Off,
+}
 
-        // Calculate frequency based on horizontal drag distance
-        let delta_x = self.drag_state.horizontal_drag(mouse_pos.x);
-        let new_freq = (self.base_freq + delta_x * 2.0).clamp(20.0, 20000.0);
+struct Oscillator {
+    state: OscillatorState,
+    frequency: f32,
+    wave: OscillatorType,
+    rectangle: Rectangle,
+    audio_node: RefCell<Option<OscillatorNode>>,
+    has_started: Cell<bool>,
+}
 
-        // Update oscillator frequency
-        if let Some(osc) = &self.oscillator {
-            osc.frequency().set_value(new_freq);
+impl Oscillator {
+    fn new(
+        state: OscillatorState,
+        frequency: f32,
+        wave: OscillatorType,
+        rectangle: Rectangle,
+    ) -> Oscillator {
+        let audio_node = RefCell::new(None);
+        let has_started = Cell::new(false);
+        Oscillator {
+            state,
+            frequency,
+            wave,
+            rectangle,
+            audio_node,
+            has_started,
         }
     }
+}
 
-    fn create_oscillator(&mut self) -> Result<(), JsValue> {
-        let oscillator = self.audio_ctx.create_oscillator()?;
-        oscillator.set_type(OscillatorType::Sine);
-        oscillator.frequency().set_value(self.base_freq);
-        oscillator.connect_with_audio_node(&self.audio_ctx.destination())?;
-        oscillator.start()?;
-        self.oscillator = Some(oscillator);
-        Ok(())
+impl Render for Oscillator {
+    fn render(&self) {
+        self.rectangle.render()
     }
+}
 
-    fn cleanup_oscillator(&mut self) {
-        if let Some(osc) = self.oscillator.take() {
-            let _ = osc.stop();
+impl RenderAudio for Oscillator {
+    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
+        match self.state {
+            OscillatorState::On => {
+                if !self.has_started.get() {
+                    let mut node_ref = self.audio_node.borrow_mut();
+                    *node_ref = Some(audio_context.create_oscillator()?);
+                    let node = node_ref.as_ref().unwrap();
+                    node.set_type(self.wave);
+                    node.frequency().set_value(self.frequency);
+                    node.connect_with_audio_node(&audio_context.destination())?;
+                    node.start()?;
+                    self.has_started.set(true);
+                }
+                Ok(())
+            }
+            OscillatorState::Off => {
+                if self.has_started.get() {
+                    if let Some(node) = self.audio_node.borrow_mut().take() {
+                        node.stop()?;
+                    }
+                    self.has_started.set(false);
+                }
+                Ok(())
+            }
         }
     }
+}
 
-    fn draw(&self) {
-        self.rectangle.draw(RED);
+enum GameEvent {
+    OscillatorStart,
+    OscillatorStop,
+    OscillatorDrag { mouse_pos: Vec2 },
+    OscillatorSetFrequency { frequency: f32 },
+    DraggingStart,
+    DraggingStop,
+}
+
+fn process_event(game_state: &mut GameState, event: &GameEvent) {
+    match event {
+        GameEvent::OscillatorStart => game_state.oscillator.state = OscillatorState::On,
+        GameEvent::OscillatorStop => game_state.oscillator.state = OscillatorState::Off,
+        GameEvent::OscillatorDrag { mouse_pos } => {
+            game_state.oscillator.rectangle.position =
+                *mouse_pos - (0.5 * game_state.oscillator.rectangle.size)
+        }
+        GameEvent::OscillatorSetFrequency { frequency } => {
+            game_state.oscillator.frequency = *frequency
+        }
+        GameEvent::DraggingStart => game_state.is_dragging = true,
+        GameEvent::DraggingStop => game_state.is_dragging = false,
     }
 }
 
 #[macroquad::main("Drag Sound Demo")]
-async fn main() {
-    let mut game_state = GameState::new().expect("Failed to initialize audio");
+async fn main() -> Result<(), JsValue> {
+    let audio_context = AudioContext::new()?;
+    let osc_rectangle = Rectangle::new(vec2(0.0, 0.0), vec2(50.0, 50.0), RED);
+    let oscillator = Oscillator::new(
+        OscillatorState::Off,
+        440.0,
+        OscillatorType::Sine,
+        osc_rectangle,
+    );
+
+    let mut game_state = GameState::new(audio_context, oscillator);
+    let mut event_queue: VecDeque<GameEvent> = VecDeque::new();
 
     loop {
         clear_background(BLACK);
-        let mouse_pos = mouse_position().into();
+        let mouse_pos: Vec2 = mouse_position().into();
+        let width = screen_width();
+        // let height = screen_height();
 
-        game_state.handle_input(mouse_pos);
-        game_state.draw();
+        // Input
+        {
+            let mut emit = |event: GameEvent| event_queue.push_back(event);
 
+            if is_mouse_button_pressed(MouseButton::Left) {
+                emit(GameEvent::OscillatorStart);
+                emit(GameEvent::DraggingStart);
+            }
+
+            if is_mouse_button_released(MouseButton::Left) {
+                emit(GameEvent::OscillatorStop);
+                emit(GameEvent::DraggingStop);
+            }
+
+            // Additional events based on the state
+            if game_state.is_dragging {
+                emit(GameEvent::OscillatorDrag { mouse_pos });
+                emit(GameEvent::OscillatorSetFrequency {
+                    frequency: 20.0
+                        * (10_000.0 / 20.0 as f64).powf((mouse_pos.x as f64) / width as f64) as f32,
+                });
+            }
+        }
+
+        // Event processing
+        while let Some(event) = event_queue.pop_front() {
+            process_event(&mut game_state, &event);
+        }
+
+        //Rendering
+        game_state.render_audio(&game_state.audio_context)?;
+        game_state.render();
         next_frame().await;
     }
 }
