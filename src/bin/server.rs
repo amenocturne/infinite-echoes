@@ -3,6 +3,8 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
+use maud::{html, PreEscaped, DOCTYPE};
+
 struct FileData {
     content: Vec<u8>,
     mime_type: String,
@@ -47,11 +49,49 @@ fn read_file_or_panic(path: &str, mime_type: &str) -> FileData {
     }
 }
 
+// TODO: add hot reloading support for dev build
 fn main() {
+    let html_content = html! {
+        (DOCTYPE)
+        html lang="en" {
+            head {
+                meta charset="utf-8";
+                meta name="viewport" content="width=device-width, initial-scale=1";
+                title { "My Game" }
+                style {
+                    (PreEscaped(r#"
+                    html,
+                    body,
+                    canvas {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                        overflow: hidden;
+                        position: absolute;
+                        background: black;
+                        z-index: 0;
+                    }
+                "#))
+                }
+            }
+            body {
+                canvas id="glcanvas" {}
+                script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js" {}
+                script {
+                    (PreEscaped(r#"load("game.wasm");"#))
+                }
+            }
+        }
+    };
+
     let files: HashMap<String, FileData> = vec![
         (
             "index.html".to_string(),
-            read_file_or_panic("index.html", "text/html"),
+            FileData {
+                content: html_content.into_string().as_bytes().to_vec(),
+                mime_type: "text/html".to_string(),
+            },
         ),
         (
             "game.wasm".to_string(),
