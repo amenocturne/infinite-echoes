@@ -69,54 +69,29 @@ fn read_file_or_panic(path: &str) -> Vec<u8> {
 
 // TODO: add hot reloading support for dev build
 fn main() {
-    let html_content = html! {
-        (DOCTYPE)
-        html lang="en" {
-            head {
-                meta charset="utf-8";
-                meta name="viewport" content="width=device-width, initial-scale=1";
-                title { "My Game" }
-                style {
-                    (PreEscaped(r#"
-                    html,
-                    body,
-                    canvas {
-                        margin: 0;
-                        padding: 0;
-                        width: 100%;
-                        height: 100%;
-                        overflow: hidden;
-                        position: absolute;
-                        background: black;
-                        z-index: 0;
-                    }
-                "#))
-                }
-            }
-            body {
-                canvas id="glcanvas" {}
-                script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js" {} // TODO: should download this separaterly
-                script {
-                    (PreEscaped(r#"load("game.wasm");"#))
-                }
-            }
-        }
-    };
 
-    let wasm_file_path = "./target/wasm32-unknown-unknown/release/game.wasm".to_string();
+    let wasm_file_path = "./dist/game_bg.wasm".to_string();
+    let js_file_path = "./dist/game.js".to_string();
+    let index_path = "./index.html".to_string();
 
     let files: Vec<FileData> = vec![
         FileData {
             route: "/".to_string(),
-            file_path: None,
-            content: html_content.into_string().as_bytes().to_vec(),
+            file_path: Some(index_path.to_owned()),
+            content: read_file_or_panic(&index_path),
             mime_type: "text/html".to_string(),
         },
         FileData {
-            route: "/game.wasm".to_string(),
+            route: "/game_bg.wasm".to_string(),
             file_path: Some(wasm_file_path.to_owned()),
             content: read_file_or_panic(&wasm_file_path),
             mime_type: "application/wasm".to_string(),
+        },
+        FileData {
+            route: "/game.js".to_string(),
+            file_path: Some(js_file_path.to_owned()),
+            content: read_file_or_panic(&js_file_path),
+            mime_type: "text/javascript".to_string(),
         },
     ];
 

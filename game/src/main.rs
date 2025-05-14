@@ -1,4 +1,17 @@
 use macroquad::prelude::*;
+use wasm_bindgen::prelude::*;
+use web_sys::{AudioContext, OscillatorType};
+
+#[wasm_bindgen]
+pub fn create_oscillator() -> Result<(), JsValue> {
+    let ctx = AudioContext::new()?;
+    let oscillator = ctx.create_oscillator()?;
+    oscillator.set_type(OscillatorType::Sine);
+    oscillator.frequency().set_value(440.0);
+    oscillator.connect_with_audio_node(&ctx.destination())?;
+    oscillator.start()?;
+    Ok(())
+}
 
 #[macroquad::main("Movable Rectangle")]
 async fn main() {
@@ -6,6 +19,8 @@ async fn main() {
     let rect_size = vec2(150.0, 100.0);
     let mut dragging = false;
     let mut drag_offset = vec2(0.0, 0.0);
+
+    let _ = create_oscillator();
 
     loop {
         clear_background(BLACK);

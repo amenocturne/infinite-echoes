@@ -1,9 +1,16 @@
 # Infinite Echoes
 
+
+## Installation
+
+```
+cargo install wasm-bindgen-cli
+```
+
 ## Building wasm
 
 ```
-cargo build --release --target wasm32-unknown-unknown
+just build
 ```
 
 ## How to run
