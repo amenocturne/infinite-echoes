@@ -77,7 +77,7 @@ enum OscillatorState {
 
 struct Oscillator {
     state: OscillatorState,
-    frequency: f32,
+    frequency: Cell<f32>,
     wave: OscillatorType,
     rectangle: Rectangle,
     audio_node: RefCell<Option<OscillatorNode>>,
@@ -93,6 +93,7 @@ impl Oscillator {
     ) -> Oscillator {
         let audio_node = RefCell::new(None);
         let has_started = Cell::new(false);
+        let frequency = Cell::new(frequency);
         Oscillator {
             state,
             frequency,
@@ -100,6 +101,14 @@ impl Oscillator {
             rectangle,
             audio_node,
             has_started,
+        }
+    }
+
+    fn set_frequency(&self, frequency: f32) {
+        self.frequency.set(frequency);
+
+        if let Some(node) = self.audio_node.borrow().as_ref() {
+            node.frequency().set_value(frequency);
         }
     }
 }
@@ -119,7 +128,7 @@ impl RenderAudio for Oscillator {
                     *node_ref = Some(audio_context.create_oscillator()?);
                     let node = node_ref.as_ref().unwrap();
                     node.set_type(self.wave);
-                    node.frequency().set_value(self.frequency);
+                    node.frequency().set_value(self.frequency.get());
                     node.connect_with_audio_node(&audio_context.destination())?;
                     node.start()?;
                     self.has_started.set(true);
@@ -157,7 +166,7 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
                 *mouse_pos - (0.5 * game_state.oscillator.rectangle.size)
         }
         GameEvent::OscillatorSetFrequency { frequency } => {
-            game_state.oscillator.frequency = *frequency
+            game_state.oscillator.set_frequency(*frequency);
         }
         GameEvent::DraggingStart => game_state.is_dragging = true,
         GameEvent::DraggingStop => game_state.is_dragging = false,
