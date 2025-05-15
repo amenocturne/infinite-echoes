@@ -173,7 +173,7 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
     }
 }
 
-#[macroquad::main("Drag Sound Demo")]
+#[macroquad::main("Infinite Echoes")]
 async fn main() -> Result<(), JsValue> {
     let audio_context = AudioContext::new()?;
     let osc_rectangle = Rectangle::new(vec2(0.0, 0.0), vec2(50.0, 50.0), RED);
