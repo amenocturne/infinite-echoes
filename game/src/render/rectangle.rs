@@ -1,3 +1,4 @@
+use crate::errors::GameResult;
 use crate::Render;
 use macroquad::color::Color;
 use macroquad::math::Vec2;
@@ -20,7 +21,7 @@ impl Rectangle {
 }
 
 impl Render for Rectangle {
-    fn render(&self) -> () {
+    fn render(&self) -> GameResult<()> {
         draw_rectangle(
             self.position.x,
             self.position.y,
@@ -28,5 +29,6 @@ impl Render for Rectangle {
             self.size.y,
             self.color,
         );
+        Ok(())
     }
 }

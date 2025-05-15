@@ -14,7 +14,7 @@ build-server:
 
 build:build-game build-server
 
-run: build
+run: build download-runtime
   cargo run --package server --release
 
 download-runtime:

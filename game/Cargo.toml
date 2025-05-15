@@ -7,4 +7,14 @@ edition = "2021"
 macroquad = "0.4.14"
 miniquad = {version = "0.4.8", features = ["log-impl"]}
 wasm-bindgen = "0.2.100"
-web-sys = { version = "0.3.77", features = [ "AudioContext", "OscillatorType", "OscillatorNode", "AudioParam", "AudioDestinationNode" ] }
+
+[dependencies.web-sys]
+version = "0.3.77"
+features = [
+  "AudioContext",
+  "OscillatorType",
+  "OscillatorNode",
+  "AudioParam",
+  "AudioDestinationNode",
+  "GainNode"
+]

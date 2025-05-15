@@ -1,12 +1,12 @@
 pub mod rectangle;
 
-use wasm_bindgen::JsValue;
 use web_sys::AudioContext;
+use crate::errors::GameResult;
 
 pub trait Render {
-    fn render(&self) -> ();
+    fn render(&self) -> GameResult<()>;
 }
 
 pub trait RenderAudio {
-    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue>;
+    fn render_audio(&self, audio_context: &AudioContext) -> GameResult<()>;
 }

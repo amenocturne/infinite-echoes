@@ -1,54 +1,25 @@
+mod errors;
+mod game_state;
 mod nodes;
 mod render;
 
-use crate::nodes::oscillator::OscillatorState;
-use crate::render::rectangle::Rectangle;
-use crate::render::Render;
-use crate::render::RenderAudio;
+use errors::GameError;
+use errors::GameResult;
+use game_state::GameEvent;
+use game_state::GameState;
+use nodes::note_generator::Note;
+use nodes::note_generator::NoteName;
+use nodes::note_generator::NotePosition;
 use nodes::oscillator::Oscillator;
+use nodes::oscillator::OscillatorState;
+use render::rectangle::Rectangle;
+use render::Render;
+use render::RenderAudio;
 use std::collections::VecDeque;
 
 use macroquad::prelude::*;
 
-use wasm_bindgen::JsValue;
 use web_sys::{AudioContext, OscillatorType};
-
-struct GameState {
-    audio_context: AudioContext,
-    oscillator: Oscillator,
-    is_dragging: bool,
-}
-
-impl GameState {
-    fn new(audio_context: AudioContext, oscillator: Oscillator) -> GameState {
-        GameState {
-            audio_context,
-            oscillator,
-            is_dragging: false,
-        }
-    }
-}
-
-impl Render for GameState {
-    fn render(&self) -> () {
-        self.oscillator.rectangle.render();
-    }
-}
-
-impl RenderAudio for GameState {
-    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
-        self.oscillator.render_audio(audio_context)
-    }
-}
-
-enum GameEvent {
-    OscillatorStart,
-    OscillatorStop,
-    OscillatorDrag { mouse_pos: Vec2 },
-    OscillatorSetFrequency { frequency: f32 },
-    DraggingStart,
-    DraggingStop,
-}
 
 fn process_event(game_state: &mut GameState, event: &GameEvent) {
     match event {
@@ -66,13 +37,20 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
     }
 }
 
-#[macroquad::main("Infinite Echoes")]
-async fn main() -> Result<(), JsValue> {
-    let audio_context = AudioContext::new()?;
+fn handle_error(e: GameError) {
+    debug!("{:?}", e)
+}
+
+async fn run() -> GameResult<()> {
+    let audio_context =
+        AudioContext::new().map_err(GameError::js("Could not create audio context"))?;
     let osc_rectangle = Rectangle::new(vec2(0.0, 0.0), vec2(50.0, 50.0), RED);
+
+    let note = Note::new(3, NoteName::C, NotePosition::new(1.0, 1.0));
+
     let oscillator = Oscillator::new(
         OscillatorState::Off,
-        440.0,
+        note.to_frequancy(),
         OscillatorType::Sine,
         osc_rectangle,
     );
@@ -80,17 +58,30 @@ async fn main() -> Result<(), JsValue> {
     let mut game_state = GameState::new(audio_context, oscillator);
     let mut event_queue: VecDeque<GameEvent> = VecDeque::new();
 
+    let mut note_selector = 0;
+    let notes = [
+        Note::new(4, NoteName::C, NotePosition::new(0.0, 1.0)),
+        Note::new(4, NoteName::CSharp, NotePosition::new(1.0, 1.0)),
+        Note::new(4, NoteName::D, NotePosition::new(2.0, 1.0)),
+        Note::new(4, NoteName::DSharp, NotePosition::new(2.0, 1.0)),
+    ];
+
     loop {
         clear_background(BLACK);
         let mouse_pos: Vec2 = mouse_position().into();
-        let width = screen_width();
-        // let height = screen_height();
+        // let width = screen_width();
 
         // Input
         {
             let mut emit = |event: GameEvent| event_queue.push_back(event);
 
             if is_mouse_button_pressed(MouseButton::Left) {
+                note_selector = (note_selector + 1) % notes.len();
+                info!("{}", note_selector);
+                emit(GameEvent::OscillatorSetFrequency {
+                    frequency: unsafe { notes.get_unchecked(note_selector).to_frequancy() },
+                });
+
                 emit(GameEvent::OscillatorStart);
                 emit(GameEvent::DraggingStart);
             }
@@ -103,10 +94,6 @@ async fn main() -> Result<(), JsValue> {
             // Additional events based on the state
             if game_state.is_dragging {
                 emit(GameEvent::OscillatorDrag { mouse_pos });
-                emit(GameEvent::OscillatorSetFrequency {
-                    frequency: 20.0
-                        * (10_000.0 / 20.0 as f64).powf((mouse_pos.x as f64) / width as f64) as f32,
-                });
             }
         }
 
@@ -117,7 +104,15 @@ async fn main() -> Result<(), JsValue> {
 
         //Rendering
         game_state.render_audio(&game_state.audio_context)?;
-        game_state.render();
+        game_state.render()?;
         next_frame().await;
+    }
+}
+
+#[macroquad::main("Infinite Echoes")]
+async fn main() {
+    match run().await {
+        Ok(_) => (),
+        Err(e) => handle_error(e),
     }
 }

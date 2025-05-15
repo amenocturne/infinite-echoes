@@ -1,6 +1,6 @@
+use crate::errors::{GameError, GameResult};
 use crate::render::{Render, RenderAudio};
 use std::cell::{Cell, RefCell};
-use wasm_bindgen::JsValue;
 use web_sys::AudioContext;
 use web_sys::OscillatorNode;
 
@@ -51,23 +51,33 @@ impl Oscillator {
 }
 
 impl Render for Oscillator {
-    fn render(&self) {
+    fn render(&self) -> GameResult<()> {
         self.rectangle.render()
     }
 }
 
 impl RenderAudio for Oscillator {
-    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
+    fn render_audio(&self, audio_context: &AudioContext) -> GameResult<()> {
         match self.state {
             OscillatorState::On => {
                 if !self.has_started.get() {
+                    let osc = audio_context
+                        .create_oscillator()
+                        .map_err(GameError::js("Error while creating oscillator"))?;
+
                     let mut node_ref = self.audio_node.borrow_mut();
-                    *node_ref = Some(audio_context.create_oscillator()?);
-                    let node = node_ref.as_ref().unwrap();
+                    *node_ref = Some(osc);
+
+                    let node = node_ref
+                        .as_ref()
+                        .ok_or(GameError::msg("Could not construct oscillator node"))?;
+
                     node.set_type(self.wave);
                     node.frequency().set_value(self.frequency.get());
-                    node.connect_with_audio_node(&audio_context.destination())?;
-                    node.start()?;
+                    node.connect_with_audio_node(&audio_context.destination())
+                        .map_err(GameError::js("Could not connect audio node to destination"))?;
+                    node.start()
+                        .map_err(GameError::js("Could not start audio"))?;
                     self.has_started.set(true);
                 }
                 Ok(())
@@ -75,7 +85,7 @@ impl RenderAudio for Oscillator {
             OscillatorState::Off => {
                 if self.has_started.get() {
                     if let Some(node) = self.audio_node.borrow_mut().take() {
-                        node.stop()?;
+                        node.stop().map_err(GameError::js("Could not stop audio"))?;
                     }
                     self.has_started.set(false);
                 }
