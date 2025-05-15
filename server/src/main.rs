@@ -4,12 +4,55 @@ use std::net::{TcpListener, TcpStream};
 
 const PORT: u16 = 1234;
 
+#[derive(Clone, Eq, PartialEq)]
+enum HotReloading {
+    Enabled,
+    Disabled,
+}
+
+#[derive(Clone, Eq, PartialEq)]
+enum MimeType {
+    Html,
+    JavaScript,
+    Wasm,
+}
+impl MimeType {
+    fn as_str(&self) -> &'static str {
+        match self {
+            MimeType::Html => "text/html",
+            MimeType::JavaScript => "text/javascript",
+            MimeType::Wasm => "application/wasm",
+        }
+    }
+}
+
 #[derive(Clone)]
 struct FileData {
     route: String,
-    file_path: Option<String>, // To dynamically reload on each request. If  NONE is set, then would be statically read once
+    file_path: String,
     content: Vec<u8>,
-    mime_type: String,
+    mime_type: MimeType,
+    hot_reloading: HotReloading,
+}
+
+impl FileData {
+    fn new(
+        route: &str,
+        file_path: &str,
+        mime_type: MimeType,
+        hot_reloading: HotReloading,
+    ) -> FileData {
+        let content = read_file_or_panic(file_path);
+        let route = route.to_string();
+        let file_path = file_path.to_string();
+        FileData {
+            route,
+            file_path,
+            content,
+            mime_type,
+            hot_reloading,
+        }
+    }
 }
 
 fn handle_client(mut stream: TcpStream, files: &Vec<FileData>) {
@@ -26,7 +69,7 @@ fn handle_client(mut stream: TcpStream, files: &Vec<FileData>) {
         let ok_response = |f: &FileData| {
             format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n",
-                f.mime_type,
+                f.mime_type.as_str(),
                 f.content.len()
             )
             .as_bytes()
@@ -41,18 +84,14 @@ fn handle_client(mut stream: TcpStream, files: &Vec<FileData>) {
 
         let response: Vec<u8> = found_file
             .map(|f| {
-                let new_f = f
-                    .to_owned()
-                    .file_path
-                    .map(|p| {
-                        println!("Reading new content");
-                        FileData {
-                            content: read_file_or_panic(&p.to_string()),
-                            ..f.clone()
-                        }
-                    })
-                    .unwrap_or(f.to_owned());
-                ok_response(&new_f)
+                let new_f = match f.hot_reloading {
+                    HotReloading::Enabled => &FileData {
+                        content: read_file_or_panic(&f.file_path.to_string()),
+                        ..f.clone()
+                    },
+                    HotReloading::Disabled => f,
+                };
+                ok_response(new_f)
             })
             .unwrap_or(not_found_response.into());
 
@@ -65,32 +104,32 @@ fn read_file_or_panic(path: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|_| panic!("Failed to read file: {}", path))
 }
 
-// TODO: add hot reloading support for dev build
 fn main() {
-
-    let wasm_file_path = "./dist/game_bg.wasm".to_string();
-    let js_file_path = "./dist/game.js".to_string();
-    let index_path = "./index.html".to_string();
-
     let files: Vec<FileData> = vec![
-        FileData {
-            route: "/".to_string(),
-            file_path: Some(index_path.to_owned()),
-            content: read_file_or_panic(&index_path),
-            mime_type: "text/html".to_string(),
-        },
-        FileData {
-            route: "/game_bg.wasm".to_string(),
-            file_path: Some(wasm_file_path.to_owned()),
-            content: read_file_or_panic(&wasm_file_path),
-            mime_type: "application/wasm".to_string(),
-        },
-        FileData {
-            route: "/game.js".to_string(),
-            file_path: Some(js_file_path.to_owned()),
-            content: read_file_or_panic(&js_file_path),
-            mime_type: "text/javascript".to_string(),
-        },
+        FileData::new(
+            "/",
+            "./web/index.html",
+            MimeType::Html,
+            HotReloading::Enabled,
+        ),
+        FileData::new(
+            "/miniquad_runtime.js",
+            "./web/miniquad_runtime.js",
+            MimeType::JavaScript,
+            HotReloading::Disabled,
+        ),
+        FileData::new(
+            "/game_bg.wasm",
+            "./dist/game_bg.wasm",
+            MimeType::Wasm,
+            HotReloading::Enabled,
+        ),
+        FileData::new(
+            "/game.js",
+            "./dist/game.js",
+            MimeType::JavaScript,
+            HotReloading::Enabled,
+        ),
     ];
 
     let address = format!("localhost:{}", PORT);

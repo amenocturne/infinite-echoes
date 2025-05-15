@@ -16,3 +16,6 @@ build:build-game build-server
 
 run: build
   cargo run --package server --release
+
+download-runtime:
+	if [ ! -f "./web/miniquad_runtime.js" ]; then wget "https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"; mv mq_js_bundle.js ./web/miniquad_runtime.js; else echo "File exists, skipping"; fi
