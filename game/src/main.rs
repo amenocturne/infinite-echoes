@@ -1,46 +1,17 @@
-use std::cell::{Cell, RefCell};
+mod nodes;
+mod render;
+
+use crate::nodes::oscillator::OscillatorState;
+use crate::render::rectangle::Rectangle;
+use crate::render::Render;
+use crate::render::RenderAudio;
+use nodes::oscillator::Oscillator;
 use std::collections::VecDeque;
 
 use macroquad::prelude::*;
 
 use wasm_bindgen::JsValue;
-use web_sys::{AudioContext, OscillatorNode, OscillatorType};
-
-trait Render {
-    fn render(&self) -> ();
-}
-
-trait RenderAudio {
-    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue>;
-}
-
-struct Rectangle {
-    position: Vec2,
-    size: Vec2,
-    color: Color,
-}
-
-impl Rectangle {
-    fn new(position: Vec2, size: Vec2, color: Color) -> Rectangle {
-        Rectangle {
-            position,
-            size,
-            color,
-        }
-    }
-}
-
-impl Render for Rectangle {
-    fn render(&self) -> () {
-        draw_rectangle(
-            self.position.x,
-            self.position.y,
-            self.size.x,
-            self.size.y,
-            self.color,
-        );
-    }
-}
+use web_sys::{AudioContext, OscillatorType};
 
 struct GameState {
     audio_context: AudioContext,
@@ -67,84 +38,6 @@ impl Render for GameState {
 impl RenderAudio for GameState {
     fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
         self.oscillator.render_audio(audio_context)
-    }
-}
-
-enum OscillatorState {
-    On,
-    Off,
-}
-
-struct Oscillator {
-    state: OscillatorState,
-    frequency: Cell<f32>,
-    wave: OscillatorType,
-    rectangle: Rectangle,
-    audio_node: RefCell<Option<OscillatorNode>>,
-    has_started: Cell<bool>,
-}
-
-impl Oscillator {
-    fn new(
-        state: OscillatorState,
-        frequency: f32,
-        wave: OscillatorType,
-        rectangle: Rectangle,
-    ) -> Oscillator {
-        let audio_node = RefCell::new(None);
-        let has_started = Cell::new(false);
-        let frequency = Cell::new(frequency);
-        Oscillator {
-            state,
-            frequency,
-            wave,
-            rectangle,
-            audio_node,
-            has_started,
-        }
-    }
-
-    fn set_frequency(&self, frequency: f32) {
-        self.frequency.set(frequency);
-
-        if let Some(node) = self.audio_node.borrow().as_ref() {
-            node.frequency().set_value(frequency);
-        }
-    }
-}
-
-impl Render for Oscillator {
-    fn render(&self) {
-        self.rectangle.render()
-    }
-}
-
-impl RenderAudio for Oscillator {
-    fn render_audio(&self, audio_context: &AudioContext) -> Result<(), JsValue> {
-        match self.state {
-            OscillatorState::On => {
-                if !self.has_started.get() {
-                    let mut node_ref = self.audio_node.borrow_mut();
-                    *node_ref = Some(audio_context.create_oscillator()?);
-                    let node = node_ref.as_ref().unwrap();
-                    node.set_type(self.wave);
-                    node.frequency().set_value(self.frequency.get());
-                    node.connect_with_audio_node(&audio_context.destination())?;
-                    node.start()?;
-                    self.has_started.set(true);
-                }
-                Ok(())
-            }
-            OscillatorState::Off => {
-                if self.has_started.get() {
-                    if let Some(node) = self.audio_node.borrow_mut().take() {
-                        node.stop()?;
-                    }
-                    self.has_started.set(false);
-                }
-                Ok(())
-            }
-        }
     }
 }
 

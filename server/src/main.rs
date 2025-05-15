@@ -2,8 +2,6 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-use maud::{html, PreEscaped, DOCTYPE};
-
 const PORT: u16 = 1234;
 
 #[derive(Clone)]
