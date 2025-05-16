@@ -1,7 +1,7 @@
 pub mod rectangle;
 
 use web_sys::AudioContext;
-use crate::errors::GameResult;
+use crate::engine::errors::GameResult;
 
 pub trait Render {
     fn render(&self) -> GameResult<()>;

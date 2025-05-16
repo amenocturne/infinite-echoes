@@ -1,5 +1,5 @@
-use crate::errors::GameResult;
-use crate::Render;
+use crate::engine::errors::GameResult;
+use crate::render::Render;
 use macroquad::color::Color;
 use macroquad::math::Vec2;
 use macroquad::shapes::draw_rectangle;

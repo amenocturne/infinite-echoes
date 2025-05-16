@@ -1,4 +1,4 @@
-use crate::errors::{GameError, GameResult};
+use crate::engine::errors::{GameError, GameResult};
 use crate::render::{Render, RenderAudio};
 use std::cell::{Cell, RefCell};
 use web_sys::AudioContext;

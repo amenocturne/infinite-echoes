@@ -1,9 +1,7 @@
 use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
 
-use crate::{
-    errors::{GameError, GameResult},
-    nodes::note_generator::Note,
-};
+use crate::engine::errors::{GameError, GameResult};
+use crate::nodes::note_generator::Note;
 
 pub struct AudioEngine {
     audio_context: AudioContext,
