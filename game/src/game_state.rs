@@ -2,22 +2,28 @@ use macroquad::math::Vec2;
 use web_sys::AudioContext;
 
 use crate::{
-    errors::GameResult, nodes::oscillator::Oscillator, render::{Render, RenderAudio}
+    engine::audio::AudioEngine,
+    errors::GameResult,
+    nodes::oscillator::Oscillator,
+    render::{Render, RenderAudio},
 };
 
 pub struct GameState {
     pub audio_context: AudioContext,
     pub oscillator: Oscillator,
     pub is_dragging: bool,
+    pub audio_engine: AudioEngine,
 }
 
 impl GameState {
-    pub fn new(audio_context: AudioContext, oscillator: Oscillator) -> GameState {
-        GameState {
+    pub fn new(audio_context: AudioContext, oscillator: Oscillator) -> GameResult<GameState> {
+        let audio_engine = AudioEngine::new()?;
+        Ok(GameState {
             audio_context,
             oscillator,
             is_dragging: false,
-        }
+            audio_engine
+        })
     }
 }
 

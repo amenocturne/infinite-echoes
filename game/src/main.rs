@@ -1,3 +1,4 @@
+mod engine;
 mod errors;
 mod game_state;
 mod nodes;
@@ -55,16 +56,25 @@ async fn run() -> GameResult<()> {
         osc_rectangle,
     );
 
-    let mut game_state = GameState::new(audio_context, oscillator);
+    let mut game_state = GameState::new(audio_context, oscillator)?;
     let mut event_queue: VecDeque<GameEvent> = VecDeque::new();
 
-    let mut note_selector = 0;
+    fn chord(start: Note, shifts: Vec<i32>) -> Vec<Note> {
+        shifts.iter().map(|s| start.clone().shift(*s)).collect()
+    }
+    fn major_chord(start: Note) -> Vec<Note> {
+        chord(start, vec![0, 4, 7])
+    }
+    fn minor_chord(start: Note) -> Vec<Note> {
+        chord(start, vec![0, 3, 7])
+    }
     let notes = [
-        Note::new(4, NoteName::C, NotePosition::new(0.0, 1.0)),
-        Note::new(4, NoteName::CSharp, NotePosition::new(1.0, 1.0)),
-        Note::new(4, NoteName::D, NotePosition::new(2.0, 1.0)),
-        Note::new(4, NoteName::DSharp, NotePosition::new(2.0, 1.0)),
-    ];
+        major_chord(Note::new(3, NoteName::C, NotePosition::new(0.0, 1.0))),
+        minor_chord(Note::new(3, NoteName::D, NotePosition::new(1.0, 1.0))),
+        minor_chord(Note::new(3, NoteName::E, NotePosition::new(2.0, 1.0))),
+        major_chord(Note::new(3, NoteName::C, NotePosition::new(3.0, 1.0))),
+    ]
+    .concat();
 
     loop {
         clear_background(BLACK);
@@ -76,14 +86,15 @@ async fn run() -> GameResult<()> {
             let mut emit = |event: GameEvent| event_queue.push_back(event);
 
             if is_mouse_button_pressed(MouseButton::Left) {
-                note_selector = (note_selector + 1) % notes.len();
-                info!("{}", note_selector);
-                emit(GameEvent::OscillatorSetFrequency {
-                    frequency: unsafe { notes.get_unchecked(note_selector).to_frequancy() },
-                });
-
-                emit(GameEvent::OscillatorStart);
-                emit(GameEvent::DraggingStart);
+                // note_selector = (note_selector + 1) % notes.len();
+                // info!("{}", note_selector);
+                // emit(GameEvent::OscillatorSetFrequency {
+                //     frequency: unsafe { notes.get_unchecked(note_selector).to_frequancy() },
+                // });
+                //
+                // emit(GameEvent::OscillatorStart);
+                // emit(GameEvent::DraggingStart);
+                game_state.audio_engine.play_notes(notes.as_slice())?;
             }
 
             if is_mouse_button_released(MouseButton::Left) {
