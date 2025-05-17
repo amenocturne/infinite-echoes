@@ -1,7 +1,9 @@
 use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
 
 use crate::engine::errors::{GameError, GameResult};
+use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::note_generator::Note;
+use crate::util::time::GameTime;
 
 pub struct AudioEngine {
     audio_context: AudioContext,
@@ -13,22 +15,33 @@ impl AudioEngine {
         Ok(AudioEngine { audio_context })
     }
 
-    pub fn play_freq(&self, frequency: f32, duration: f32) -> GameResult<()> {
-        let osc = GameOscillator::new(&self.audio_context)?;
-        osc.play(&self.audio_context, 0.0, frequency, duration)
+    pub fn interpret_graph(&self, audio_graph: &AudioGraph) {
+        let note_generator = &audio_graph.note_generator;
+        let oscillator = &audio_graph.oscillator; // TODO:
+        let audio_context = &self.audio_context;
+
+        let bpm = 120;
+        let loop_length_secs = note_generator.loop_length.to_seconds(bpm); // TODO:
+
+        let now = audio_context.current_time();
+
+        for note_event in &note_generator.notes {
+            let freq = note_event.note.to_frequancy();
+            let start = note_event.start.to_seconds(bpm);
+            let duration = note_event.duration.to_seconds(bpm);
+
+            let _ = self.play_freq_at_time(freq, now + start, duration);
+        }
     }
 
-    pub fn play_notes(&self, notes: &[Note]) -> GameResult<()> {
-        for note in notes {
-            let osc = GameOscillator::new(&self.audio_context)?;
-            osc.play(
-                &self.audio_context,
-                note.to_frequancy(),
-                note.position.start,
-                note.position.duration,
-            )?;
-        }
-        Ok(())
+    fn play_freq_at_time(
+        &self,
+        frequency: f32,
+        start: GameTime,
+        duration: GameTime,
+    ) -> GameResult<()> {
+        let osc = GameOscillator::new(&self.audio_context)?;
+        osc.play(&self.audio_context, frequency, start, duration)
     }
 }
 
@@ -52,8 +65,8 @@ impl GameOscillator {
         &self,
         audio_context: &AudioContext,
         frequency: f32,
-        start: f32,
-        duration: f32,
+        start: GameTime,
+        duration: GameTime,
     ) -> GameResult<()> {
         self.osc.set_type(OscillatorType::Sine);
         self.osc.frequency().set_value(frequency);

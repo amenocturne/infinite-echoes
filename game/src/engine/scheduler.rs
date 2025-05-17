@@ -3,7 +3,6 @@ use std::{cmp::Ordering, collections::BinaryHeap, time::Duration};
 use crate::util::time::GameTime;
 
 use macroquad::time::get_time;
-use miniquad::{debug, info};
 
 use super::game_state::GameEvent;
 

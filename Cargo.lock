@@ -111,6 +111,7 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "macroquad",
+ "macros",
  "miniquad",
  "wasm-bindgen",
  "web-sys",
@@ -187,6 +188,14 @@ name = "macroquad_macro"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64b1d96218903768c1ce078b657c0d5965465c95a60d2682fd97443c9d2483dd"
+
+[[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "malloc_buf"

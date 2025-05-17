@@ -1,17 +1,89 @@
+use crate::util::time::GameTime;
+
+/// Defines number of ticks in a quarter note
+const PULSES_PER_QUARTER_NOTE: u32 = 480;
+
+pub struct NoteGenerator {
+    pub loop_length: MusicTime,
+    pub notes: Vec<NoteEvent>,
+}
+
+impl NoteGenerator {
+    pub fn new(loop_length: MusicTime, notes: Vec<NoteEvent>) -> NoteGenerator {
+        NoteGenerator { loop_length, notes }
+    }
+}
+
+/// Enum for ease of use of music durations
+pub enum NoteDuration {
+    Whole = 0,
+    Half = 1,
+    Quarter = 2,
+    Eighth = 3,
+    // Triplets
+    Third = 4,
+}
+
+impl From<NoteDuration> for MusicTime {
+    fn from(value: NoteDuration) -> Self {
+        match value {
+            NoteDuration::Whole => MusicTime::new(4 * PULSES_PER_QUARTER_NOTE),
+            NoteDuration::Half => MusicTime::new(2 * PULSES_PER_QUARTER_NOTE),
+            NoteDuration::Quarter => MusicTime::new(PULSES_PER_QUARTER_NOTE),
+            NoteDuration::Eighth => MusicTime::new(PULSES_PER_QUARTER_NOTE / 2),
+            NoteDuration::Third => MusicTime::new(4 * PULSES_PER_QUARTER_NOTE / 3),
+        }
+    }
+}
+
+/// Represents time in musical terms, independently of BPM
+///
+/// Given the BPM, you can convert `MusicTime` to `GameTime`
+#[derive(Clone, Copy, PartialEq)]
+pub struct MusicTime {
+    ticks: u32,
+}
+
+impl MusicTime {
+    pub fn new(ticks: u32) -> Self {
+        MusicTime { ticks }
+    }
+
+    pub fn to_seconds(&self, bpm: u32) -> GameTime {
+        let tick_duration = 60.0 / (bpm as GameTime * PULSES_PER_QUARTER_NOTE as GameTime);
+        self.ticks as GameTime * tick_duration
+    }
+
+    pub const ZERO: MusicTime = MusicTime { ticks: 0 };
+}
+
+// ---------------------------------- Note ------------------------------
+
+pub struct NoteEvent {
+    pub note: Note,
+    pub start: MusicTime,
+    pub duration: MusicTime,
+}
+
+impl NoteEvent {
+    pub fn new(note: Note, start: MusicTime, duration: MusicTime) -> NoteEvent {
+        NoteEvent {
+            note,
+            start,
+            duration,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq)]
 pub struct Note {
     pub octave: i32,
     pub note_name: NoteName,
-    pub position: NotePosition,
 }
 
 impl Note {
-    pub fn new(octave: i32, note_name: NoteName, position: NotePosition) -> Note {
-        Note {
-            octave,
-            note_name,
-            position,
-        }
+    pub fn new(octave: i32, note_name: NoteName) -> Note {
+        Note { octave, note_name }
     }
     pub fn to_frequancy(&self) -> f32 {
         const A3_FREQ: f32 = 440.0;
@@ -24,20 +96,19 @@ impl Note {
     }
 
     pub fn shift(&self, semitones: i32) -> Note {
-        Note::from_semitones(self.to_semitones() + semitones, self.position)
+        Note::from_semitones(self.to_semitones() + semitones)
     }
 
     pub fn to_semitones(&self) -> i32 {
         self.octave * 12 + self.note_name.to_int()
     }
 
-    pub fn from_semitones(semitones: i32, position: NotePosition) -> Note {
+    pub fn from_semitones(semitones: i32) -> Note {
         let note_i = semitones.rem_euclid(12);
         let octave = (semitones - note_i) / 12;
         Note {
             octave,
-            note_name: NoteName::from_position(note_i),
-            position,
+            note_name: NoteName::from_int(note_i as u32),
         }
     }
 }
@@ -60,7 +131,7 @@ pub enum NoteName {
 }
 
 impl NoteName {
-    pub fn from_position(i: i32) -> NoteName {
+    pub fn from_int(i: u32) -> NoteName {
         match i % 12 {
             0 => NoteName::C,
             1 => NoteName::CSharp,
@@ -92,17 +163,5 @@ impl NoteName {
             NoteName::ASharp => 10,
             NoteName::B => 11,
         }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub struct NotePosition {
-    pub start: f32,
-    pub duration: f32,
-}
-
-impl NotePosition {
-    pub fn new(start: f32, duration: f32) -> NotePosition {
-        NotePosition { start, duration }
     }
 }
