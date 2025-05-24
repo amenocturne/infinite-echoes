@@ -2,25 +2,19 @@ use std::cell::RefCell;
 
 use super::audio_node::{AudioNode, DisplayedAudioNode};
 
-pub struct Oscillator {
-    pub wave_shape: WaveShape,
+pub struct AudioEffect {
     displayed_audio_node: RefCell<DisplayedAudioNode>,
 }
 
-pub enum WaveShape {
-    Sine,
-}
-
-impl Oscillator {
-    pub fn new(wave_shape: WaveShape, displayed_audio_node: DisplayedAudioNode) -> Oscillator {
-        Oscillator {
-            wave_shape,
+impl AudioEffect {
+    pub fn new(displayed_audio_node: DisplayedAudioNode) -> Self {
+        Self {
             displayed_audio_node: RefCell::new(displayed_audio_node),
         }
     }
 }
 
-impl AudioNode for Oscillator {
+impl AudioNode for AudioEffect {
     fn as_displayed(&self) -> &RefCell<DisplayedAudioNode> {
         &self.displayed_audio_node
     }

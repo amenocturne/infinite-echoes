@@ -1,36 +1,27 @@
-use macroquad::color::RED;
-use macroquad::math::vec2;
+use macroquad::math::Vec2;
 
 use crate::engine::audio_engine::AudioEngine;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
-use crate::render::rectangle::Rectangle;
 use crate::render::Render;
 
 pub struct GameState {
     pub audio_engine: AudioEngine,
-    pub rectangle: Rectangle,
-    pub is_rectangle_visible: bool,
-    pub audio_graph: AudioGraph
+    pub audio_graph: AudioGraph,
 }
 
 impl GameState {
     pub fn new(audio_engine: AudioEngine, audio_graph: AudioGraph) -> GameState {
-        let rectangle = Rectangle::new(vec2(0.0, 0.0), vec2(50.0, 50.0), RED); // TODO: remove
         GameState {
             audio_engine,
-            rectangle,
-            is_rectangle_visible: false,
-            audio_graph
+            audio_graph,
         }
     }
 }
 
 impl Render for GameState {
     fn render(&self) -> GameResult<()> {
-        if self.is_rectangle_visible {
-            self.rectangle.render()?;
-        }
+        self.audio_graph.render()?;
         Ok(())
     }
 }
@@ -41,13 +32,18 @@ impl Render for GameState {
 //     }
 // }
 
-#[derive(PartialEq, Eq, Debug)]
 pub enum GameEvent {
     InterpretGraph,
+    // Audio Node events
+    AudioNodeStartDrag(Vec2),
+    AudioNodeDrag(Vec2),
+    AudioNodeStopDrag,
+    AudioNodeAddEffect(Vec2),
+    AudioNodeDeleteAudioEffect(Vec2),
     // OscillatorStart,
-                      // OscillatorStop,
-                      // OscillatorDrag { mouse_pos: Vec2 },
-                      // OscillatorSetFrequency { frequency: f32 },
-                      // DraggingStart,
-                      // DraggingStop,
+    // OscillatorStop,
+    // OscillatorDrag { mouse_pos: Vec2 },
+    // OscillatorSetFrequency { frequency: f32 },
+    // DraggingStart,
+    // DraggingStop,
 }
