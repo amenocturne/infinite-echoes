@@ -5,7 +5,7 @@ mod render;
 mod util;
 
 use debug::hud::DebugHud;
-use engine::audio::AudioEngine;
+use engine::audio_engine::AudioEngine;
 use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_state::GameEvent;
@@ -28,10 +28,12 @@ use macroquad::prelude::*;
 
 fn process_event(game_state: &mut GameState, event: &GameEvent) {
     match event {
-        GameEvent::DisplayRectangle => game_state.is_rectangle_visible = true,
-        GameEvent::InterpretGraph => game_state
-            .audio_engine
-            .interpret_graph(&game_state.audio_graph),
+        GameEvent::InterpretGraph => {
+            game_state
+                .audio_engine
+                .interpret_graph(&game_state.audio_graph);
+            info!("InterpretGraph");
+        }
     }
 }
 

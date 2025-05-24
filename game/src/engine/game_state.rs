@@ -1,7 +1,7 @@
 use macroquad::color::RED;
 use macroquad::math::vec2;
 
-use crate::engine::audio::AudioEngine;
+use crate::engine::audio_engine::AudioEngine;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::render::rectangle::Rectangle;
@@ -43,7 +43,6 @@ impl Render for GameState {
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum GameEvent {
-    DisplayRectangle,
     InterpretGraph,
     // OscillatorStart,
                       // OscillatorStop,

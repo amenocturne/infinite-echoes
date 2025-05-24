@@ -2,7 +2,6 @@ use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
 
 use crate::engine::errors::{GameError, GameResult};
 use crate::nodes::audio_graph::AudioGraph;
-use crate::nodes::note_generator::Note;
 use crate::util::time::GameTime;
 
 pub struct AudioEngine {
@@ -17,11 +16,11 @@ impl AudioEngine {
 
     pub fn interpret_graph(&self, audio_graph: &AudioGraph) {
         let note_generator = &audio_graph.note_generator;
-        let oscillator = &audio_graph.oscillator; // TODO:
+        // let oscillator = &audio_graph.oscillator; // TODO:
         let audio_context = &self.audio_context;
 
         let bpm = 120;
-        let loop_length_secs = note_generator.loop_length.to_seconds(bpm); // TODO:
+        // let loop_length_secs = note_generator.loop_length.to_seconds(bpm); // TODO:
 
         let now = audio_context.current_time();
 
@@ -74,8 +73,7 @@ impl GameOscillator {
             .connect_with_audio_node(&audio_context.destination())
             .map_err(GameError::js("Could not connect audio node to destination"))?;
 
-        let now = audio_context.current_time();
-        let start_time = now + start as f64;
+        let start_time = start as f64;
 
         self.osc
             .start_with_when(start_time)
