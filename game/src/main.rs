@@ -1,8 +1,8 @@
+mod core;
 mod debug;
 mod engine;
 mod nodes;
 mod render;
-mod util;
 
 use debug::hud::DebugHud;
 use engine::audio_engine::AudioEngine;
@@ -23,7 +23,9 @@ use nodes::note_generator::NoteGenerator;
 use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
+use render::shapes::Shape;
 use render::Render;
+use render::RenderCtx;
 use std::cell::RefCell;
 
 use macroquad::prelude::*;
@@ -47,16 +49,15 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
             }
         }
         GameEvent::AudioNodeAddEffect(cursor) => {
-            let audio_effect_displayed = DisplayedAudioNode::new(*cursor, vec2(50.0, 50.0), BLUE); // TODO: remove
+            let audio_effect_displayed =
+                DisplayedAudioNode::new(*cursor, vec2(50.0, 50.0), WHITE, BLUE, Shape::Blank); // TODO: remove
             game_state
                 .audio_graph
                 .audio_effects
                 .push(AudioEffect::new(audio_effect_displayed));
         }
         GameEvent::AudioNodeDeleteAudioEffect(cursor) => {
-            game_state
-                .audio_graph
-                .delete_howered_audio_effect(cursor);
+            game_state.audio_graph.delete_howered_audio_effect(cursor);
         }
 
         // rest
@@ -73,8 +74,13 @@ fn handle_error(e: GameError) {
 }
 
 async fn run() -> GameResult<()> {
-    let note_generator_displayed =
-        DisplayedAudioNode::new(vec2(100.0, 100.0), vec2(50.0, 50.0), RED); // TODO: remove
+    let note_generator_displayed = DisplayedAudioNode::new(
+        vec2(100.0, 100.0),
+        vec2(50.0, 50.0),
+        WHITE,
+        GRAY,
+        Shape::Piano,
+    ); // TODO: remove
     let note_generator = NoteGenerator::new(
         NoteDuration::Whole.into(),
         vec![
@@ -93,7 +99,13 @@ async fn run() -> GameResult<()> {
         note_generator_displayed,
     );
 
-    let oscillator_displayed = DisplayedAudioNode::new(vec2(200.0, 200.0), vec2(50.0, 50.0), GREEN); // TODO: remove
+    let oscillator_displayed = DisplayedAudioNode::new(
+        vec2(200.0, 200.0),
+        vec2(50.0, 50.0),
+        WHITE,
+        GREEN,
+        Shape::SineWave,
+    ); // TODO: remove
     let oscillator = Oscillator::new(WaveShape::Sine, oscillator_displayed);
 
     let audio_graph = AudioGraph::new(note_generator, oscillator, vec![]);
@@ -103,6 +115,8 @@ async fn run() -> GameResult<()> {
     let mut scheduler = Scheduler::new();
 
     let debug_hud = DebugHud::new(100);
+
+    let render_ctx = RenderCtx::new().await?;
 
     loop {
         clear_background(BLACK);
@@ -135,8 +149,8 @@ async fn run() -> GameResult<()> {
             process_event(&mut state, &e)
         });
 
-        game_state.borrow().render()?;
-        debug_hud.render()?;
+        game_state.borrow().render(&render_ctx)?;
+        debug_hud.render(&render_ctx)?;
         next_frame().await;
     }
 }

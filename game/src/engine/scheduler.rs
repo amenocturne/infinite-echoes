@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::BinaryHeap, time::Duration};
 
-use crate::util::time::GameTime;
+use crate::core::GameTime;
 
 use macroquad::time::get_time;
 

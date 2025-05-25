@@ -2,7 +2,7 @@ use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
 
 use crate::engine::errors::{GameError, GameResult};
 use crate::nodes::audio_graph::AudioGraph;
-use crate::util::time::GameTime;
+use crate::core::GameTime;
 
 pub struct AudioEngine {
     audio_context: AudioContext,

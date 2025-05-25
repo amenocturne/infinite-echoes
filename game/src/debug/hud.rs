@@ -10,7 +10,7 @@ use macroquad::{
     time::{get_fps, get_time},
 };
 
-use crate::render::Render;
+use crate::render::{Render, RenderCtx};
 
 pub struct DebugHud {
     fps_queue: RefCell<VecDeque<i32>>,
@@ -35,7 +35,7 @@ impl DebugHud {
 }
 
 impl Render for DebugHud {
-    fn render(&self) -> crate::engine::errors::GameResult<()> {
+    fn render(&self, _render_ctx: &RenderCtx) -> crate::engine::errors::GameResult<()> {
         let fps = compute_average(get_fps(), &mut self.fps_queue.borrow_mut(), 100) as i32;
         let time = get_time();
         let latency_ms = (1000.0

@@ -4,6 +4,8 @@ use macroquad::color::Color;
 use macroquad::math::Vec2;
 use macroquad::shapes::draw_rectangle;
 
+use super::RenderCtx;
+
 pub struct Rectangle {
     pub position: Vec2,
     pub size: Vec2,
@@ -21,7 +23,7 @@ impl Rectangle {
 }
 
 impl Render for Rectangle {
-    fn render(&self) -> GameResult<()> {
+    fn render(&self, _render_ctx: &RenderCtx) -> GameResult<()> {
         draw_rectangle(
             self.position.x,
             self.position.y,

@@ -3,7 +3,7 @@ use macroquad::math::Vec2;
 use crate::engine::audio_engine::AudioEngine;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
-use crate::render::Render;
+use crate::render::{Render, RenderCtx};
 
 pub struct GameState {
     pub audio_engine: AudioEngine,
@@ -20,8 +20,8 @@ impl GameState {
 }
 
 impl Render for GameState {
-    fn render(&self) -> GameResult<()> {
-        self.audio_graph.render()?;
+    fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
+        self.audio_graph.render(render_ctx)?;
         Ok(())
     }
 }

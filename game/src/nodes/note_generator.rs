@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use crate::util::time::GameTime;
+use crate::core::GameTime;
 
 use super::audio_node::{AudioNode, DisplayedAudioNode};
 

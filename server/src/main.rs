@@ -15,6 +15,7 @@ enum MimeType {
     Html,
     JavaScript,
     Wasm,
+    Png,
 }
 impl MimeType {
     fn as_str(&self) -> &'static str {
@@ -22,6 +23,7 @@ impl MimeType {
             MimeType::Html => "text/html",
             MimeType::JavaScript => "text/javascript",
             MimeType::Wasm => "application/wasm",
+            MimeType::Png => "image/png",
         }
     }
 }
@@ -128,6 +130,18 @@ fn main() {
             "/game.js",
             "./dist/game.js",
             MimeType::JavaScript,
+            HotReloading::Enabled,
+        ),
+        FileData::new(
+            "/resources/piano.png",
+            "./resources/piano.png",
+            MimeType::Png,
+            HotReloading::Enabled,
+        ),
+        FileData::new(
+            "/resources/sine.png",
+            "./resources/sine.png",
+            MimeType::Png,
             HotReloading::Enabled,
         ),
     ];

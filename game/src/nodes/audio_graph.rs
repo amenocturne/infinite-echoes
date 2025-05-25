@@ -1,13 +1,11 @@
-use std::ops::Index;
-
 use macroquad::color::BLUE;
 use macroquad::math::Vec2;
 use macroquad::shapes::draw_line;
 
 use crate::engine::errors::GameResult;
-use crate::render::Render;
+use crate::render::{Render, RenderCtx};
 
-use super::audio_effect::{self, AudioEffect};
+use super::audio_effect::AudioEffect;
 use super::audio_node::AudioNode;
 use super::note_generator::NoteGenerator;
 use super::oscillator::Oscillator;
@@ -69,7 +67,7 @@ impl AudioGraph {
 }
 
 impl Render for AudioGraph {
-    fn render(&self) -> GameResult<()> {
+    fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
         let ng = &self.note_generator;
         let osc = &self.oscillator;
         let connection = Connection {
@@ -77,7 +75,7 @@ impl Render for AudioGraph {
             start: ng.get_center(),
             end: osc.get_center(),
         };
-        connection.render()?;
+        connection.render(render_ctx)?;
 
         let mut last_start = osc.get_center();
 
@@ -87,11 +85,11 @@ impl Render for AudioGraph {
                 end: e.get_center(),
             };
             last_start = e.get_center();
-            connection.render()?;
+            connection.render(render_ctx)?;
         }
 
         for n in self.all_nodes() {
-            n.render()?;
+            n.render(render_ctx)?;
         }
 
         Ok(())
@@ -104,7 +102,7 @@ struct Connection {
 }
 
 impl Render for Connection {
-    fn render(&self) -> GameResult<()> {
+    fn render(&self, _render_ctx: &RenderCtx) -> GameResult<()> {
         let thickness = 10.0;
         draw_line(
             self.start.x,
