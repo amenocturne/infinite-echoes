@@ -4,6 +4,7 @@ pub mod shapes;
 pub mod texture;
 pub mod card;
 pub mod hover;
+pub mod cards_row;
 
 use std::collections::HashMap;
 

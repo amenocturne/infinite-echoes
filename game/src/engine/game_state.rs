@@ -24,7 +24,7 @@ impl GameState {
 
 impl Render for GameState {
     fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
-        self.layout.grid.render(render_ctx)?;
+        // self.layout.grid.render(render_ctx)?;
         self.audio_graph.render(render_ctx)?;
         Ok(())
     }

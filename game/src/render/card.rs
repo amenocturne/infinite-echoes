@@ -7,6 +7,7 @@ use super::{
     Render, RenderCtx,
 };
 
+#[derive(Clone, Copy)]
 pub struct Card {
     pub center: Vec2,
     pub size: Vec2,
@@ -39,6 +40,9 @@ impl Card {
         if is_inside(position - margins, position + margins, self.center) {
             self.center = position;
         }
+    }
+    pub fn is_dragged(&self) -> bool {
+        self.is_dragged
     }
 }
 

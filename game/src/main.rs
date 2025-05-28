@@ -26,6 +26,7 @@ use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
 use render::card::Card;
+use render::cards_row::CardsRow;
 use render::hover::Hover;
 use render::layout::GridWidget;
 use render::layout::Layout;
@@ -122,11 +123,13 @@ async fn run() -> GameResult<()> {
 
     let render_ctx = RenderCtx::new(vec2(screen_width(), screen_height())).await?;
 
-    let mut card = Card::new(
-        vec2(0.25, 0.25),
-        vec2(1.0 / 10.0 - 0.05, 1.0 / 4.0 - 0.05),
-        WHITE,
-    );
+    // let mut card = Card::new(
+    //     vec2(0.25, 0.25),
+    //     vec2(1.0 / 10.0 - 0.05, 1.0 / 4.0 - 0.05),
+    //     WHITE,
+    // );
+
+    let mut cards_row = CardsRow::new(10, vec2(0.5, 0.85), vec2(0.9, 0.13), 0.9);
 
     loop {
         clear_background(BLACK);
@@ -136,21 +139,16 @@ async fn run() -> GameResult<()> {
         let mouse_pos_relative = mouse_pos / screen;
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            if card.is_hovered_over(mouse_pos_relative) {
-                card.start_dragging();
-            }
+            cards_row.start_dragging(mouse_pos_relative);
         }
 
         if is_mouse_button_released(MouseButton::Left) {
-            card.stop_dragging();
+            cards_row.stop_dragging();
         }
 
-        card.update_dragged_position(mouse_pos_relative);
-        let snapping_points = game_state.borrow().layout.grid.snapping_points();
-        for p in snapping_points {
-            card.snap(p, vec2(0.05, 0.05));
-        }
-        card.render(&render_ctx)?;
+        cards_row.update_dragged_position(mouse_pos_relative);
+        cards_row.snap(0.2);
+        cards_row.render(&render_ctx)?;
 
         // let cursor = mouse_position().into();
         // if is_mouse_button_pressed(MouseButton::Left) {
