@@ -1,4 +1,6 @@
-use std::{cmp::Ordering, collections::BinaryHeap, time::Duration};
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+use std::time::Duration;
 
 use crate::core::GameTime;
 

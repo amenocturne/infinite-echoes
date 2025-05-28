@@ -1,4 +1,5 @@
 mod core;
+
 mod debug;
 mod engine;
 mod nodes;
@@ -10,9 +11,6 @@ use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_state::GameEvent;
 use engine::game_state::GameState;
-use engine::scheduler::Scheduler;
-use macroquad::ui::hash;
-use macroquad::ui::root_ui;
 use macros::note;
 use nodes::audio_effect::AudioEffect;
 use nodes::audio_graph::AudioGraph;
@@ -25,12 +23,10 @@ use nodes::note_generator::NoteGenerator;
 use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
-use render::card::Card;
-use render::cards_row::CardsRow;
-use render::hover::Hover;
-use render::layout::GridWidget;
 use render::layout::Layout;
 use render::shapes::Shape;
+use render::widgets::cards_row::CardsRow;
+use render::widgets::grid::GridWidget;
 use render::Render;
 use render::RenderCtx;
 use std::cell::RefCell;
@@ -117,7 +113,7 @@ async fn run() -> GameResult<()> {
     let layout = Layout::new(GridWidget::new(position, size, 5, 2));
     let game_state = RefCell::new(GameState::new(layout, audio_engine, audio_graph));
 
-    let mut scheduler = Scheduler::new();
+    // let mut scheduler = Scheduler::new();
 
     let debug_hud = DebugHud::new(100);
 
@@ -129,7 +125,7 @@ async fn run() -> GameResult<()> {
     //     WHITE,
     // );
 
-    let mut cards_row = CardsRow::new(10, vec2(0.5, 0.85), vec2(0.9, 0.13), 0.9);
+    let cards_row = CardsRow::new(10, vec2(0.5, 0.85), vec2(0.9, 0.13), 0.8);
 
     loop {
         clear_background(BLACK);

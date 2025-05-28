@@ -1,15 +1,17 @@
+pub mod hover;
 pub mod layout;
 pub mod rectangle;
 pub mod shapes;
 pub mod texture;
-pub mod card;
-pub mod hover;
-pub mod cards_row;
+pub mod widgets;
 
 use std::collections::HashMap;
 
-use crate::engine::errors::{GameError, GameResult};
-use macroquad::{math::Vec2, texture::{load_texture, Texture2D}};
+use crate::engine::errors::GameError;
+use crate::engine::errors::GameResult;
+use macroquad::math::Vec2;
+use macroquad::texture::load_texture;
+use macroquad::texture::Texture2D;
 use texture::TextureAsset;
 use web_sys::AudioContext;
 
@@ -17,13 +19,16 @@ pub type Assets = HashMap<TextureAsset, Texture2D>;
 
 pub struct RenderCtx {
     assets: Assets,
-    screen_size: Vec2
+    screen_size: Vec2,
 }
 
 impl RenderCtx {
     pub async fn new(screen_size: Vec2) -> GameResult<Self> {
         let assets = Self::load_assets().await?;
-        Ok(RenderCtx { assets, screen_size })
+        Ok(RenderCtx {
+            assets,
+            screen_size,
+        })
     }
 
     async fn load_assets() -> GameResult<Assets> {

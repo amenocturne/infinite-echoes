@@ -1,18 +1,24 @@
 use std::cell::RefCell;
 
-use macroquad::{
-    color::WHITE,
-    math::{vec2, Vec2},
-};
+use macroquad::color::BLACK;
+use macroquad::color::WHITE;
+use macroquad::math::vec2;
+use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::render::hover::Hover;
+use crate::render::shapes::Shape;
+use crate::render::Render;
+use crate::render::RenderCtx;
 
-use super::{card::Card, hover::Hover, Render};
+use super::card::Card;
+use super::grid::GridWidget;
 
 pub struct CardsRow {
     center: Vec2,
     size: Vec2,
     cards: Vec<RefCell<Card>>,
+    grid: GridWidget,
 }
 
 impl CardsRow {
@@ -28,12 +34,16 @@ impl CardsRow {
                 card_center,
                 card_size * card_scale,
                 WHITE,
+                BLACK,
+                Shape::SineWave,
             )))
         }
+        let grid = GridWidget::new(center - size / 2.0, size, num_cards, 1);
         Self {
             center,
             size,
             cards,
+            grid,
         }
     }
 
@@ -81,14 +91,15 @@ impl CardsRow {
         let card_size = self.size / vec2(self.cards.len() as f32, 1.0);
         for c in &self.cards {
             for center in self.card_centers() {
-                c.borrow_mut().snap(center, card_size*snapping_margin);
+                c.borrow_mut().snap(center, card_size * snapping_margin);
             }
         }
     }
 }
 
 impl Render for CardsRow {
-    fn render(&self, render_ctx: &super::RenderCtx) -> GameResult<()> {
+    fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
+        self.grid.render(render_ctx)?;
         for c in &self.cards {
             c.borrow().render(render_ctx)?;
         }

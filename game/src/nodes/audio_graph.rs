@@ -3,7 +3,8 @@ use macroquad::math::Vec2;
 use macroquad::shapes::draw_line;
 
 use crate::engine::errors::GameResult;
-use crate::render::{Render, RenderCtx};
+use crate::render::Render;
+use crate::render::RenderCtx;
 
 use super::audio_effect::AudioEffect;
 use super::audio_node::AudioNode;

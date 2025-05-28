@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
-use super::audio_node::{AudioNode, DisplayedAudioNode};
+use super::audio_node::AudioNode;
+use super::audio_node::DisplayedAudioNode;
 
 pub struct AudioEffect {
     displayed_audio_node: RefCell<DisplayedAudioNode>,

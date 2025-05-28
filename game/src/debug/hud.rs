@@ -1,16 +1,15 @@
-use std::{
-    cell::{Cell, RefCell},
-    collections::VecDeque,
-    ops::Add,
-};
+use std::cell::Cell;
+use std::cell::RefCell;
+use std::collections::VecDeque;
+use std::ops::Add;
 
-use macroquad::{
-    color::WHITE,
-    text::draw_text,
-    time::{get_fps, get_time},
-};
+use macroquad::color::WHITE;
+use macroquad::text::draw_text;
+use macroquad::time::get_fps;
+use macroquad::time::get_time;
 
-use crate::render::{Render, RenderCtx};
+use crate::render::Render;
+use crate::render::RenderCtx;
 
 pub struct DebugHud {
     fps_queue: RefCell<VecDeque<i32>>,

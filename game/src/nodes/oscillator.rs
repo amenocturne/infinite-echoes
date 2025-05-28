@@ -1,13 +1,13 @@
 use std::cell::RefCell;
 
-use macroquad::{
-    color::{GREEN, WHITE},
-    math::vec2,
-};
+use macroquad::color::GREEN;
+use macroquad::color::WHITE;
+use macroquad::math::vec2;
 
 use crate::render::shapes::Shape;
 
-use super::audio_node::{AudioNode, DisplayedAudioNode};
+use super::audio_node::AudioNode;
+use super::audio_node::DisplayedAudioNode;
 
 pub struct Oscillator {
     pub wave_shape: WaveShape,

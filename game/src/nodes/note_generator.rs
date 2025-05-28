@@ -1,13 +1,14 @@
 use std::cell::RefCell;
 
-use macroquad::{
-    color::{GRAY, WHITE},
-    math::vec2,
-};
+use macroquad::color::GRAY;
+use macroquad::color::WHITE;
+use macroquad::math::vec2;
 
-use crate::{core::GameTime, render::shapes::Shape};
+use crate::core::GameTime;
+use crate::render::shapes::Shape;
 
-use super::audio_node::{AudioNode, DisplayedAudioNode};
+use super::audio_node::AudioNode;
+use super::audio_node::DisplayedAudioNode;
 
 /// Defines number of ticks in a quarter note
 const PULSES_PER_QUARTER_NOTE: u32 = 480;

@@ -3,7 +3,8 @@ use macroquad::prelude::*;
 use crate::engine::errors::GameError;
 use crate::engine::errors::GameResult;
 
-use super::{Render, RenderCtx};
+use super::Render;
+use super::RenderCtx;
 
 #[derive(Hash, PartialEq, Eq)]
 pub enum TextureAsset {

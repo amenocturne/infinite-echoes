@@ -1,7 +1,11 @@
-use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
+use web_sys::AudioContext;
+use web_sys::GainNode;
+use web_sys::OscillatorNode;
+use web_sys::OscillatorType;
 
 use crate::core::GameTime;
-use crate::engine::errors::{GameError, GameResult};
+use crate::engine::errors::GameError;
+use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::oscillator::WaveShape;
 

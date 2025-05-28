@@ -1,11 +1,12 @@
-use macroquad::{color::Color, math::Vec2};
+use macroquad::color::Color;
+use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
 
-use super::{
-    texture::{Texture, TextureAsset},
-    Render, RenderCtx,
-};
+use super::texture::Texture;
+use super::texture::TextureAsset;
+use super::Render;
+use super::RenderCtx;
 
 #[derive(Clone, Copy)]
 pub enum Shape {
@@ -23,8 +24,12 @@ impl Shape {
         color: Color,
     ) -> GameResult<()> {
         match self {
-            Shape::SineWave => Texture::new(position, size, color, TextureAsset::SineWave).render(render_ctx),
-            Shape::Piano => Texture::new(position, size, color, TextureAsset::Piano).render(render_ctx),
+            Shape::SineWave => {
+                Texture::new(position, size, color, TextureAsset::SineWave).render(render_ctx)
+            }
+            Shape::Piano => {
+                Texture::new(position, size, color, TextureAsset::Piano).render(render_ctx)
+            }
             Shape::Blank => Ok(()),
         }
     }
