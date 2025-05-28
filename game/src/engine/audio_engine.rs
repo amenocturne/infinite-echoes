@@ -1,8 +1,9 @@
 use web_sys::{AudioContext, GainNode, OscillatorNode, OscillatorType};
 
+use crate::core::GameTime;
 use crate::engine::errors::{GameError, GameResult};
 use crate::nodes::audio_graph::AudioGraph;
-use crate::core::GameTime;
+use crate::nodes::oscillator::WaveShape;
 
 pub struct AudioEngine {
     audio_context: AudioContext,
@@ -14,9 +15,9 @@ impl AudioEngine {
         Ok(AudioEngine { audio_context })
     }
 
-    pub fn interpret_graph(&self, audio_graph: &AudioGraph) {
+    pub fn interpret_graph(&self, audio_graph: &AudioGraph) -> GameResult<()> {
         let note_generator = &audio_graph.note_generator;
-        // let oscillator = &audio_graph.oscillator; // TODO:
+        let oscillator = &audio_graph.oscillator; // TODO:
         let audio_context = &self.audio_context;
 
         let bpm = 120;
@@ -26,38 +27,35 @@ impl AudioEngine {
 
         for note_event in &note_generator.notes {
             let freq = note_event.note.to_frequancy();
-            let start = note_event.start.to_seconds(bpm);
+            let start = now + note_event.start.to_seconds(bpm);
             let duration = note_event.duration.to_seconds(bpm);
 
-            let _ = self.play_freq_at_time(freq, now + start, duration);
+            let osc = GameOscillator::new(&self.audio_context, oscillator.wave_shape)?;
+            osc.play(&self.audio_context, freq, start, duration)?;
         }
-    }
-
-    fn play_freq_at_time(
-        &self,
-        frequency: f32,
-        start: GameTime,
-        duration: GameTime,
-    ) -> GameResult<()> {
-        let osc = GameOscillator::new(&self.audio_context)?;
-        osc.play(&self.audio_context, frequency, start, duration)
+        Ok(())
     }
 }
 
 pub struct GameOscillator {
     osc: OscillatorNode,
     gain: GainNode,
+    wave_shape: WaveShape,
 }
 
 impl GameOscillator {
-    fn new(audio_context: &AudioContext) -> GameResult<GameOscillator> {
+    fn new(audio_context: &AudioContext, wave_shape: WaveShape) -> GameResult<GameOscillator> {
         let osc = audio_context
             .create_oscillator()
             .map_err(GameError::js("Could not create oscillator"))?;
         let gain = audio_context
             .create_gain()
             .map_err(GameError::js("Coult not create gain node"))?;
-        Ok(GameOscillator { osc, gain })
+        Ok(GameOscillator {
+            osc,
+            gain,
+            wave_shape,
+        })
     }
 
     fn play(
@@ -67,7 +65,11 @@ impl GameOscillator {
         start: GameTime,
         duration: GameTime,
     ) -> GameResult<()> {
-        self.osc.set_type(OscillatorType::Sine);
+        let wave = match self.wave_shape {
+            WaveShape::Sine => OscillatorType::Sine,
+            WaveShape::Square => OscillatorType::Square,
+        };
+        self.osc.set_type(wave);
         self.osc.frequency().set_value(frequency);
         self.osc
             .connect_with_audio_node(&audio_context.destination())

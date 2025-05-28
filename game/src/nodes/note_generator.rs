@@ -1,6 +1,11 @@
 use std::cell::RefCell;
 
-use crate::core::GameTime;
+use macroquad::{
+    color::{GRAY, WHITE},
+    math::vec2,
+};
+
+use crate::{core::GameTime, render::shapes::Shape};
 
 use super::audio_node::{AudioNode, DisplayedAudioNode};
 
@@ -14,15 +19,18 @@ pub struct NoteGenerator {
 }
 
 impl NoteGenerator {
-    pub fn new(
-        loop_length: MusicTime,
-        notes: Vec<NoteEvent>,
-        displayed_audio_node: DisplayedAudioNode,
-    ) -> NoteGenerator {
+    pub fn new(loop_length: MusicTime, notes: Vec<NoteEvent>) -> NoteGenerator {
+        let displayed = DisplayedAudioNode::new(
+            vec2(100.0, 100.0),
+            vec2(50.0, 50.0),
+            WHITE,
+            GRAY,
+            Shape::Piano,
+        ); // TODO: remove
         NoteGenerator {
             loop_length,
             notes,
-            displayed_audio_node: RefCell::new(displayed_audio_node),
+            displayed_audio_node: RefCell::new(displayed),
         }
     }
 }

@@ -1,5 +1,12 @@
 use std::cell::RefCell;
 
+use macroquad::{
+    color::{GREEN, WHITE},
+    math::vec2,
+};
+
+use crate::render::shapes::Shape;
+
 use super::audio_node::{AudioNode, DisplayedAudioNode};
 
 pub struct Oscillator {
@@ -7,15 +14,24 @@ pub struct Oscillator {
     displayed_audio_node: RefCell<DisplayedAudioNode>,
 }
 
+#[derive(Clone, Copy)]
 pub enum WaveShape {
     Sine,
+    Square,
 }
 
 impl Oscillator {
-    pub fn new(wave_shape: WaveShape, displayed_audio_node: DisplayedAudioNode) -> Oscillator {
+    pub fn new(wave_shape: WaveShape) -> Oscillator {
+        let displayed = DisplayedAudioNode::new(
+            vec2(200.0, 200.0),
+            vec2(50.0, 50.0),
+            WHITE,
+            GREEN,
+            Shape::SineWave,
+        );
         Oscillator {
             wave_shape,
-            displayed_audio_node: RefCell::new(displayed_audio_node),
+            displayed_audio_node: RefCell::new(displayed),
         }
     }
 }
