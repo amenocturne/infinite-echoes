@@ -11,10 +11,10 @@ use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_state::GameEvent;
 use engine::game_state::GameState;
+use engine::scheduler::Scheduler;
 use macros::note;
 use nodes::audio_effect::AudioEffect;
 use nodes::audio_graph::AudioGraph;
-use nodes::audio_node::DisplayedAudioNode;
 use nodes::note_generator::MusicTime;
 use nodes::note_generator::Note;
 use nodes::note_generator::NoteDuration;
@@ -24,8 +24,8 @@ use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
 use render::layout::Layout;
-use render::shapes::Shape;
-use render::widgets::cards_row::CardsRow;
+use render::widgets::audio_graph_widget::AudioGraphWidget;
+use render::widgets::cards_row_widget::CardsRowWidget;
 use render::widgets::grid::GridWidget;
 use render::Render;
 use render::RenderCtx;
@@ -36,31 +36,18 @@ use macroquad::prelude::*;
 fn process_event(game_state: &mut GameState, event: &GameEvent) {
     match event {
         // Audio Node events
-        GameEvent::AudioNodeStartDrag(cursor) => {
-            for n in game_state.audio_graph.all_nodes() {
-                n.maybe_start_dragging(cursor);
-            }
-        }
-        GameEvent::AudioNodeStopDrag => {
-            for n in game_state.audio_graph.all_nodes() {
-                n.stop_dragging();
-            }
-        }
-        GameEvent::AudioNodeDrag(cursor) => {
-            for n in game_state.audio_graph.all_nodes() {
-                n.update_dragged_position(cursor);
-            }
-        }
-        GameEvent::AudioNodeAddEffect(cursor) => {
-            let audio_effect_displayed =
-                DisplayedAudioNode::new(*cursor, vec2(50.0, 50.0), WHITE, BLUE, Shape::Blank); // TODO: remove
+        GameEvent::AudioNodeStartDrag(_) => {}
+        GameEvent::AudioNodeStopDrag => {}
+        GameEvent::AudioNodeDrag(_) => {}
+        GameEvent::AudioNodeAddEffect() => {
+            info!("Added effect");
             game_state
                 .audio_graph
                 .audio_effects
-                .push(AudioEffect::new(audio_effect_displayed));
+                .push(AudioEffect::new());
         }
-        GameEvent::AudioNodeDeleteAudioEffect(cursor) => {
-            game_state.audio_graph.delete_howered_audio_effect(cursor);
+        GameEvent::AudioNodeDeleteAudioEffect(_) => {
+            // game_state.audio_graph.delete_howered_audio_effect(cursor);
         }
 
         // rest
@@ -113,7 +100,7 @@ async fn run() -> GameResult<()> {
     let layout = Layout::new(GridWidget::new(position, size, 5, 2));
     let game_state = RefCell::new(GameState::new(layout, audio_engine, audio_graph));
 
-    // let mut scheduler = Scheduler::new();
+    let mut scheduler = Scheduler::new();
 
     let debug_hud = DebugHud::new(100);
 
@@ -125,7 +112,9 @@ async fn run() -> GameResult<()> {
     //     WHITE,
     // );
 
-    let cards_row = CardsRow::new(10, vec2(0.5, 0.85), vec2(0.9, 0.13), 0.8);
+    let card_size = vec2(0.075, 0.1);
+    let card_margin = 0.01;
+    let cards_row = CardsRowWidget::new(vec2(0.5, 0.85), vec2(0.9, 0.13), card_size, card_margin);
 
     loop {
         clear_background(BLACK);
@@ -142,9 +131,22 @@ async fn run() -> GameResult<()> {
             cards_row.stop_dragging();
         }
 
+        if is_key_pressed(KeyCode::Space) {
+            scheduler.schedule(GameEvent::AudioNodeAddEffect(), None);
+        }
+
         cards_row.update_dragged_position(mouse_pos_relative);
         cards_row.snap(0.2);
         cards_row.render(&render_ctx)?;
+
+        let audio_graph_widget = AudioGraphWidget::new(
+            vec2(0.5, 0.5),
+            vec2(0.9, 0.13),
+            card_size,
+            card_margin,
+            &game_state.borrow().audio_graph,
+        );
+        audio_graph_widget.render(&render_ctx)?;
 
         // let cursor = mouse_position().into();
         // if is_mouse_button_pressed(MouseButton::Left) {
@@ -175,14 +177,14 @@ async fn run() -> GameResult<()> {
         // if is_key_pressed(KeyCode::A) {
         //     scheduler.schedule(GameEvent::ChangeOscillatorType, None);
         // }
-        //
-        // // Event processing
-        // scheduler.process_events(&mut |e| {
-        //     let mut state = game_state.try_borrow_mut().unwrap();
-        //     process_event(&mut state, &e)
-        // });
 
-        game_state.borrow().render(&render_ctx)?;
+        // // Event processing
+        scheduler.process_events(&mut |e| {
+            let mut state = game_state.try_borrow_mut().unwrap();
+            process_event(&mut state, &e)
+        });
+
+        // game_state.borrow().render(&render_ctx)?;
         debug_hud.render(&render_ctx)?;
         next_frame().await;
     }

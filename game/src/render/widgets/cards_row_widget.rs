@@ -7,38 +7,41 @@ use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
 use crate::render::hover::Hover;
-use crate::render::shapes::Shape;
+use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
 use crate::render::RenderCtx;
 
 use super::card::Card;
+use super::card::CardType;
 use super::grid::GridWidget;
 
-pub struct CardsRow {
+pub struct CardsRowWidget {
     center: Vec2,
     size: Vec2,
     cards: Vec<RefCell<Card>>,
     grid: GridWidget,
 }
 
-impl CardsRow {
-    pub fn new(num_cards: u32, center: Vec2, size: Vec2, card_scale: f32) -> Self {
-        let mut cards = vec![];
-        let card_size = size / vec2(num_cards as f32, 1.0);
-        for i in 0..num_cards {
-            let card_center = vec2(
-                (center.x - size.x / 2.0 + card_size.x / 2.0) + i as f32 * card_size.x,
-                center.y,
-            );
-            cards.push(RefCell::new(Card::new(
-                card_center,
-                card_size * card_scale,
-                WHITE,
-                BLACK,
-                Shape::SineWave,
-            )))
-        }
-        let grid = GridWidget::new(center - size / 2.0, size, num_cards, 1);
+impl CardsRowWidget {
+    pub fn new(center: Vec2, size: Vec2, card_size: Vec2, card_margin: f32) -> Self {
+        let max_cards = (size / (card_size + card_margin)).x.floor() as u32;
+
+        let card_centers = Self::grid_centers_from(center, size, max_cards, 1);
+
+        let cards = card_centers
+            .iter()
+            .map(|c| {
+                RefCell::new(Card::new(
+                    c.clone(),
+                    card_size,
+                    WHITE,
+                    BLACK,
+                    CardType::AudioEffect,
+                ))
+            })
+            .collect();
+
+        let grid = GridWidget::new(center, size, max_cards, 1);
         Self {
             center,
             size,
@@ -48,15 +51,7 @@ impl CardsRow {
     }
 
     fn card_centers(&self) -> Vec<Vec2> {
-        let mut card_centers = vec![];
-        let card_size = self.size / vec2(self.cards.len() as f32, 1.0);
-        for i in 0..self.cards.len() {
-            card_centers.push(vec2(
-                (self.center.x - self.size.x / 2.0 + card_size.x / 2.0) + i as f32 * card_size.x,
-                self.center.y,
-            ))
-        }
-        return card_centers;
+        self.grid_centers(self.cards.len() as u32, 1)
     }
 
     pub fn start_dragging(&self, mouse_position: Vec2) {
@@ -97,7 +92,17 @@ impl CardsRow {
     }
 }
 
-impl Render for CardsRow {
+impl RectangleBoundary for CardsRowWidget {
+    fn center(&self) -> Vec2 {
+        self.center
+    }
+
+    fn size(&self) -> Vec2 {
+        self.size
+    }
+}
+
+impl Render for CardsRowWidget {
     fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
         self.grid.render(render_ctx)?;
         for c in &self.cards {

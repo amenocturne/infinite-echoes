@@ -24,9 +24,9 @@ impl GameState {
 }
 
 impl Render for GameState {
-    fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
+    fn render(&self, _render_ctx: &RenderCtx) -> GameResult<()> {
         // self.layout.grid.render(render_ctx)?;
-        self.audio_graph.render(render_ctx)?;
+        // self.audio_graph.render(render_ctx)?;
         Ok(())
     }
 }
@@ -38,6 +38,6 @@ pub enum GameEvent {
     AudioNodeStartDrag(Vec2),
     AudioNodeDrag(Vec2),
     AudioNodeStopDrag,
-    AudioNodeAddEffect(Vec2),
+    AudioNodeAddEffect(),
     AudioNodeDeleteAudioEffect(Vec2),
 }

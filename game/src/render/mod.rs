@@ -4,6 +4,7 @@ pub mod rectangle;
 pub mod shapes;
 pub mod texture;
 pub mod widgets;
+pub mod rectangle_boundary;
 
 use std::collections::HashMap;
 

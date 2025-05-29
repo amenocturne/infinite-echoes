@@ -1,5 +1,6 @@
 use super::line::LineWidget;
 use crate::engine::errors::GameResult;
+use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
 use crate::render::RenderCtx;
 use macroquad::color::WHITE;
@@ -8,16 +9,16 @@ use macroquad::math::Vec2;
 
 /// Position and size are in percent to the whole screen width and height
 pub struct GridWidget {
-    position: Vec2,
+    center: Vec2,
     size: Vec2,
     columns: u32,
     rows: u32,
 }
 
 impl GridWidget {
-    pub fn new(position: Vec2, size: Vec2, columns: u32, rows: u32) -> Self {
+    pub fn new(center: Vec2, size: Vec2, columns: u32, rows: u32) -> Self {
         GridWidget {
-            position,
+            center,
             size,
             columns,
             rows,
@@ -29,12 +30,21 @@ impl GridWidget {
         for col in 0..self.columns {
             for row in 0..self.rows {
                 points.push(vec2(
-                    cell_size.x / 2.0 + col as f32 * cell_size.x + self.position.x,
-                    cell_size.y / 2.0 + row as f32 * cell_size.y + self.position.y,
+                    cell_size.x / 2.0 + col as f32 * cell_size.x + self.top_left().x,
+                    cell_size.y / 2.0 + row as f32 * cell_size.y + self.top_left().y,
                 ))
             }
         }
         return points;
+    }
+}
+
+impl RectangleBoundary for GridWidget {
+    fn center(&self) -> Vec2 {
+        self.center
+    }
+    fn size(&self) -> Vec2 {
+        self.size
     }
 }
 
@@ -43,8 +53,8 @@ impl Render for GridWidget {
         let cell_size = self.size / vec2(self.columns as f32, self.rows as f32);
         let columns = (0..(self.columns + 1)).map(|i| {
             LineWidget::new(
-                vec2((i as f32) * cell_size.x, 0.0) + self.position,
-                vec2((i as f32) * cell_size.x, self.size.y) + self.position,
+                vec2((i as f32) * cell_size.x, 0.0) + self.left_center(),
+                vec2((i as f32) * cell_size.x, self.size.y) + self.left_center(),
                 2.0,
                 WHITE,
             )
@@ -52,8 +62,8 @@ impl Render for GridWidget {
 
         let rows = (0..(self.rows + 1)).map(|i| {
             LineWidget::new(
-                vec2(0.0, (i as f32) * cell_size.y) + self.position,
-                vec2(self.size.x, (i as f32) * cell_size.y) + self.position,
+                vec2(0.0, (i as f32) * cell_size.y) + self.left_center(),
+                vec2(self.size.x, (i as f32) * cell_size.y) + self.left_center(),
                 2.0,
                 WHITE,
             )

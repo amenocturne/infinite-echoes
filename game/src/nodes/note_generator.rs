@@ -1,14 +1,4 @@
-use std::cell::RefCell;
-
-use macroquad::color::GRAY;
-use macroquad::color::WHITE;
-use macroquad::math::vec2;
-
 use crate::core::GameTime;
-use crate::render::shapes::Shape;
-
-use super::audio_node::AudioNode;
-use super::audio_node::DisplayedAudioNode;
 
 /// Defines number of ticks in a quarter note
 const PULSES_PER_QUARTER_NOTE: u32 = 480;
@@ -16,29 +6,11 @@ const PULSES_PER_QUARTER_NOTE: u32 = 480;
 pub struct NoteGenerator {
     pub loop_length: MusicTime,
     pub notes: Vec<NoteEvent>,
-    displayed_audio_node: RefCell<DisplayedAudioNode>,
 }
 
 impl NoteGenerator {
     pub fn new(loop_length: MusicTime, notes: Vec<NoteEvent>) -> NoteGenerator {
-        let displayed = DisplayedAudioNode::new(
-            vec2(100.0, 100.0),
-            vec2(50.0, 50.0),
-            WHITE,
-            GRAY,
-            Shape::Piano,
-        ); // TODO: remove
-        NoteGenerator {
-            loop_length,
-            notes,
-            displayed_audio_node: RefCell::new(displayed),
-        }
-    }
-}
-
-impl AudioNode for NoteGenerator {
-    fn as_displayed(&self) -> &RefCell<DisplayedAudioNode> {
-        &self.displayed_audio_node
+        NoteGenerator { loop_length, notes }
     }
 }
 

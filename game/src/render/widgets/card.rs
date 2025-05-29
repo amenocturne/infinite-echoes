@@ -17,8 +17,25 @@ pub struct Card {
     pub size: Vec2,
     pub background_color: Color,
     pub foreground_color: Color,
-    shape: Shape,
+    card_type: CardType,
     is_dragged: bool,
+}
+
+#[derive(Clone, Copy)]
+pub enum CardType {
+    NoteGenerator,
+    SineOscillator,
+    AudioEffect,
+}
+
+impl CardType {
+    pub fn as_shape(&self) -> Shape {
+        match self {
+            CardType::AudioEffect => Shape::Blank,
+            CardType::SineOscillator => Shape::SineWave,
+            CardType::NoteGenerator => Shape::Piano,
+        }
+    }
 }
 
 impl Card {
@@ -27,14 +44,14 @@ impl Card {
         size: Vec2,
         background_color: Color,
         foreground_color: Color,
-        shape: Shape,
+        card_type: CardType,
     ) -> Card {
         Card {
             center,
             size,
             background_color,
             foreground_color,
-            shape,
+            card_type,
             is_dragged: false,
         }
     }
@@ -75,7 +92,7 @@ impl Render for Card {
             self.background_color,
         );
 
-        self.shape.draw(
+        self.card_type.as_shape().draw(
             render_ctx,
             absolute_top_left + absolute_margin / 2.0,
             absolute_size * (1.0 - MARGIN_PERSENTAGE),
