@@ -19,17 +19,20 @@ pub trait DraggableCardBuffer {
     fn organize_cards(&mut self);
 
     // Starts card dragging if mouse_pos is over a card
-    fn try_start_dragging(&self, mouse_pos: Vec2) -> Option<usize>{
+    fn try_start_dragging(&mut self, mouse_pos: Vec2) -> Option<(usize, RefCell<Card>)> {
+        let mut result = None;
         for (i, c) in self.cards().iter().enumerate() {
             if c.borrow().is_hovered_over(mouse_pos) {
                 c.borrow_mut().start_dragging();
-                return Some(i);
+                result = Some((i, c.clone()));
             }
         }
-        None
+
+        result.as_ref().map(|(i, _)| self.remove_card(*i));
+        result
     }
 
-    fn pop_dragged_card(&mut self) -> Option<RefCell<Card>>{
+    fn pop_dragged_card(&mut self) -> Option<(usize, RefCell<Card>)> {
         let mut removed = None;
         let mut removed_index = None;
         for (i, c) in self.cards().iter().enumerate() {
@@ -41,7 +44,10 @@ pub trait DraggableCardBuffer {
             }
         }
         removed_index.map(|i| self.remove_card(i));
-        removed
+        match (removed_index, removed) {
+            (Some(i), Some(r)) => Some((i, r)),
+            _ => None,
+        }
     }
 
     // Aborts dragging cards and puts all of them back
