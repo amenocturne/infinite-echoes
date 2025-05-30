@@ -155,7 +155,6 @@ async fn run() -> GameResult<()> {
         }
 
         if is_mouse_button_down(MouseButton::Left) {
-            info!("{:?}", drag_manager);
             drag_manager.handle_mouse_drag(mouse_pos);
         }
 

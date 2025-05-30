@@ -82,6 +82,10 @@ impl DraggableCardBuffer for AudioGraphWidget {
         &self.cards
     }
 
+    fn push_card(&mut self, card: RefCell<Card>) {
+        self.cards.push(card)
+    }
+
     fn remove_card(&mut self, i: usize) -> RefCell<Card> {
         self.cards.remove(i)
     }

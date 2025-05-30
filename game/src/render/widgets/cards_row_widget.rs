@@ -7,8 +7,6 @@ use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
-use crate::render::hover::Hover;
-use crate::render::rectangle_boundary::is_inside_rectangle;
 use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
 use crate::render::RenderCtx;
@@ -58,6 +56,10 @@ impl DraggableCardBuffer for CardsRowWidget {
         &self.cards
     }
 
+    fn push_card(&mut self, card: RefCell<Card>) {
+        self.cards.push(card)
+    }
+
     fn remove_card(&mut self, i: usize) -> RefCell<Card> {
         self.cards.remove(i)
     }
@@ -76,20 +78,16 @@ impl DraggableCardBuffer for CardsRowWidget {
 
     fn drag_in_regions(&self) -> Vec<(Vec2, Vec2)> {
         let box_size = self.grid.single_cell_size();
-        let shift = -vec2(box_size.x, 0.0) / 2.0;
-        let mut regions: Vec<_> = self
-            .card_centers()
-            .into_iter()
-            .map(|c| (c - box_size / 2.0 + shift, c + box_size / 2.0 + shift))
-            .collect();
+        let mut prev_top_left = self.top_left();
+        let mut regions = vec![];
+        let actual_card_centers: Vec<_> =
+            self.cards().iter().map(|c| c.borrow().center()).collect();
 
-        if let Some(last) = self.card_centers().last() {
-            let top_left = *last - vec2(0.0, box_size.y / 2.0);
-            let bottom_right = self.bottom_right();
-            regions.push((top_left, bottom_right))
-        } else{
-            regions.push((self.top_left(), self.bottom_right()))
+        for c in actual_card_centers {
+            regions.push((prev_top_left, c + vec2(0.0, box_size.y / 2.0)));
+            prev_top_left = c - vec2(0.0, box_size.y / 2.0);
         }
+        regions.push((prev_top_left, self.bottom_right()));
         regions
     }
 

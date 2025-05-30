@@ -10,6 +10,7 @@ use super::{
 
 pub trait DraggableCardBuffer {
     fn cards(&self) -> &Vec<RefCell<Card>>;
+    fn push_card(&mut self, card: RefCell<Card>);
     fn remove_card(&mut self, i: usize) -> RefCell<Card>;
     fn insert_card(&mut self, i: usize, card: RefCell<Card>);
     fn snapping_margin(&self) -> Vec2;
@@ -69,9 +70,15 @@ pub trait DraggableCardBuffer {
     }
 
     fn drag_card_in(&mut self, card: &RefCell<Card>) -> bool {
-        for (i, (top_left, bottom_right)) in (self.drag_in_regions()).iter().enumerate() {
+        let regions = self.drag_in_regions();
+        let cards = self.cards();
+        for (i, (top_left, bottom_right)) in regions.iter().enumerate() {
             if is_inside_rectangle(top_left, bottom_right, &card.borrow().center()) {
-                self.insert_card(i, card.clone());
+                if i < cards.len() {
+                    self.insert_card(i, card.clone());
+                } else {
+                    self.push_card(card.clone());
+                }
                 self.organize_cards();
                 return true;
             }

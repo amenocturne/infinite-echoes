@@ -4,7 +4,6 @@ use super::Render;
 use super::RenderCtx;
 use crate::engine::errors::GameResult;
 use macroquad::math::Vec2;
-use miniquad::info;
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -58,7 +57,6 @@ impl DragManager {
 
     pub fn handle_mouse_drag(&mut self, mouse_pos: Vec2) {
         if let Some(ref state) = self.state {
-            info!("Updating dragged card position to: {:?}", mouse_pos);
             state
                 .dragged_card
                 .borrow_mut()
@@ -74,7 +72,6 @@ impl DragManager {
             for buffer in buffers.iter_mut() {
                 if buffer.drag_card_in(&state.dragged_card) {
                     placed = true;
-                    info!("Card placed in buffer");
                     break;
                 }
             }
