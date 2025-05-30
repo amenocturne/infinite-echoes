@@ -3,6 +3,7 @@ use macroquad::math::Vec2;
 use macroquad::shapes::draw_rectangle;
 
 use crate::engine::errors::GameResult;
+use crate::nodes::AudioNodeType;
 use crate::render::hover::Hover;
 use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::shapes::Shape;
@@ -27,15 +28,26 @@ pub enum CardType {
     SineOscillator,
     SquareOscilaltor,
     AudioEffect,
+    NoteEffect,
 }
 
 impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
             CardType::AudioEffect => Shape::Blank,
+            CardType::NoteEffect => Shape::Blank,
             CardType::SineOscillator => Shape::SineWave,
             CardType::SquareOscilaltor => Shape::SquareWave,
             CardType::NoteGenerator => Shape::Piano,
+        }
+    }
+    pub fn as_type(&self) -> AudioNodeType {
+        match self {
+            CardType::AudioEffect => AudioNodeType::AudioEffect,
+            CardType::NoteEffect => AudioNodeType::NoteEffect,
+            CardType::SineOscillator => AudioNodeType::Oscillator,
+            CardType::SquareOscilaltor => AudioNodeType::Oscillator,
+            CardType::NoteGenerator => AudioNodeType::NoteGenerator,
         }
     }
 }
@@ -76,6 +88,10 @@ impl Card {
     }
     pub fn is_dragged(&self) -> bool {
         self.is_dragged
+    }
+
+    pub fn as_type(&self) -> AudioNodeType {
+        self.card_type.as_type()
     }
 }
 

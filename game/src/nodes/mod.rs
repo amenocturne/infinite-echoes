@@ -1,4 +1,5 @@
 use audio_effect::AudioEffect;
+use note_effect::NoteEffect;
 use note_generator::NoteGenerator;
 use oscillator::{Oscillator, WaveShape};
 
@@ -6,12 +7,14 @@ use crate::render::widgets::card_widget::CardType;
 
 pub mod audio_effect;
 pub mod audio_graph;
+pub mod note_effect;
 pub mod note_generator;
 pub mod oscillator;
 
 #[derive(Clone)]
 pub enum AudioNode {
     NoteGenerator(NoteGenerator),
+    NoteEffect(NoteEffect),
     Oscillator(Oscillator),
     AudioEffect(AudioEffect),
 }
@@ -25,21 +28,131 @@ impl AudioNode {
                 WaveShape::Square => CardType::SquareOscilaltor,
             },
             AudioNode::AudioEffect(_) => CardType::AudioEffect,
+            AudioNode::NoteEffect(_) => CardType::NoteEffect,
         }
     }
 
     pub fn as_type(&self) -> AudioNodeType {
         match self {
             AudioNode::NoteGenerator(_) => AudioNodeType::NoteGenerator,
+            AudioNode::NoteEffect(_) => AudioNodeType::NoteEffect,
             AudioNode::Oscillator(_) => AudioNodeType::Oscillator,
             AudioNode::AudioEffect(_) => AudioNodeType::AudioEffect,
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum AudioNodeType {
     NoteGenerator,
+    NoteEffect,
     Oscillator,
     AudioEffect,
+}
+
+impl AudioNodeType {
+    // Used in actual validation
+    pub fn can_put_between_strict(
+        &self,
+        before: Option<AudioNodeType>,
+        after: Option<AudioNodeType>,
+    ) -> bool {
+        match (before, after) {
+            (None, None) => true,
+            (None, Some(after)) => self.allowed_after(after),
+            (Some(before), None) => self.allowed_before(before),
+            (Some(before), Some(after)) => self.allowed_before(before) && self.allowed_after(after),
+        }
+    }
+
+    // Used while building the graph, may lead to invalid graphs
+    pub fn can_put_between_loose(
+        &self,
+        before: Option<AudioNodeType>,
+        after: Option<AudioNodeType>,
+    ) -> bool {
+        match (before, after) {
+            (None, None) => true,
+            (None, Some(after)) => self.allowed_after(after),
+            (Some(before), None) => self.allowed_before_loose(before),
+            (Some(before), Some(after)) => {
+                self.allowed_before_loose(before) && self.allowed_after(after)
+            }
+        }
+    }
+
+    fn allowed_before(&self, t: AudioNodeType) -> bool {
+        match self {
+            AudioNodeType::NoteGenerator => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::NoteEffect => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::Oscillator => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::AudioEffect => {
+                vec![AudioNodeType::Oscillator, AudioNodeType::AudioEffect]
+            }
+        }
+        .iter()
+        .find(|&c| *c == t)
+        .is_some()
+    }
+
+    fn allowed_before_loose(&self, t: AudioNodeType) -> bool {
+        match self {
+            AudioNodeType::NoteGenerator => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::NoteEffect => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::Oscillator => {
+                vec![AudioNodeType::NoteGenerator, AudioNodeType::NoteEffect]
+            }
+            AudioNodeType::AudioEffect => {
+                vec![
+                    AudioNodeType::NoteGenerator,
+                    AudioNodeType::NoteEffect,
+                    AudioNodeType::Oscillator,
+                    AudioNodeType::AudioEffect,
+                ]
+            }
+        }
+        .iter()
+        .find(|&c| *c == t)
+        .is_some()
+    }
+
+    fn allowed_after(&self, t: AudioNodeType) -> bool {
+        match self {
+            AudioNodeType::NoteGenerator => {
+                vec![
+                    AudioNodeType::NoteGenerator,
+                    AudioNodeType::NoteEffect,
+                    AudioNodeType::Oscillator,
+                ]
+            }
+            AudioNodeType::NoteEffect => {
+                vec![
+                    AudioNodeType::NoteGenerator,
+                    AudioNodeType::NoteEffect,
+                    AudioNodeType::Oscillator,
+                ]
+            }
+            AudioNodeType::Oscillator => {
+                vec![AudioNodeType::AudioEffect]
+            }
+            AudioNodeType::AudioEffect => {
+                vec![AudioNodeType::AudioEffect]
+            }
+        }
+        .iter()
+        .find(|&c| *c == t)
+        .is_some()
+    }
+
+    // Can lead to invalid states, used only when building audio graph, not validating
 }

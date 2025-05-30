@@ -41,6 +41,10 @@ pub trait RectangleBoundary {
         Self::left_center_from(self.center(), self.size())
     }
 
+    fn right_center(&self) -> Vec2 {
+        self.center() + vec2(self.size().x, 0.0) / 2.0
+    }
+
     fn grid_centers(&self, columns: u32, rows: u32) -> Vec<Vec2> {
         Self::grid_centers_from(self.center(), self.size(), columns, rows)
     }

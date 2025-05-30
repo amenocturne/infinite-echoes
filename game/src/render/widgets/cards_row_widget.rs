@@ -6,6 +6,7 @@ use macroquad::math::vec2;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::nodes::AudioNodeType;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
@@ -76,18 +77,23 @@ impl DraggableCardBuffer for CardsRowWidget {
         self.card_size / 2.0
     }
 
-    fn drag_in_regions(&self) -> Vec<(Vec2, Vec2)> {
+    // Can put at any position in a deck
+    fn drag_in_regions(&self, _node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)> {
         let box_size = self.grid.single_cell_size();
         let mut prev_top_left = self.top_left();
         let mut regions = vec![];
         let actual_card_centers: Vec<_> =
             self.cards().iter().map(|c| c.borrow().center()).collect();
 
-        for c in actual_card_centers {
-            regions.push((prev_top_left, c + vec2(0.0, box_size.y / 2.0)));
-            prev_top_left = c - vec2(0.0, box_size.y / 2.0);
+        for (i, c) in actual_card_centers.iter().enumerate() {
+            regions.push((i, prev_top_left, *c + vec2(0.0, box_size.y / 2.0)));
+            prev_top_left = *c - vec2(0.0, box_size.y / 2.0);
         }
-        regions.push((prev_top_left, self.bottom_right()));
+        regions.push((
+            actual_card_centers.len(),
+            prev_top_left,
+            self.bottom_right(),
+        ));
         regions
     }
 

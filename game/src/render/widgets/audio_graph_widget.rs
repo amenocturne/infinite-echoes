@@ -4,9 +4,11 @@ use macroquad::color::BLACK;
 use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
+use miniquad::info;
 
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
+use crate::nodes::AudioNodeType;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
@@ -102,22 +104,35 @@ impl DraggableCardBuffer for AudioGraphWidget {
         self.card_size / 2.0
     }
 
-    fn drag_in_regions(&self) -> Vec<(Vec2, Vec2)> {
-        let box_size = self.grid.single_cell_size();
-        let shift = -vec2(box_size.x, 0.0) / 2.0;
-        let mut regions: Vec<_> = self
-            .card_centers()
-            .into_iter()
-            .map(|c| (c - box_size / 2.0 + shift, c + box_size / 2.0 + shift))
-            .collect();
+    // can put only at positions where the resulting audio graph will be valid
+    fn drag_in_regions(&self, node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)> {
+        let mut allowed_places = vec![];
+        let mut maybe_before = None;
 
-        if let Some(last) = self.card_centers().last() {
-            let top_left = *last - vec2(0.0, box_size.y / 2.0);
-            let bottom_right = self.bottom_right();
-            regions.push((top_left, bottom_right))
-        } else {
-            regions.push((self.top_left(), self.bottom_right()))
+        for (i, after) in self.cards.iter().enumerate() {
+            if node_type.can_put_between_loose(maybe_before, Some(after.borrow().as_type())) {
+                allowed_places.push((i, after.borrow().center()));
+            }
+            maybe_before = Some(after.borrow().as_type());
         }
+        if node_type.can_put_between_loose(maybe_before, None) {
+            allowed_places.push((self.cards.len(), self.right_center()));
+        }
+
+        let box_size = self.grid.single_cell_size();
+        let mut prev_top_left = self.top_left();
+        let mut regions = vec![];
+
+        for (i, c) in allowed_places.iter() {
+            regions.push((*i, prev_top_left, *c + vec2(0.0, box_size.y / 2.0)));
+            prev_top_left = *c - vec2(0.0, box_size.y / 2.0);
+        }
+        // extends region for the last element to contain the rightmost boarder
+        if let Some((i, _)) = allowed_places.last() {
+            regions.push((*i, prev_top_left, self.bottom_right()));
+        }
+        info!("{:?}", allowed_places);
+
         regions
     }
 

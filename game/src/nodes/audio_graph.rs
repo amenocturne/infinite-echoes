@@ -61,22 +61,22 @@ impl AudioGraph {
         self.nodes[position] = RefCell::new(node);
     }
 
-    pub fn is_valid(&self) -> bool {
-        let mut checking_stage = CheckingStage::NoteGenerators;
-        for node in self.nodes() {
-            match (&checking_stage, node.borrow().as_type()) {
-                (CheckingStage::NoteGenerators, AudioNodeType::NoteGenerator) => (),
-                (CheckingStage::NoteGenerators, AudioNodeType::Oscillator) => {
-                    checking_stage = CheckingStage::AudioEffects;
-                }
-                (CheckingStage::AudioEffects, AudioNodeType::AudioEffect) => (),
-                _ => {
-                    return false;
-                }
-            }
-        }
-        true
-    }
+    // pub fn is_valid(&self) -> bool {
+    //     let mut checking_stage = CheckingStage::NoteGenerators;
+    //     for node in self.nodes() {
+    //         match (&checking_stage, node.borrow().as_type()) {
+    //             (CheckingStage::NoteGenerators, AudioNodeType::NoteGenerator) => (),
+    //             (CheckingStage::NoteGenerators, AudioNodeType::Oscillator) => {
+    //                 checking_stage = CheckingStage::AudioEffects;
+    //             }
+    //             (CheckingStage::AudioEffects, AudioNodeType::AudioEffect) => (),
+    //             _ => {
+    //                 return false;
+    //             }
+    //         }
+    //     }
+    //     true
+    // }
 
     pub fn note_generators(&self) -> Vec<NoteGenerator> {
         self.nodes

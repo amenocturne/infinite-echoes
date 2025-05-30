@@ -2,6 +2,8 @@ use std::cell::RefCell;
 
 use macroquad::math::Vec2;
 
+use crate::nodes::AudioNodeType;
+
 use super::{
     hover::Hover,
     rectangle_boundary::{is_inside_rectangle, RectangleBoundary},
@@ -15,7 +17,7 @@ pub trait DraggableCardBuffer {
     fn insert_card(&mut self, i: usize, card: RefCell<Card>);
     fn snapping_margin(&self) -> Vec2;
     fn card_centers(&self) -> Vec<Vec2>;
-    fn drag_in_regions(&self) -> Vec<(Vec2, Vec2)>;
+    fn drag_in_regions(&self, node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)>;
     // Should put cards into their default locations
     fn organize_cards(&mut self);
 
@@ -70,10 +72,10 @@ pub trait DraggableCardBuffer {
     }
 
     fn drag_card_in(&mut self, card: &RefCell<Card>) -> bool {
-        let regions = self.drag_in_regions();
+        let regions = self.drag_in_regions(card.borrow().as_type());
         let cards = self.cards();
-        for (i, (top_left, bottom_right)) in regions.iter().enumerate() {
-            if is_inside_rectangle(top_left, bottom_right, &card.borrow().center()) {
+        for (i, top_left, bottom_right) in regions {
+            if is_inside_rectangle(&top_left, &bottom_right, &card.borrow().center()) {
                 if i < cards.len() {
                     self.insert_card(i, card.clone());
                 } else {

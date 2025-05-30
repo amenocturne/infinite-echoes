@@ -62,12 +62,12 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
             game_state.audio_graph.remove(usize::MAX);
         }
         GameEvent::InterpretGraph => {
-            if game_state.audio_graph.is_valid() {
-                game_state
-                    .audio_engine
-                    .interpret_graph(&game_state.audio_graph)
-                    .unwrap();
-            }
+            // if game_state.audio_graph.is_valid() {
+            game_state
+                .audio_engine
+                .interpret_graph(&game_state.audio_graph)
+                .unwrap();
+            // }
         }
     }
 }
