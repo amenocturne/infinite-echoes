@@ -55,7 +55,7 @@ impl DragManager {
         }
     }
 
-    pub fn handle_mouse_drag(&mut self, mouse_pos: Vec2) {
+    pub fn handle_mouse_drag(&self, mouse_pos: Vec2) {
         if let Some(ref state) = self.state {
             state
                 .dragged_card

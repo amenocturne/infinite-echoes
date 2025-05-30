@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::time::Duration;
@@ -5,40 +6,51 @@ use std::time::Duration;
 use crate::core::GameTime;
 
 use macroquad::time::get_time;
+use miniquad::info;
 
 use super::game_state::GameEvent;
 
 pub struct Scheduler {
-    queue: BinaryHeap<ScheduledEvent>,
+    queue: RefCell<BinaryHeap<ScheduledEvent>>,
 }
 
 impl Scheduler {
     pub fn new() -> Self {
         Self {
-            queue: BinaryHeap::new(),
+            queue: RefCell::new(BinaryHeap::new()),
         }
     }
 
-    pub fn schedule(&mut self, event: GameEvent, delay: Option<Duration>) {
+    pub fn schedule(&self, event: GameEvent, delay: Option<Duration>) {
         let trigger_time = delay.map(|d| get_time() + d.as_secs_f64());
-        self.queue.push(ScheduledEvent {
+        self.queue.borrow_mut().push(ScheduledEvent {
             trigger_time,
             event,
         })
     }
 
-    pub fn process_events(&mut self, handler: &mut dyn Fn(GameEvent)) {
-        while let Some(event) = self.queue.peek() {
+    pub fn process_events(&self, handler: &mut dyn Fn(GameEvent)) {
+        let mut queue = self.queue.borrow_mut(); // Get one mutable borrow
+
+        while let Some(event) = queue.peek() {
             let current_time = get_time();
-            match event.trigger_time {
+            let trigger_time = event.trigger_time; // Copy trigger_time to avoid borrowing issues
+
+            match trigger_time {
                 Some(t) => {
                     if t <= current_time {
-                        handler(self.queue.pop().unwrap().event);
+                        // Since we already have the mutable borrow, we can pop directly
+                        let popped_event = queue.pop().unwrap().event;
+                        handler(popped_event);
                     } else {
-                        break;
+                        break; // Event is in the future, stop processing
                     }
                 }
-                None => handler(self.queue.pop().unwrap().event),
+                None => {
+                    // Since we already have the mutable borrow, we can pop directly
+                    let popped_event = queue.pop().unwrap().event;
+                    handler(popped_event);
+                }
             }
         }
     }

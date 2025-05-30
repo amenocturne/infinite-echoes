@@ -1,5 +1,7 @@
 use std::cell::RefCell;
 
+use miniquad::info;
+
 use crate::render::widgets::card_widget::CardType;
 
 use super::audio_effect::AudioEffect;
@@ -34,8 +36,12 @@ impl AudioGraph {
     }
 
     pub fn from_cards(cards: Vec<CardType>) -> Option<Self> {
-        if Self::is_valid(cards) {
-            None
+        if Self::is_valid(&cards) {
+            let nodes = cards
+                .iter()
+                .map(|c| RefCell::new(AudioNode::from_card(c)))
+                .collect();
+            Some(Self { nodes })
         } else {
             None
         }
@@ -52,7 +58,7 @@ impl AudioGraph {
             .collect()
     }
 
-    fn is_valid(cards: Vec<CardType>) -> bool {
+    fn is_valid(cards: &Vec<CardType>) -> bool {
         let mut maybe_before = None;
         let mut maybe_current = None;
         let mut valid = true;

@@ -115,7 +115,6 @@ impl DraggableCardBuffer for AudioGraphWidget {
         if let Some((i, _)) = allowed_places.last() {
             regions.push((*i, prev_top_left, self.bottom_right()));
         }
-        info!("{:?}", allowed_places);
 
         regions
     }

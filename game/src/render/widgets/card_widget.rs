@@ -93,6 +93,10 @@ impl Card {
     pub fn as_type(&self) -> AudioNodeType {
         self.card_type.as_type()
     }
+
+    pub fn card_type(&self) -> CardType {
+        self.card_type
+    }
 }
 
 impl RectangleBoundary for Card {

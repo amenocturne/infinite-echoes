@@ -1,3 +1,4 @@
+use miniquad::info;
 use web_sys::AudioContext;
 use web_sys::GainNode;
 use web_sys::OscillatorNode;
@@ -36,13 +37,13 @@ impl AudioEngine {
         let mut notes = vec![];
         let mut acc_loop_start: MusicTime = MusicTime::new(0);
         for ng in note_generators {
-            _ = ng.notes.iter().map(|ne| {
+            for ne in &ng.notes {
                 let shifted_event = NoteEvent {
-                    duration: ne.duration + acc_loop_start,
+                    start: ne.start + acc_loop_start,
                     ..*ne
                 };
                 notes.push(shifted_event);
-            });
+            }
             acc_loop_start = acc_loop_start + ng.loop_length;
         }
 

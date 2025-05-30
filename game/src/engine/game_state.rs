@@ -1,38 +1,31 @@
-use macroquad::math::Vec2;
+use std::cell::Cell;
 
-use crate::engine::audio_engine::AudioEngine;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
+use crate::render::widgets::card_widget::CardType;
 use crate::render::Render;
 use crate::render::RenderCtx;
 
 pub struct GameState {
-    pub audio_engine: AudioEngine,
-    pub audio_graph: Option<AudioGraph>,
+    pub audio_graph: Cell<Option<AudioGraph>>,
+    pub card_deck: Vec<CardType>
 }
 
 impl GameState {
-    pub fn new(audio_engine: AudioEngine) -> GameState {
+    pub fn new(initial_deck: Vec<CardType>) -> GameState {
         GameState {
-            audio_engine,
-            audio_graph: None,
+            audio_graph: Cell::new( None ),
+            card_deck: initial_deck,
         }
     }
 }
 
 impl Render for GameState {
     fn render(&self, _render_ctx: &RenderCtx) -> GameResult<()> {
-        // self.layout.grid.render(render_ctx)?;
-        // self.audio_graph.render(render_ctx)?;
         Ok(())
     }
 }
 
 pub enum GameEvent {
     InterpretGraph,
-    // ChangeOscillatorType,
-    // Dragging
-    StartDrag(Vec2),
-    Drag(Vec2),
-    StopDrag,
 }

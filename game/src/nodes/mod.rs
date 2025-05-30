@@ -26,7 +26,7 @@ pub enum AudioNode {
 }
 
 impl AudioNode {
-    pub fn from_card(card: CardType) -> Self {
+    pub fn from_card(card: &CardType) -> Self {
         match card {
             CardType::NoteGenerator => Self::NoteGenerator(NoteGenerator::new(
                 NoteDuration::Whole.into(),

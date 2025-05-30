@@ -21,7 +21,7 @@ pub type Assets = HashMap<TextureAsset, Texture2D>;
 
 pub struct RenderCtx {
     assets: Assets,
-    screen_size: Vec2,
+    pub screen_size: Vec2,
 }
 
 impl RenderCtx {
