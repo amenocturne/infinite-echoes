@@ -26,28 +26,12 @@ pub struct AudioGraphWidget {
 }
 
 impl AudioGraphWidget {
-    pub fn new(center: Vec2, size: Vec2, card_size: Vec2, audio_graph: &AudioGraph) -> Self {
-        let card_types = audio_graph.as_card_types();
-        let default_pos = vec2(0.0, 0.0);
-
-        let cards: Vec<RefCell<Card>> = card_types
-            .iter()
-            .map(|card_type| {
-                RefCell::new(Card::new(
-                    default_pos,
-                    card_size,
-                    WHITE,
-                    BLACK,
-                    card_type.clone(),
-                ))
-            })
-            .collect();
-
-        let grid = GridWidget::new(center, size, cards.len() as u32, 1);
+    pub fn new(center: Vec2, size: Vec2, card_size: Vec2) -> Self {
+        let grid = GridWidget::new(center, size, 0, 1);
         let mut result = Self {
             center,
             size,
-            cards,
+            cards: vec![],
             card_size,
             grid,
         };
@@ -110,12 +94,12 @@ impl DraggableCardBuffer for AudioGraphWidget {
         let mut maybe_before = None;
 
         for (i, after) in self.cards.iter().enumerate() {
-            if node_type.can_put_between_loose(maybe_before, Some(after.borrow().as_type())) {
+            if node_type.can_put_between_loose(&maybe_before, &Some(after.borrow().as_type())) {
                 allowed_places.push((i, after.borrow().center()));
             }
             maybe_before = Some(after.borrow().as_type());
         }
-        if node_type.can_put_between_loose(maybe_before, None) {
+        if node_type.can_put_between_loose(&maybe_before, &None) {
             allowed_places.push((self.cards.len(), self.right_center()));
         }
 

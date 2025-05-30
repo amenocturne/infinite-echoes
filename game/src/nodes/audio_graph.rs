@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::cmp::min;
 
 use crate::render::widgets::card_widget::CardType;
 
@@ -33,6 +32,15 @@ impl AudioGraph {
 
         AudioGraph { nodes }
     }
+
+    pub fn from_cards(cards: Vec<CardType>) -> Option<Self> {
+        if Self::is_valid(cards) {
+            None
+        } else {
+            None
+        }
+    }
+
     pub fn nodes(&self) -> &Vec<RefCell<AudioNode>> {
         &self.nodes
     }
@@ -44,39 +52,39 @@ impl AudioGraph {
             .collect()
     }
 
-    pub fn add(&mut self, node: AudioNode, position: usize) {
-        let position = min(position, self.nodes().len());
-        self.nodes.insert(position, RefCell::new(node));
-    }
+    fn is_valid(cards: Vec<CardType>) -> bool {
+        let mut maybe_before = None;
+        let mut maybe_current = None;
+        let mut valid = true;
+        let mut has_note_generator = false;
+        let mut has_oscillator = false;
+        for card in cards.iter() {
+            match card.as_type() {
+                AudioNodeType::NoteGenerator => {
+                    has_note_generator = true;
+                }
+                AudioNodeType::Oscillator => {
+                    has_oscillator = true;
+                }
+                _ => (),
+            }
+            if maybe_current.is_none() {
+                maybe_current = Some(card);
+                continue;
+            }
+            let maybe_after = Some(card.as_type());
+            if let Some(checking_node) = maybe_current {
+                valid = valid
+                    && checking_node
+                        .as_type()
+                        .can_put_between_strict(&maybe_before, &maybe_after);
+                maybe_before = Some(checking_node.as_type());
+            }
 
-    pub fn remove(&mut self, position: usize) {
-        let position = min(position, self.nodes.len() - 1);
-        if self.nodes.len() != 0 {
-            self.nodes.remove(position);
+            maybe_current = Some(card);
         }
+        valid && has_oscillator && has_note_generator // TODO: make error msg for the user on what is not ok
     }
-
-    pub fn replace(&mut self, node: AudioNode, position: usize) {
-        let position = min(position, self.nodes.len() - 1);
-        self.nodes[position] = RefCell::new(node);
-    }
-
-    // pub fn is_valid(&self) -> bool {
-    //     let mut checking_stage = CheckingStage::NoteGenerators;
-    //     for node in self.nodes() {
-    //         match (&checking_stage, node.borrow().as_type()) {
-    //             (CheckingStage::NoteGenerators, AudioNodeType::NoteGenerator) => (),
-    //             (CheckingStage::NoteGenerators, AudioNodeType::Oscillator) => {
-    //                 checking_stage = CheckingStage::AudioEffects;
-    //             }
-    //             (CheckingStage::AudioEffects, AudioNodeType::AudioEffect) => (),
-    //             _ => {
-    //                 return false;
-    //             }
-    //         }
-    //     }
-    //     true
-    // }
 
     pub fn note_generators(&self) -> Vec<NoteGenerator> {
         self.nodes

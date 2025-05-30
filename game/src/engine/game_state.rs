@@ -3,25 +3,21 @@ use macroquad::math::Vec2;
 use crate::engine::audio_engine::AudioEngine;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_graph::AudioGraph;
-use crate::render::layout::Layout;
 use crate::render::Render;
 use crate::render::RenderCtx;
 
 pub struct GameState {
-    pub layout: Layout,
     pub audio_engine: AudioEngine,
-    pub audio_graph: AudioGraph,
+    pub audio_graph: Option<AudioGraph>,
 }
 
 impl GameState {
-    pub fn new(layout: Layout, audio_engine: AudioEngine, audio_graph: AudioGraph) -> GameState {
+    pub fn new(audio_engine: AudioEngine) -> GameState {
         GameState {
-            layout,
             audio_engine,
-            audio_graph,
+            audio_graph: None,
         }
     }
-
 }
 
 impl Render for GameState {
@@ -39,10 +35,4 @@ pub enum GameEvent {
     StartDrag(Vec2),
     Drag(Vec2),
     StopDrag,
-    // Effects
-    AddAudioEffect,
-    DeleteAudioEffect,
-    // Notes
-    AddNoteGenerator,
-    DeleteNoteGenerator,
 }

@@ -102,17 +102,6 @@ impl DragManager {
             buffer.snap();
         }
     }
-
-    pub fn abort_all_dragging(&mut self, buffers: &mut [&mut dyn DraggableCardBuffer]) {
-        if let Some(ref state) = self.state {
-            state.dragged_card.borrow_mut().stop_dragging();
-            self.state = None;
-        }
-
-        for buffer in buffers {
-            buffer.abort_dragging();
-        }
-    }
 }
 
 impl Render for DragManager {
