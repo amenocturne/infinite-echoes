@@ -1,5 +1,4 @@
 mod core;
-
 mod debug;
 mod engine;
 mod nodes;
@@ -25,9 +24,10 @@ use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
 use nodes::AudioNode;
+use render::drag_manager::DragManager; // Import the DragManager
+use render::draggable_card_buffer::DraggableCardBuffer;
 use render::layout::Layout;
 use render::widgets::audio_graph_widget::AudioGraphWidget;
-use render::widgets::card_widget::Card;
 use render::widgets::card_widget::CardType;
 use render::widgets::cards_row_widget::CardsRowWidget;
 use render::widgets::grid_widget::GridWidget;
@@ -40,7 +40,6 @@ use macroquad::prelude::*;
 
 fn process_event(game_state: &mut GameState, event: &GameEvent) {
     match event {
-        // Audio Node events
         GameEvent::StartDrag(_) => {}
         GameEvent::StopDrag => {}
         GameEvent::Drag(_) => {}
@@ -53,7 +52,6 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
         GameEvent::DeleteAudioEffect => {
             game_state.audio_graph.remove(usize::MAX);
         }
-
         GameEvent::AddNoteGenerator => {
             game_state.audio_graph.add(
                 AudioNode::NoteGenerator(NoteGenerator::new(NoteDuration::Whole.into(), vec![])),
@@ -63,22 +61,14 @@ fn process_event(game_state: &mut GameState, event: &GameEvent) {
         GameEvent::DeleteNoteGenerator => {
             game_state.audio_graph.remove(usize::MAX);
         }
-
-        // rest
         GameEvent::InterpretGraph => {
             if game_state.audio_graph.is_valid() {
                 game_state
                     .audio_engine
                     .interpret_graph(&game_state.audio_graph)
-                    .unwrap(); // TODO: remove unwrap
+                    .unwrap();
             }
-        } // GameEvent::ChangeOscillatorType => {
-          //     let new_shape = match game_state.audio_graph.oscillator.wave_shape {
-          //         WaveShape::Sine => WaveShape::Square,
-          //         WaveShape::Square => WaveShape::Sine,
-          //     };
-          //     game_state.audio_graph.oscillator.wave_shape = new_shape;
-          // }
+        }
     }
 }
 
@@ -105,7 +95,6 @@ async fn run() -> GameResult<()> {
     );
 
     let oscillator = Oscillator::new(WaveShape::Sine);
-
     let audio_graph = AudioGraph::new(
         vec![note_generator.clone(), note_generator.clone()],
         oscillator,
@@ -120,12 +109,16 @@ async fn run() -> GameResult<()> {
     let game_state = RefCell::new(GameState::new(layout, audio_engine, audio_graph));
 
     let mut scheduler = Scheduler::new();
-
     let debug_hud = DebugHud::new(100);
 
     let render_ctx = RenderCtx::new(vec2(screen_width(), screen_height())).await?;
 
+    // Initialize DragManager
+    let mut drag_manager = DragManager::new();
+
     let card_size = vec2(0.075, 0.1);
+
+    // Create card buffers
     let mut cards_row = CardsRowWidget::new(
         vec2(0.5, 0.85),
         vec2(0.9, 0.13),
@@ -137,20 +130,13 @@ async fn run() -> GameResult<()> {
             CardType::AudioEffect,
         ],
     );
+
     let mut audio_graph_widget = AudioGraphWidget::new(
         vec2(0.5, 0.5),
         vec2(0.9, 0.13),
         card_size,
         &game_state.borrow().audio_graph,
     );
-
-    let mut dragged_card = Some(RefCell::new(Card::new(
-        vec2(0.5, 0.5),
-        card_size,
-        RED,
-        RED,
-        CardType::AudioEffect,
-    )));
 
     loop {
         clear_background(BLACK);
@@ -159,37 +145,44 @@ async fn run() -> GameResult<()> {
         let mouse_pos_absolute: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos_absolute / screen;
 
+        // Create array of mutable references to buffers for DragManager
+        let mut buffers: Vec<&mut dyn DraggableCardBuffer> =
+            vec![&mut cards_row, &mut audio_graph_widget];
+
+        // Handle mouse input with DragManager - THIS IS THE KEY PART
         if is_mouse_button_pressed(MouseButton::Left) {
-            dragged_card
-                .as_ref()
-                .map(|rc| rc.borrow_mut().start_dragging());
+            drag_manager.handle_mouse_press(mouse_pos, &mut buffers);
         }
 
         if is_mouse_button_down(MouseButton::Left) {
-            if let Some(card_ref) = &dragged_card {
-                card_ref.borrow_mut().update_dragged_position(mouse_pos);
-                if cards_row.add_card(card_ref) {
-                    if let Some(_) = dragged_card.take() {
-                        cards_row.abort_dragging();
-                    }
-                }
-            }
+            info!("{:?}", drag_manager);
+            drag_manager.handle_mouse_drag(mouse_pos);
         }
 
         if is_mouse_button_released(MouseButton::Left) {
-            dragged_card
-                .as_ref()
-                .map(|rc| rc.borrow_mut().stop_dragging());
+            drag_manager.handle_mouse_release(&mut buffers);
         }
 
-        dragged_card
-            .as_ref()
-            .map(|rc| rc.borrow().render(&render_ctx))
-            .unwrap_or(Ok(()))?;
+        // Handle keyboard shortcuts for testing
+        if is_key_pressed(KeyCode::Escape) {
+            drag_manager.abort_all_dragging(&mut buffers);
+        }
 
-        cards_row.update_dragged_position(mouse_pos);
-        cards_row.snap(0.2);
+        // Update buffers (snapping, organizing, etc.)
+        {
+            let buffer_refs: Vec<&dyn DraggableCardBuffer> = vec![&cards_row, &audio_graph_widget];
+            drag_manager.snap(&buffer_refs);
+        }
+
+        // Update audio graph widget to reflect current game state
+        // audio_graph_widget.update_audio_graph(&game_state.borrow().audio_graph);
+
+        // Render everything
         cards_row.render(&render_ctx)?;
+        audio_graph_widget.render(&render_ctx)?;
+
+        // Render the dragged card (handled by DragManager)
+        drag_manager.render(&render_ctx)?;
 
         // Event processing
         scheduler.process_events(&mut |e| {
@@ -197,8 +190,8 @@ async fn run() -> GameResult<()> {
             process_event(&mut state, &e)
         });
 
-        // game_state.borrow().render(&render_ctx)?;
         debug_hud.render(&render_ctx)?;
+
         next_frame().await;
     }
 }

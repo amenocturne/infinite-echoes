@@ -4,10 +4,11 @@ use macroquad::color::BLACK;
 use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
-use miniquad::info;
 
 use crate::engine::errors::GameResult;
+use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::hover::Hover;
+use crate::render::rectangle_boundary::is_inside_rectangle;
 use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
 use crate::render::RenderCtx;
@@ -43,52 +44,56 @@ impl CardsRowWidget {
             card_size,
             grid,
         };
-        res.move_cards_to_default_positions();
+        res.organize_cards();
         res
+    }
+
+    fn update_grid(&mut self) {
+        self.grid = GridWidget::new(self.center, self.size, self.cards.len() as u32, 1);
+    }
+}
+
+impl DraggableCardBuffer for CardsRowWidget {
+    fn cards(&self) -> &Vec<RefCell<Card>> {
+        &self.cards
+    }
+
+    fn remove_card(&mut self, i: usize) -> RefCell<Card> {
+        self.cards.remove(i)
+    }
+
+    fn insert_card(&mut self, i: usize, card: RefCell<Card>) {
+        self.cards.insert(i, card);
     }
 
     fn card_centers(&self) -> Vec<Vec2> {
         self.grid_centers(self.grid.columns(), self.grid.rows())
     }
 
-    pub fn start_dragging(&self, mouse_position: Vec2) {
-        for c in &self.cards {
-            if c.borrow().is_hovered_over(mouse_position) {
-                c.borrow_mut().start_dragging();
-                return;
-            }
-        }
+    fn snapping_margin(&self) -> Vec2 {
+        self.card_size / 2.0
     }
 
-    // Removes and returns dragged card
-    pub fn stop_dragging(&mut self) -> Option<RefCell<Card>> {
-        let mut removed = None;
-        let mut removed_index = None;
-        for (i, c) in self.cards.iter().enumerate() {
-            if c.borrow().is_dragged() {
-                c.borrow_mut().stop_dragging();
-                removed_index = Some(i);
-                removed = Some(c.clone());
-                break;
-            }
+    fn drag_in_regions(&self) -> Vec<(Vec2, Vec2)> {
+        let box_size = self.grid.single_cell_size();
+        let shift = -vec2(box_size.x, 0.0) / 2.0;
+        let mut regions: Vec<_> = self
+            .card_centers()
+            .into_iter()
+            .map(|c| (c - box_size / 2.0 + shift, c + box_size / 2.0 + shift))
+            .collect();
+
+        if let Some(last) = self.card_centers().last() {
+            let top_left = *last - vec2(0.0, box_size.y / 2.0);
+            let bottom_right = self.bottom_right();
+            regions.push((top_left, bottom_right))
+        } else{
+            regions.push((self.top_left(), self.bottom_right()))
         }
-        removed_index.map(|i| self.cards.remove(i));
-        self.move_cards_to_default_positions();
-        removed
+        regions
     }
 
-    // stops dragging on all cards and moves them to default locations
-    pub fn abort_dragging(&mut self) {
-        for c in &self.cards {
-            if c.borrow().is_dragged() {
-                c.borrow_mut().stop_dragging();
-                self.move_cards_to_default_positions();
-                break;
-            }
-        }
-    }
-
-    fn move_cards_to_default_positions(&mut self) {
+    fn organize_cards(&mut self) {
         self.update_grid();
         let centers = self.grid_centers(self.grid.columns(), self.grid.rows());
         _ = self
@@ -99,51 +104,6 @@ impl CardsRowWidget {
                 card.borrow_mut().center = center.clone();
             })
             .collect::<Vec<()>>();
-    }
-
-    fn update_grid(&mut self) {
-        self.grid = GridWidget::new(self.center, self.size, self.cards.len() as u32, 1);
-    }
-
-    pub fn update_dragged_position(&self, mouse_position: Vec2) {
-        for c in &self.cards {
-            c.borrow_mut().update_dragged_position(mouse_position);
-        }
-    }
-
-    pub fn snap(&self, snapping_margin: f32) {
-        let card_size = self.size / vec2(self.cards.len() as f32, 1.0);
-        for c in &self.cards {
-            for center in self.card_centers() {
-                c.borrow_mut().snap(center, card_size * snapping_margin);
-            }
-        }
-    }
-
-    pub fn add_card(&mut self, card: &RefCell<Card>) -> bool {
-        let box_size = self.grid.single_cell_size();
-        let shift = -vec2(box_size.x, 0.0) / 2.0;
-        let add_boxes = self
-            .card_centers()
-            .into_iter()
-            .map(|c| (c - box_size / 2.0 + shift, c + box_size / 2.0 + shift));
-        for (i, (top_left, bottom_right)) in add_boxes.enumerate() {
-            if Self::is_inside_from(top_left, bottom_right, card.borrow().center()) {
-                self.cards.insert(i, card.clone());
-                self.move_cards_to_default_positions();
-                return true;
-            }
-        }
-        if let Some(last) = self.card_centers().last() {
-            let top_left = *last - vec2(0.0, box_size.y / 2.0);
-            let bottom_right = self.bottom_right();
-            if Self::is_inside_from(top_left, bottom_right, card.borrow().center()) {
-                self.cards.push(card.clone());
-                self.move_cards_to_default_positions();
-                return true;
-            }
-        }
-        false
     }
 }
 

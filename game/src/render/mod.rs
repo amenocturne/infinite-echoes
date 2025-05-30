@@ -5,6 +5,8 @@ pub mod shapes;
 pub mod texture;
 pub mod widgets;
 pub mod rectangle_boundary;
+pub mod draggable_card_buffer;
+pub mod drag_manager;
 
 use std::collections::HashMap;
 
