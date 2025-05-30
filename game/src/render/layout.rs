@@ -1,4 +1,4 @@
-use super::widgets::grid::GridWidget;
+use super::widgets::grid_widget::GridWidget;
 
 pub struct Layout {
     pub grid: GridWidget,

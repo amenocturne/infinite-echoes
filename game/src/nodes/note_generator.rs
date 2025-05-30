@@ -1,8 +1,11 @@
+use std::ops::Add;
+
 use crate::core::GameTime;
 
 /// Defines number of ticks in a quarter note
 const PULSES_PER_QUARTER_NOTE: u32 = 480;
 
+#[derive(Clone)]
 pub struct NoteGenerator {
     pub loop_length: MusicTime,
     pub notes: Vec<NoteEvent>,
@@ -15,6 +18,7 @@ impl NoteGenerator {
 }
 
 /// Enum for ease of use of music durations
+#[derive(Clone, Copy)]
 pub enum NoteDuration {
     Whole = 0,
     Half = 1,
@@ -57,8 +61,19 @@ impl MusicTime {
     pub const ZERO: MusicTime = MusicTime { ticks: 0 };
 }
 
+impl Add for MusicTime {
+    type Output = MusicTime;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            ticks: self.ticks + rhs.ticks,
+        }
+    }
+}
+
 // ---------------------------------- Note ------------------------------
 
+#[derive(Clone, Copy)]
 pub struct NoteEvent {
     pub note: Note,
     pub start: MusicTime,

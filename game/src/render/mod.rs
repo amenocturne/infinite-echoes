@@ -36,6 +36,7 @@ impl RenderCtx {
         let files = [
             (TextureAsset::Piano, "resources/piano.png"),
             (TextureAsset::SineWave, "resources/sine.png"),
+            (TextureAsset::SquareWave, "resources/square.png"),
         ];
 
         let mut assets = HashMap::new();

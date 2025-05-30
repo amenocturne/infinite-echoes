@@ -14,6 +14,7 @@ use engine::game_state::GameState;
 use engine::scheduler::Scheduler;
 use macros::note;
 use nodes::audio_effect::AudioEffect;
+use nodes::audio_effect::AudioEffectType;
 use nodes::audio_graph::AudioGraph;
 use nodes::note_generator::MusicTime;
 use nodes::note_generator::Note;
@@ -23,47 +24,61 @@ use nodes::note_generator::NoteGenerator;
 use nodes::note_generator::NoteName;
 use nodes::oscillator::Oscillator;
 use nodes::oscillator::WaveShape;
+use nodes::AudioNode;
 use render::layout::Layout;
 use render::widgets::audio_graph_widget::AudioGraphWidget;
+use render::widgets::card_widget::Card;
+use render::widgets::card_widget::CardType;
 use render::widgets::cards_row_widget::CardsRowWidget;
-use render::widgets::grid::GridWidget;
+use render::widgets::grid_widget::GridWidget;
 use render::Render;
 use render::RenderCtx;
 use std::cell::RefCell;
+use std::usize;
 
 use macroquad::prelude::*;
 
 fn process_event(game_state: &mut GameState, event: &GameEvent) {
     match event {
         // Audio Node events
-        GameEvent::AudioNodeStartDrag(_) => {}
-        GameEvent::AudioNodeStopDrag => {}
-        GameEvent::AudioNodeDrag(_) => {}
-        GameEvent::AudioNodeAddEffect() => {
-            info!("Added effect");
-            game_state
-                .audio_graph
-                .audio_effects
-                .push(AudioEffect::new());
+        GameEvent::StartDrag(_) => {}
+        GameEvent::StopDrag => {}
+        GameEvent::Drag(_) => {}
+        GameEvent::AddAudioEffect => {
+            game_state.audio_graph.add(
+                AudioNode::AudioEffect(AudioEffect::new(AudioEffectType::Filter)),
+                usize::MAX,
+            );
         }
-        GameEvent::AudioNodeDeleteAudioEffect(_) => {
-            // game_state.audio_graph.delete_howered_audio_effect(cursor);
+        GameEvent::DeleteAudioEffect => {
+            game_state.audio_graph.remove(usize::MAX);
+        }
+
+        GameEvent::AddNoteGenerator => {
+            game_state.audio_graph.add(
+                AudioNode::NoteGenerator(NoteGenerator::new(NoteDuration::Whole.into(), vec![])),
+                usize::MAX,
+            );
+        }
+        GameEvent::DeleteNoteGenerator => {
+            game_state.audio_graph.remove(usize::MAX);
         }
 
         // rest
         GameEvent::InterpretGraph => {
-            game_state
-                .audio_engine
-                .interpret_graph(&game_state.audio_graph)
-                .unwrap(); // TODO: remove unwrap
-        }
-        GameEvent::ChangeOscillatorType => {
-            let new_shape = match game_state.audio_graph.oscillator.wave_shape {
-                WaveShape::Sine => WaveShape::Square,
-                WaveShape::Square => WaveShape::Sine,
-            };
-            game_state.audio_graph.oscillator.wave_shape = new_shape;
-        }
+            if game_state.audio_graph.is_valid() {
+                game_state
+                    .audio_engine
+                    .interpret_graph(&game_state.audio_graph)
+                    .unwrap(); // TODO: remove unwrap
+            }
+        } // GameEvent::ChangeOscillatorType => {
+          //     let new_shape = match game_state.audio_graph.oscillator.wave_shape {
+          //         WaveShape::Sine => WaveShape::Square,
+          //         WaveShape::Square => WaveShape::Sine,
+          //     };
+          //     game_state.audio_graph.oscillator.wave_shape = new_shape;
+          // }
     }
 }
 
@@ -91,7 +106,11 @@ async fn run() -> GameResult<()> {
 
     let oscillator = Oscillator::new(WaveShape::Sine);
 
-    let audio_graph = AudioGraph::new(note_generator, oscillator, vec![]);
+    let audio_graph = AudioGraph::new(
+        vec![note_generator.clone(), note_generator.clone()],
+        oscillator,
+        vec![],
+    );
     let audio_engine = AudioEngine::new()?;
 
     let position = vec2(0.25, 0.25);
@@ -106,79 +125,73 @@ async fn run() -> GameResult<()> {
 
     let render_ctx = RenderCtx::new(vec2(screen_width(), screen_height())).await?;
 
-    // let mut card = Card::new(
-    //     vec2(0.25, 0.25),
-    //     vec2(1.0 / 10.0 - 0.05, 1.0 / 4.0 - 0.05),
-    //     WHITE,
-    // );
-
     let card_size = vec2(0.075, 0.1);
-    let card_margin = 0.01;
-    let cards_row = CardsRowWidget::new(vec2(0.5, 0.85), vec2(0.9, 0.13), card_size, card_margin);
+    let mut cards_row = CardsRowWidget::new(
+        vec2(0.5, 0.85),
+        vec2(0.9, 0.13),
+        card_size,
+        vec![
+            CardType::NoteGenerator,
+            CardType::SineOscillator,
+            CardType::AudioEffect,
+            CardType::AudioEffect,
+        ],
+    );
+    let mut audio_graph_widget = AudioGraphWidget::new(
+        vec2(0.5, 0.5),
+        vec2(0.9, 0.13),
+        card_size,
+        &game_state.borrow().audio_graph,
+    );
+
+    let mut dragged_card = Some(RefCell::new(Card::new(
+        vec2(0.5, 0.5),
+        card_size,
+        RED,
+        RED,
+        CardType::AudioEffect,
+    )));
 
     loop {
         clear_background(BLACK);
 
         let screen = vec2(screen_width(), screen_height());
-        let mouse_pos: Vec2 = mouse_position().into();
-        let mouse_pos_relative = mouse_pos / screen;
+        let mouse_pos_absolute: Vec2 = mouse_position().into();
+        let mouse_pos = mouse_pos_absolute / screen;
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            cards_row.start_dragging(mouse_pos_relative);
+            dragged_card
+                .as_ref()
+                .map(|rc| rc.borrow_mut().start_dragging());
+        }
+
+        if is_mouse_button_down(MouseButton::Left) {
+            if let Some(card_ref) = &dragged_card {
+                card_ref.borrow_mut().update_dragged_position(mouse_pos);
+                if cards_row.add_card(card_ref) {
+                    if let Some(_) = dragged_card.take() {
+                        cards_row.abort_dragging();
+                    }
+                }
+            }
         }
 
         if is_mouse_button_released(MouseButton::Left) {
-            cards_row.stop_dragging();
+            dragged_card
+                .as_ref()
+                .map(|rc| rc.borrow_mut().stop_dragging());
         }
 
-        if is_key_pressed(KeyCode::Space) {
-            scheduler.schedule(GameEvent::AudioNodeAddEffect(), None);
-        }
+        dragged_card
+            .as_ref()
+            .map(|rc| rc.borrow().render(&render_ctx))
+            .unwrap_or(Ok(()))?;
 
-        cards_row.update_dragged_position(mouse_pos_relative);
+        cards_row.update_dragged_position(mouse_pos);
         cards_row.snap(0.2);
         cards_row.render(&render_ctx)?;
 
-        let audio_graph_widget = AudioGraphWidget::new(
-            vec2(0.5, 0.5),
-            vec2(0.9, 0.13),
-            card_size,
-            card_margin,
-            &game_state.borrow().audio_graph,
-        );
-        audio_graph_widget.render(&render_ctx)?;
-
-        // let cursor = mouse_position().into();
-        // if is_mouse_button_pressed(MouseButton::Left) {
-        //     if game_state.borrow().audio_graph.is_on_some_node(&cursor) {
-        //         scheduler.schedule(GameEvent::AudioNodeStartDrag(cursor), None);
-        //     } else {
-        //         scheduler.schedule(GameEvent::AudioNodeAddEffect(cursor), None);
-        //     }
-        // }
-        //
-        // if is_mouse_button_down(MouseButton::Left) {
-        //     scheduler.schedule(GameEvent::AudioNodeDrag(cursor), None);
-        // }
-        // if is_mouse_button_released(MouseButton::Left) {
-        //     scheduler.schedule(GameEvent::AudioNodeStopDrag, None);
-        // }
-        //
-        // if is_mouse_button_pressed(MouseButton::Right) {
-        //     if game_state.borrow().audio_graph.is_on_some_node(&cursor) {
-        //         scheduler.schedule(GameEvent::AudioNodeDeleteAudioEffect(cursor), None);
-        //     }
-        // }
-        //
-        // if is_key_pressed(KeyCode::Space) {
-        //     scheduler.schedule(GameEvent::InterpretGraph, None);
-        // }
-        //
-        // if is_key_pressed(KeyCode::A) {
-        //     scheduler.schedule(GameEvent::ChangeOscillatorType, None);
-        // }
-
-        // // Event processing
+        // Event processing
         scheduler.process_events(&mut |e| {
             let mut state = game_state.try_borrow_mut().unwrap();
             process_event(&mut state, &e)

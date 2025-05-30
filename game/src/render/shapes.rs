@@ -11,6 +11,7 @@ use super::RenderCtx;
 #[derive(Clone, Copy)]
 pub enum Shape {
     SineWave,
+    SquareWave,
     Piano,
     Blank,
 }
@@ -26,6 +27,9 @@ impl Shape {
         match self {
             Shape::SineWave => {
                 Texture::new(position, size, color, TextureAsset::SineWave).render(render_ctx)
+            }
+            Shape::SquareWave => {
+                Texture::new(position, size, color, TextureAsset::SquareWave).render(render_ctx)
             }
             Shape::Piano => {
                 Texture::new(position, size, color, TextureAsset::Piano).render(render_ctx)

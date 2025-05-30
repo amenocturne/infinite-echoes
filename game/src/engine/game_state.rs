@@ -21,6 +21,7 @@ impl GameState {
             audio_graph,
         }
     }
+
 }
 
 impl Render for GameState {
@@ -33,11 +34,15 @@ impl Render for GameState {
 
 pub enum GameEvent {
     InterpretGraph,
-    ChangeOscillatorType,
-    // Audio Node events
-    AudioNodeStartDrag(Vec2),
-    AudioNodeDrag(Vec2),
-    AudioNodeStopDrag,
-    AudioNodeAddEffect(),
-    AudioNodeDeleteAudioEffect(Vec2),
+    // ChangeOscillatorType,
+    // Dragging
+    StartDrag(Vec2),
+    Drag(Vec2),
+    StopDrag,
+    // Effects
+    AddAudioEffect,
+    DeleteAudioEffect,
+    // Notes
+    AddNoteGenerator,
+    DeleteNoteGenerator,
 }

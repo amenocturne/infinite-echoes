@@ -3,15 +3,15 @@ use macroquad::math::Vec2;
 use macroquad::shapes::draw_rectangle;
 
 use crate::engine::errors::GameResult;
-use crate::render::hover::is_inside;
 use crate::render::hover::Hover;
+use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::shapes::Shape;
 use crate::render::Render;
 use crate::render::RenderCtx;
 
 const MARGIN_PERSENTAGE: f32 = 0.2; // TODO: move to config/constants
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Card {
     pub center: Vec2,
     pub size: Vec2,
@@ -21,10 +21,11 @@ pub struct Card {
     is_dragged: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum CardType {
     NoteGenerator,
     SineOscillator,
+    SquareOscilaltor,
     AudioEffect,
 }
 
@@ -33,6 +34,7 @@ impl CardType {
         match self {
             CardType::AudioEffect => Shape::Blank,
             CardType::SineOscillator => Shape::SineWave,
+            CardType::SquareOscilaltor => Shape::SquareWave,
             CardType::NoteGenerator => Shape::Piano,
         }
     }
@@ -68,12 +70,22 @@ impl Card {
     }
 
     pub fn snap(&mut self, position: Vec2, margins: Vec2) {
-        if is_inside(position - margins, position + margins, self.center) {
+        if Self::is_inside_from(position - margins, position + margins, self.center) {
             self.center = position;
         }
     }
     pub fn is_dragged(&self) -> bool {
         self.is_dragged
+    }
+}
+
+impl RectangleBoundary for Card {
+    fn center(&self) -> Vec2 {
+        self.center
+    }
+
+    fn size(&self) -> Vec2 {
+        self.size
     }
 }
 
@@ -104,7 +116,7 @@ impl Render for Card {
 
 impl Hover for Card {
     fn is_hovered_over(&self, relative_mouse_position: Vec2) -> bool {
-        is_inside(
+        Self::is_inside_from(
             self.center - self.size / 2.0,
             self.center + self.size / 2.0,
             relative_mouse_position,

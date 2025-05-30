@@ -146,6 +146,12 @@ fn main() {
             MimeType::Png,
             HotReloading::Enabled,
         ),
+        FileData::new(
+            "/resources/square.png",
+            "./resources/square.png",
+            MimeType::Png,
+            HotReloading::Enabled,
+        ),
     ];
 
     let address = format!("localhost:{}", PORT);

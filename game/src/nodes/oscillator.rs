@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Oscillator {
     pub wave_shape: WaveShape,
 }

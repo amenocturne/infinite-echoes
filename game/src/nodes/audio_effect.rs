@@ -1,7 +1,15 @@
-pub struct AudioEffect {}
+#[derive(Clone)]
+pub struct AudioEffect {
+    effect_type: AudioEffectType,
+}
 
+#[derive(Clone)]
+pub enum AudioEffectType {
+    Filter,
+    Distortion,
+}
 impl AudioEffect {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(effect_type: AudioEffectType) -> Self {
+        Self { effect_type }
     }
 }

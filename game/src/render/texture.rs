@@ -10,6 +10,7 @@ use super::RenderCtx;
 pub enum TextureAsset {
     Piano,
     SineWave,
+    SquareWave,
 }
 
 pub struct Texture {
