@@ -17,7 +17,11 @@ features = [
   "OscillatorNode",
   "AudioParam",
   "AudioDestinationNode",
-  "GainNode"
+  "GainNode",
+  "BiquadFilterType",
+  "BiquadFilterNode",
+  "WaveShaperNode",
+  "OverSampleType"
 ]
 
 # TODO: remove when building release

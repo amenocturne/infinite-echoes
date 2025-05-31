@@ -1,12 +1,9 @@
 use std::cell::RefCell;
 
-use macroquad::color::BLACK;
-use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
-use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::AudioNodeType;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::rectangle_boundary::RectangleBoundary;
@@ -36,25 +33,6 @@ impl AudioGraphWidget {
         };
         result.organize_cards();
         result
-    }
-
-    pub fn update_audio_graph(&mut self, audio_graph: &AudioGraph) {
-        let card_types = audio_graph.as_card_types();
-        let cards = card_types
-            .iter()
-            .map(|card_type| {
-                RefCell::new(Card::new(
-                    vec2(0.0, 0.0),
-                    self.card_size,
-                    WHITE,
-                    BLACK,
-                    card_type.clone(),
-                ))
-            })
-            .collect();
-
-        self.cards = cards;
-        self.organize_cards();
     }
 
     fn update_grid(&mut self) {

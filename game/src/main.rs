@@ -30,9 +30,8 @@ async fn run() -> GameResult<()> {
             CardType::NoteGenerator,
             CardType::NoteGenerator,
             CardType::SineOscillator,
-            CardType::SquareOscilaltor,
-            CardType::AudioEffect,
-            CardType::AudioEffect,
+            CardType::SquareOscillator,
+            CardType::Distortion,
         ],
         graph_widget: GraphWidgetConfig {
             location: vec2(0.5, 0.5),

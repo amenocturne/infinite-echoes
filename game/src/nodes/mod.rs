@@ -1,7 +1,6 @@
 use crate::nodes::note_generator::Note;
 use crate::nodes::note_generator::NoteName;
 use audio_effect::AudioEffect;
-use audio_effect::AudioEffectType;
 use macros::note;
 use note_effect::NoteEffect;
 use note_effect::NoteEffectType;
@@ -17,7 +16,7 @@ pub mod note_effect;
 pub mod note_generator;
 pub mod oscillator;
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Clone)]
 pub enum AudioNode {
     NoteGenerator(NoteGenerator),
     NoteEffect(NoteEffect),
@@ -44,33 +43,30 @@ impl AudioNode {
                         NoteDuration::Half.into(),
                         NoteDuration::Quarter.into(),
                     ),
-                    // NoteEvent::new(
-                    //     note!("D3"),
-                    //     NoteDuration::Quarter.into(),
-                    //     NoteDuration::Quarter.into(),
-                    // ),
-                    // NoteEvent::new(
-                    //     note!("E3"),
-                    //     NoteDuration::Half.into(),
-                    //     NoteDuration::Quarter.into(),
-                    // ),
                 ],
             )),
             CardType::SineOscillator => Self::Oscillator(Oscillator::new(WaveShape::Sine)),
-            CardType::SquareOscilaltor => Self::Oscillator(Oscillator::new(WaveShape::Square)),
-            CardType::AudioEffect => Self::AudioEffect(AudioEffect::new(AudioEffectType::Filter)),
+            CardType::SquareOscillator => Self::Oscillator(Oscillator::new(WaveShape::Square)),
+            CardType::LowPassFilter => Self::AudioEffect(AudioEffect::new_filter(
+                audio_effect::FilterType::LowPass,
+                1000.0,
+                1.0,
+                0.0,
+            )),
+            CardType::HighPassFilter => Self::AudioEffect(AudioEffect::new_filter(
+                audio_effect::FilterType::HighPass,
+                1000.0,
+                1.0,
+                0.0,
+            )),
+            CardType::BandPassFilter => Self::AudioEffect(AudioEffect::new_filter(
+                audio_effect::FilterType::BandPass,
+                1000.0,
+                1.0,
+                0.0,
+            )),
+            CardType::Distortion => Self::AudioEffect(AudioEffect::new_distortion(0.3, 1.0)),
             CardType::NoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Chord)),
-        }
-    }
-    pub fn to_card_type(&self) -> CardType {
-        match self {
-            AudioNode::NoteGenerator(_) => CardType::NoteGenerator,
-            AudioNode::Oscillator(oscillator) => match oscillator.wave_shape {
-                WaveShape::Sine => CardType::SineOscillator,
-                WaveShape::Square => CardType::SquareOscilaltor,
-            },
-            AudioNode::AudioEffect(_) => CardType::AudioEffect,
-            AudioNode::NoteEffect(_) => CardType::NoteEffect,
         }
     }
 

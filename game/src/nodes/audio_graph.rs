@@ -7,7 +7,7 @@ use super::note_generator::{MusicTime, NoteGenerator};
 use super::oscillator::Oscillator;
 use super::{AudioNode, AudioNodeType};
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq,Clone)]
 pub struct AudioGraph {
     nodes: Vec<RefCell<AudioNode>>,
 }
@@ -61,13 +61,6 @@ impl AudioGraph {
 
     pub fn nodes(&self) -> &Vec<RefCell<AudioNode>> {
         &self.nodes
-    }
-
-    pub fn as_card_types(&self) -> Vec<CardType> {
-        self.nodes
-            .iter()
-            .map(|n| n.borrow().to_card_type())
-            .collect()
     }
 
     fn is_valid(cards: &Vec<CardType>) -> bool {

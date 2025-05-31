@@ -27,29 +27,47 @@ pub struct Card {
 #[derive(Clone, Copy, Debug)]
 pub enum CardType {
     NoteGenerator,
-    SineOscillator,
-    SquareOscilaltor,
-    AudioEffect,
+    // Note Effects
     NoteEffect,
+    // Oscillators
+    SineOscillator,
+    SquareOscillator,
+    // Audio Effects
+    LowPassFilter,
+    HighPassFilter,
+    BandPassFilter,
+    Distortion,
 }
 
 impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
-            CardType::AudioEffect => Shape::Blank,
-            CardType::NoteEffect => Shape::Blank,
-            CardType::SineOscillator => Shape::SineWave,
-            CardType::SquareOscilaltor => Shape::SquareWave,
             CardType::NoteGenerator => Shape::Piano,
+            // Note Effects
+            CardType::NoteEffect => Shape::Blank,
+            // Oscillators
+            CardType::SineOscillator => Shape::SineWave,
+            CardType::SquareOscillator => Shape::SquareWave,
+            // Audio Effects
+            CardType::LowPassFilter => Shape::Blank,
+            CardType::HighPassFilter => Shape::Blank,
+            CardType::BandPassFilter => Shape::Blank,
+            CardType::Distortion => Shape::Blank,
         }
     }
     pub fn as_type(&self) -> AudioNodeType {
         match self {
-            CardType::AudioEffect => AudioNodeType::AudioEffect,
-            CardType::NoteEffect => AudioNodeType::NoteEffect,
-            CardType::SineOscillator => AudioNodeType::Oscillator,
-            CardType::SquareOscilaltor => AudioNodeType::Oscillator,
             CardType::NoteGenerator => AudioNodeType::NoteGenerator,
+            // Note Effects
+            CardType::NoteEffect => AudioNodeType::NoteEffect,
+            // Oscillators
+            CardType::SineOscillator => AudioNodeType::Oscillator,
+            CardType::SquareOscillator => AudioNodeType::Oscillator,
+            // Audio Effects
+            CardType::LowPassFilter => AudioNodeType::AudioEffect,
+            CardType::HighPassFilter => AudioNodeType::AudioEffect,
+            CardType::BandPassFilter => AudioNodeType::AudioEffect,
+            CardType::Distortion => AudioNodeType::AudioEffect,
         }
     }
 }

@@ -183,9 +183,7 @@ impl GameEngine {
                     .iter()
                     .map(|card| card.borrow().card_type())
                     .collect();
-                if let Some(audio_graph) = AudioGraph::from_cards(card_types) {
-                    self.state.borrow_mut().current_graph = Some(audio_graph.clone());
-                }
+                self.state.borrow_mut().current_graph = AudioGraph::from_cards(card_types).clone();
                 Ok(vec![])
             }
         }
