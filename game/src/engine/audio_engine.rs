@@ -132,17 +132,50 @@ impl GameOscillator {
         };
         self.osc.set_type(wave);
         self.osc.frequency().set_value(frequency);
+
+        // Connect oscillator -> gain -> destination instead of direct connection
         self.osc
+            .connect_with_audio_node(&self.gain)
+            .map_err(GameError::js("Could not connect oscillator to gain"))?;
+        self.gain
             .connect_with_audio_node(&audio_context.destination())
-            .map_err(GameError::js("Could not connect audio node to destination"))?;
+            .map_err(GameError::js("Could not connect gain to destination"))?;
 
         let start_time = start as f64;
+        let end_time = start_time + duration as f64;
+
+        // Attack and release times to remove clicks
+        let attack_time = 0.001; // 10ms attack
+        let release_time = 0.002; // 20ms release
+
+        // Set initial gain to 0 to avoid clicks
+        self.gain
+            .gain()
+            .set_value_at_time(0.0, start_time)
+            .map_err(GameError::js("Could not set initial gain"))?;
+
+        // Attack: ramp from 0 to 1 over attack_time
+        self.gain
+            .gain()
+            .linear_ramp_to_value_at_time(1.0, start_time + attack_time)
+            .map_err(GameError::js("Could not schedule attack ramp"))?;
+
+        // Release: ramp from 1 to 0 over release_time before stopping
+        let release_start = end_time - release_time;
+        self.gain
+            .gain()
+            .set_value_at_time(1.0, release_start)
+            .map_err(GameError::js("Could not set release start gain"))?;
+        self.gain
+            .gain()
+            .linear_ramp_to_value_at_time(0.0, end_time)
+            .map_err(GameError::js("Could not schedule release ramp"))?;
 
         self.osc
             .start_with_when(start_time)
             .map_err(GameError::js("Could not start audio"))?;
         self.osc
-            .stop_with_when(start_time + duration as f64)
+            .stop_with_when(end_time)
             .map_err(GameError::js("Couldn't schedule stop"))?;
         Ok(())
     }
