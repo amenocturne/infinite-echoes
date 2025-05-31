@@ -7,6 +7,7 @@ mod render;
 use engine::audio_engine::AudioEngine;
 use engine::errors::GameError;
 use engine::errors::GameResult;
+use engine::game_config::AudioConfig;
 use engine::game_config::CardsRowWidgetConfig;
 use engine::game_config::DebugHudConfig;
 use engine::game_config::GameConfig;
@@ -42,6 +43,12 @@ async fn run() -> GameResult<()> {
             size: vec2(0.9, 0.13),
         },
         debug_hud: Some(DebugHudConfig { buffer_size: 100 }),
+        audio: AudioConfig {
+            attack_time: 0.001,
+            release_time: 0.002,
+            max_schedule_ahead: 120.0,
+            output_gain: 0.8,
+        },
     };
 
     let audio_engine = AudioEngine::new()?;

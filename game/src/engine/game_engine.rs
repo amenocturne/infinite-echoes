@@ -157,16 +157,18 @@ impl GameEngine {
     fn process_event(&self, event: GameEvent) -> GameResult<Vec<(GameEvent, Option<Duration>)>> {
         match event {
             GameEvent::InterpretGraph => {
-                let mut state = self.state.borrow_mut();
-                let maybe_graph = &state.current_graph;
+                let maybe_graph = self.state.borrow().current_graph.clone();
                 if let Some(audio_graph) = maybe_graph {
                     self.stop_audio_graph()?;
                     self.audio_engine.borrow_mut().interpret_graph(
                         self.config.bpm,
-                        100,
                         &audio_graph,
+                        &self.config.audio,
                     )?;
-                    state.playing_graph = Some(audio_graph.clone());
+                    
+                    // Update playing_graph after we've used audio_graph
+                    self.state.borrow_mut().playing_graph = Some(audio_graph.clone());
+                    
                     Ok(vec![])
                 } else {
                     Ok(vec![(GameEvent::StopAudioGraph, None)])

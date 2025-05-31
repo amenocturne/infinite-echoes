@@ -10,7 +10,6 @@ use crate::nodes::audio_effect::FilterParameters;
 use crate::nodes::audio_effect::FilterType;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::note_generator::MusicTime;
-use crate::nodes::note_generator::NoteEvent;
 use crate::nodes::oscillator::WaveShape;
 use web_sys::AudioContext;
 use web_sys::AudioNode as WebAudioNode;
@@ -20,6 +19,8 @@ use web_sys::OscillatorNode;
 use web_sys::OscillatorType;
 use web_sys::WaveShaperNode;
 use web_sys::OverSampleType;
+
+use super::game_config::AudioConfig;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AudioState {
@@ -60,11 +61,12 @@ impl AudioEngine {
         Ok(())
     }
 
+    
     pub fn interpret_graph(
         &mut self,
         bpm: u32,
-        times: u32,
         audio_graph: &AudioGraph,
+        audio_config: &AudioConfig,
     ) -> GameResult<()> {
         self.state.set(AudioState::Playing);
         let note_generators = &audio_graph.note_generators();
@@ -135,11 +137,18 @@ impl AudioEngine {
             acc_loop_start = acc_loop_start + ng.loop_length;
         }
 
-        let mut notes_repeated: Vec<NoteEvent> = vec![];
-        for i in 0..times {
-            let shifted_notes: Vec<NoteEvent> = notes
+        // Calculate total loop length in seconds
+        let loop_length_seconds = audio_graph.loop_length().to_seconds(bpm);
+        
+        // Calculate how many loops to schedule based on max_schedule_ahead
+        let loops_to_schedule = (audio_config.max_schedule_ahead / loop_length_seconds).ceil() as i32;
+        
+        // Create and schedule oscillators for many loops ahead
+        let mut notes_repeated = vec![];
+        for i in 0..loops_to_schedule {
+            let shifted_notes: Vec<_> = notes
                 .iter()
-                .map(|n| n.shifted(audio_graph.loop_length() * i))
+                .map(|n| n.shifted(audio_graph.loop_length() * i as u32))
                 .collect();
             for sn in shifted_notes {
                 notes_repeated.push(sn);
@@ -153,9 +162,16 @@ impl AudioEngine {
             let duration = note_event.duration.to_seconds(bpm);
 
             let osc = GameOscillator::new(&self.audio_context, oscillator.wave_shape)?;
-            osc.play_with_destination(&oscillator_destination, freq, start, duration)?;
+            osc.play_with_destination(
+                &oscillator_destination, 
+                freq, 
+                start, 
+                duration,
+                audio_config,
+            )?;
             self.oscillators.push(RefCell::new(osc));
         }
+        
         Ok(())
     }
 }
@@ -189,12 +205,14 @@ impl GameOscillator {
         frequency: f32,
         start: GameTime,
         duration: GameTime,
+        audio_config: &AudioConfig,
     ) -> GameResult<()> {
         self.play_with_destination(
             &audio_context.destination().into(),
             frequency,
             start,
             duration,
+            audio_config,
         )
     }
 
@@ -204,6 +222,7 @@ impl GameOscillator {
         frequency: f32,
         start: GameTime,
         duration: GameTime,
+        audio_config: &AudioConfig,
     ) -> GameResult<()> {
         let wave = match self.wave_shape {
             WaveShape::Sine => OscillatorType::Sine,
@@ -223,9 +242,9 @@ impl GameOscillator {
         let start_time = start as f64;
         let end_time = start_time + duration as f64;
 
-        // Attack and release times to remove clicks
-        let attack_time = 0.001; // 1ms attack
-        let release_time = 0.002; // 2ms release
+        // Get attack and release times from config
+        let attack_time = audio_config.attack_time;
+        let release_time = audio_config.release_time;
 
         // Set initial gain to 0 to avoid clicks
         self.gain
@@ -233,17 +252,17 @@ impl GameOscillator {
             .set_value_at_time(0.0, start_time)
             .map_err(GameError::js("Could not set initial gain"))?;
 
-        // Attack: ramp from 0 to 1 over attack_time
+        // Attack: ramp from 0 to output_gain over attack_time
         self.gain
             .gain()
-            .linear_ramp_to_value_at_time(1.0, start_time + attack_time)
+            .linear_ramp_to_value_at_time(audio_config.output_gain, start_time + attack_time)
             .map_err(GameError::js("Could not schedule attack ramp"))?;
 
-        // Release: ramp from 1 to 0 over release_time before stopping
+        // Release: ramp from output_gain to 0 over release_time before stopping
         let release_start = end_time - release_time;
         self.gain
             .gain()
-            .set_value_at_time(1.0, release_start)
+            .set_value_at_time(audio_config.output_gain, release_start)
             .map_err(GameError::js("Could not set release start gain"))?;
         self.gain
             .gain()
@@ -256,6 +275,78 @@ impl GameOscillator {
         self.osc
             .stop_with_when(end_time)
             .map_err(GameError::js("Couldn't schedule stop"))?;
+        Ok(())
+    }
+
+    fn play_looping(
+        &self,
+        destination: &WebAudioNode,
+        frequency: f32,
+        start: GameTime,
+        duration: GameTime,
+        loop_period: GameTime,
+        audio_config: &AudioConfig,
+    ) -> GameResult<()> {
+        let wave = match self.wave_shape {
+            WaveShape::Sine => OscillatorType::Sine,
+            WaveShape::Square => OscillatorType::Square,
+        };
+        self.osc.set_type(wave);
+        self.osc.frequency().set_value(frequency);
+
+        // Connect oscillator -> gain -> destination
+        self.osc
+            .connect_with_audio_node(&self.gain)
+            .map_err(GameError::js("Could not connect oscillator to gain"))?;
+        self.gain
+            .connect_with_audio_node(destination)
+            .map_err(GameError::js("Could not connect gain to destination"))?;
+
+        let start_time = start as f64;
+        let note_duration = duration as f64;
+        let loop_period_secs = loop_period as f64;
+        
+        // Get attack and release times from config
+        let attack_time = audio_config.attack_time;
+        let release_time = audio_config.release_time;
+        
+        // Start the oscillator - it will continue until explicitly stopped
+        self.osc
+            .start_with_when(start_time)
+            .map_err(GameError::js("Could not start audio"))?;
+            
+        // Schedule a large number of loops ahead
+        let loops_to_schedule = (audio_config.max_schedule_ahead / loop_period_secs).ceil() as i32;
+        
+        for i in 0..loops_to_schedule {
+            let loop_start = start_time + (loop_period_secs * i as f64);
+            let note_start = loop_start;
+            let note_end = note_start + note_duration;
+            
+            // Set initial gain to 0 at the start of each note
+            self.gain
+                .gain()
+                .set_value_at_time(0.0, note_start)
+                .map_err(GameError::js("Could not set initial gain"))?;
+                
+            // Attack: ramp from 0 to output_gain over attack_time
+            self.gain
+                .gain()
+                .linear_ramp_to_value_at_time(audio_config.output_gain, note_start + attack_time)
+                .map_err(GameError::js("Could not schedule attack ramp"))?;
+                
+            // Release: ramp from output_gain to 0 over release_time before note end
+            let release_start = note_end - release_time;
+            self.gain
+                .gain()
+                .set_value_at_time(audio_config.output_gain, release_start)
+                .map_err(GameError::js("Could not set release start gain"))?;
+            self.gain
+                .gain()
+                .linear_ramp_to_value_at_time(0.0, note_end)
+                .map_err(GameError::js("Could not schedule release ramp"))?;
+        }
+
         Ok(())
     }
 
