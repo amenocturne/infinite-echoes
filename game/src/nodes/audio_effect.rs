@@ -18,7 +18,7 @@ pub struct FilterParameters {
 #[derive(Clone, PartialEq)]
 pub struct DistortionParameters {
     pub amount: f32,
-    pub threshold: f32,
+    pub curve_type: DistortionCurve,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -31,6 +31,12 @@ pub enum FilterType {
     Peaking,
     Notch,
     AllPass,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum DistortionCurve {
+    SoftClip,
+    HardClip,
 }
 
 impl FilterType {
@@ -59,8 +65,8 @@ impl AudioEffect {
         })
     }
 
-    pub fn new_distortion(amount: f32, threshold: f32) -> Self {
-        AudioEffect::Distortion(DistortionParameters { amount, threshold })
+    pub fn new_distortion(amount: f32, curve_type: DistortionCurve) -> Self {
+        AudioEffect::Distortion(DistortionParameters { amount, curve_type })
     }
 
     // Default constructors
@@ -69,7 +75,8 @@ impl AudioEffect {
     }
 
     pub fn default_distortion() -> Self {
-        Self::new_distortion(0.5, 0.8)
+        // Changed default to SoftClip for a less harsh effect
+        Self::new_distortion(0.5, DistortionCurve::SoftClip)
     }
 
     // Helper methods to check effect type

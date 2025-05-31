@@ -5,21 +5,22 @@ use crate::core::GameTime;
 use crate::engine::errors::GameError;
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_effect::AudioEffect;
+use crate::nodes::audio_effect::DistortionCurve;
 use crate::nodes::audio_effect::DistortionParameters;
 use crate::nodes::audio_effect::FilterParameters;
 use crate::nodes::audio_effect::FilterType;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::note_generator::MusicTime;
 use crate::nodes::oscillator::WaveShape;
+use web_sys::js_sys::Float32Array;
 use web_sys::AudioContext;
 use web_sys::AudioNode as WebAudioNode;
 use web_sys::BiquadFilterNode;
 use web_sys::GainNode;
 use web_sys::OscillatorNode;
 use web_sys::OscillatorType;
-use web_sys::WaveShaperNode;
 use web_sys::OverSampleType;
-use web_sys::js_sys::Float32Array;
+use web_sys::WaveShaperNode;
 
 use super::game_config::AudioConfig;
 
@@ -62,7 +63,6 @@ impl AudioEngine {
         Ok(())
     }
 
-    
     pub fn interpret_graph(
         &mut self,
         bpm: u32,
@@ -140,10 +140,11 @@ impl AudioEngine {
 
         // Calculate total loop length in seconds
         let loop_length_seconds = audio_graph.loop_length().to_seconds(bpm);
-        
+
         // Calculate how many loops to schedule based on max_schedule_ahead
-        let loops_to_schedule = (audio_config.max_schedule_ahead / loop_length_seconds).ceil() as i32;
-        
+        let loops_to_schedule =
+            (audio_config.max_schedule_ahead / loop_length_seconds).ceil() as i32;
+
         // Create and schedule oscillators for many loops ahead
         let mut notes_repeated = vec![];
         for i in 0..loops_to_schedule {
@@ -164,15 +165,15 @@ impl AudioEngine {
 
             let osc = GameOscillator::new(&self.audio_context, oscillator.wave_shape)?;
             osc.play_with_destination(
-                &oscillator_destination, 
-                freq, 
-                start, 
+                &oscillator_destination,
+                freq,
+                start,
                 duration,
                 audio_config,
             )?;
             self.oscillators.push(RefCell::new(osc));
         }
-        
+
         Ok(())
     }
 }
@@ -306,36 +307,36 @@ impl GameOscillator {
         let start_time = start as f64;
         let note_duration = duration as f64;
         let loop_period_secs = loop_period as f64;
-        
+
         // Get attack and release times from config
         let attack_time = audio_config.attack_time;
         let release_time = audio_config.release_time;
-        
+
         // Start the oscillator - it will continue until explicitly stopped
         self.osc
             .start_with_when(start_time)
             .map_err(GameError::js("Could not start audio"))?;
-            
+
         // Schedule a large number of loops ahead
         let loops_to_schedule = (audio_config.max_schedule_ahead / loop_period_secs).ceil() as i32;
-        
+
         for i in 0..loops_to_schedule {
             let loop_start = start_time + (loop_period_secs * i as f64);
             let note_start = loop_start;
             let note_end = note_start + note_duration;
-            
+
             // Set initial gain to 0 at the start of each note
             self.gain
                 .gain()
                 .set_value_at_time(0.0, note_start)
                 .map_err(GameError::js("Could not set initial gain"))?;
-                
+
             // Attack: ramp from 0 to output_gain over attack_time
             self.gain
                 .gain()
                 .linear_ramp_to_value_at_time(audio_config.output_gain, note_start + attack_time)
                 .map_err(GameError::js("Could not schedule attack ramp"))?;
-                
+
             // Release: ramp from output_gain to 0 over release_time before note end
             let release_start = note_end - release_time;
             self.gain
@@ -431,29 +432,35 @@ impl GameDistortion {
         input_gain.gain().set_value(1.0 + params.amount * 10.0);
 
         // Declare samples here
-        let samples = 44100; 
+        let samples = 44100;
         let curve: Vec<f32> = (0..samples)
             .map(|i| {
                 let x = (i as f32 / (samples - 1) as f32) * 2.0 - 1.0; // Map to [-1, 1]
 
-                // Create distortion using sigmoid formula (from MDN examples)
-                let k = params.amount * 100.0; // Drive amount
-                let deg = std::f32::consts::PI / 180.0;
+                match params.curve_type {
+                    DistortionCurve::SoftClip => {
+                        // Use a hyperbolic tangent (tanh) for soft clipping
+                        // The 'amount' parameter controls the intensity of the tanh curve
+                        x.tanh() * (1.0 + params.amount * 0.5) // Scale output slightly based on amount
+                    }
+                    DistortionCurve::HardClip => {
+                        // Original hard clipping logic (sigmoid with threshold)
+                        let k = params.amount * 100.0; // Drive amount
+                        let deg = std::f32::consts::PI / 180.0;
 
-                if x.abs() < 0.001 {
-                    // Avoid division by zero near zero
-                    x
-                } else {
-                    let distorted =
-                        ((3.0 + k) * x * 20.0 * deg) / (std::f32::consts::PI + k * x.abs());
+                        if x.abs() < 0.001 {
+                            // Avoid division by zero near zero
+                            x
+                        } else {
+                            let distorted =
+                                ((3.0 + k) * x * 20.0 * deg) / (std::f32::consts::PI + k * x.abs());
 
-                    // Apply threshold as hard clipping
-                    if distorted > params.threshold {
-                        params.threshold
-                    } else if distorted < -params.threshold {
-                        -params.threshold
-                    } else {
-                        distorted
+                            // Apply threshold as hard clipping
+                            // NOTE: The threshold parameter is removed from DistortionParameters,
+                            // so we'll use a fixed value or reintroduce it if needed for hard clip.
+                            // For now, let's use a simple hard clip if this curve type is selected.
+                            distorted.max(-1.0).min(1.0) // Simple hard clip to -1.0 to 1.0
+                        }
                     }
                 }
             })

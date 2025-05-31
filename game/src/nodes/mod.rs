@@ -9,6 +9,7 @@ use note_generator::{NoteDuration, NoteEvent, NoteGenerator};
 use oscillator::{Oscillator, WaveShape};
 
 use crate::render::widgets::card_widget::CardType;
+use crate::nodes::audio_effect::DistortionCurve; // Import DistortionCurve
 
 pub mod audio_effect;
 pub mod audio_graph;
@@ -65,7 +66,7 @@ impl AudioNode {
                 1.0,
                 0.0,
             )),
-            CardType::Distortion => Self::AudioEffect(AudioEffect::new_distortion(0.3, 1.0)),
+            CardType::Distortion => Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip)),
             CardType::NoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Chord)),
         }
     }
