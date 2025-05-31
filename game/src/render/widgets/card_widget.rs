@@ -1,4 +1,5 @@
 use macroquad::color::Color;
+use macroquad::color::GRAY;
 use macroquad::math::Vec2;
 use macroquad::shapes::draw_rectangle;
 
@@ -9,6 +10,8 @@ use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::shapes::Shape;
 use crate::render::Render;
 use crate::render::RenderCtx;
+
+use super::rectangle_widget::RectangleWidget;
 
 const MARGIN_PERSENTAGE: f32 = 0.2; // TODO: move to config/constants
 
@@ -111,19 +114,20 @@ impl RectangleBoundary for Card {
 
 impl Render for Card {
     fn render(&self, render_ctx: &RenderCtx) -> GameResult<()> {
+        let rect = RectangleWidget::with_boundary(
+            self.center,
+            self.size,
+            Some(self.background_color),
+            5.0,
+            GRAY,
+        );
+
         let absolute_center = self.center * render_ctx.screen_size;
         let absolute_size = self.size * render_ctx.screen_size;
         let absolute_margin = absolute_size * MARGIN_PERSENTAGE;
         let absolute_top_left = absolute_center - absolute_size / 2.0;
 
-        draw_rectangle(
-            absolute_top_left.x,
-            absolute_top_left.y,
-            absolute_size.x,
-            absolute_size.y,
-            self.background_color,
-        );
-
+        rect.render(render_ctx)?;
         self.card_type.as_shape().draw(
             render_ctx,
             absolute_top_left + absolute_margin / 2.0,
