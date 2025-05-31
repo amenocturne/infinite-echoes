@@ -13,28 +13,301 @@
       position: absolute;
       z-index: 0;
     }
+
+    /* Title Screen Styles */
+    #title-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      font-family: 'Arial', sans-serif;
+      pointer-events: all;
+      overflow: hidden;
+    }
+
+    #game-title {
+      font-size: 4rem;
+      font-weight: 300;
+      color: #ffffff;
+      margin-bottom: 1rem;
+      text-align: center;
+      letter-spacing: 0.2em;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      z-index: 15;
+      position: relative;
+    }
+
+    #game-subtitle {
+      font-size: 1.2rem;
+      color: #cccccc;
+      margin-bottom: 4rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+      z-index: 15;
+      position: relative;
+    }
+
+    #start-button {
+      background: transparent;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 300;
+      padding: 1rem 3rem;
+      cursor: pointer;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      z-index: 15;
+    }
+
+    #start-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      transition: left 0.3s ease;
+      z-index: -1;
+    }
+
+    #start-button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: #ffffff;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    #start-button:hover::before {
+      left: 0;
+    }
+
+    #start-button:active {
+      transform: translateY(0);
+    }
+
+    /* Particles Container */
+    #particles-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Particle styles */
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float linear infinite;
+    }
+
+    .particle.small {
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .particle.medium {
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .particle.large {
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Direction-specific animations */
+    @keyframes float {
+      0% {
+        transform: translateY(0vh) translateX(0px) rotate(0deg);
+        opacity: 0;
+      }
+      5% {
+        opacity: 1;
+      }
+      95% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-110vh) translateX(var(--drift)) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      #game-title {
+        font-size: 2.5rem;
+      }
+
+      #game-subtitle {
+        font-size: 1rem;
+        margin-bottom: 3rem;
+      }
+
+      #start-button {
+        font-size: 1.2rem;
+        padding: 0.8rem 2rem;
+      }
+    }
+
+    /* Fade out animation */
+    .fade-out {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
   </style>
 </head>
 <body style="margin: 0; padding: 0; height: 100vh; width: 100vw">
+  <!-- Title Screen Overlay -->
+  <div id="title-screen">
+    <!-- Particles Container -->
+    <div id="particles-container"></div>
+
+    <h1 id="game-title">INFINITE ECHOES</h1>
+    <p id="game-subtitle">A Minimalist Adventure</p>
+
+    <button id="start-button">Start Playing</button>
+  </div>
+
+  <!-- Game Canvas -->
   <canvas id="glcanvas" tabindex="1"></canvas>
+
   <script src="/miniquad_runtime.js"></script>
   <script type="module">
     import init, {set_wasm} from "./game.js";
+
+    // Particle system
+    function createParticle() {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+
+      // Random size
+      const sizes = ['small', 'medium', 'large'];
+      const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+      particle.classList.add(randomSize);
+
+      // Random horizontal position (fully random across screen width)
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.top = (Math.random() * 100 + 20) + '%';
+
+      // Random animation duration (speed)
+      const duration = Math.random() * 15 + 8; // 8-23 seconds
+      particle.style.animationDuration = duration + 's';
+
+      // Random delay
+      const delay = Math.random() * 3;
+      particle.style.animationDelay = '0s';
+
+      // Random horizontal drift during animation
+      const drift = (Math.random() - 0.5) * 200; // -100px to 100px drift
+      particle.style.setProperty('--drift', drift + 'px');
+
+      return particle;
+    }
+
+
+    function initParticles() {
+      const container = document.getElementById('particles-container');
+
+      // Clear any existing particles
+      container.innerHTML = '';
+
+      // Create initial particles with staggered delays
+      for (let i = 0; i < 100; i++) {
+        setTimeout(() => {
+          const particle = createParticle();
+          container.appendChild(particle);
+        }, i * 30);
+      }
+
+      // Continuously add new particles
+      const particleInterval = setInterval(() => {
+        const container = document.getElementById('particles-container');
+        if (container && container.parentElement) {
+          // Remove old particles to prevent memory buildup
+          const particles = container.querySelectorAll('.particle');
+          if (particles.length > 200) {
+            particles[0].remove();
+          }
+
+          // Add new particle
+          const particle = createParticle();
+          container.appendChild(particle);
+        } else {
+          // Clear interval if container is removed
+          clearInterval(particleInterval);
+        }
+      }, 50);
+    }
+
+    // Title screen functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const titleScreen = document.getElementById('title-screen');
+      const startButton = document.getElementById('start-button');
+      const canvas = document.getElementById('glcanvas');
+
+      // Initialize particles after a short delay to prevent initial stuck particles
+      initParticles();
+
+      // Start button click handler
+      startButton.addEventListener('click', () => {
+        // Immediately disable pointer events on title screen
+        titleScreen.style.pointerEvents = 'none';
+
+        // Add fade out class
+        titleScreen.classList.add('fade-out');
+
+        // Completely remove the element after fade
+        setTimeout(() => {
+          if (titleScreen.parentNode) {
+            titleScreen.parentNode.removeChild(titleScreen);
+          }
+
+          // Ensure canvas has focus and is ready for input
+          canvas.focus();
+          canvas.click(); // Trigger click to ensure it's active
+
+          console.log('Title screen removed, game should be interactive');
+        }, 500);
+      });
+
+      // Initialize game
+      canvas.removeAttribute("hidden");
+      impl_run();
+    });
+
     async function impl_run() {
       let wbg = await init();
       miniquad_add_plugin({
         register_plugin: (a) => (a.wbg = wbg),
         on_init: () => set_wasm(wasm_exports),
-        version: "0.0.1",
+        version: "0.1",
         name: "wbg",
       });
       load("./game_bg.wasm");
     }
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById("glcanvas").removeAttribute("hidden");
-      document.getElementById("glcanvas").focus();
-      impl_run();
-    });
+
     document.addEventListener('contextmenu', event => event.preventDefault());
   </script>
 </body>
