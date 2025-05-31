@@ -19,6 +19,7 @@ use web_sys::OscillatorNode;
 use web_sys::OscillatorType;
 use web_sys::WaveShaperNode;
 use web_sys::OverSampleType;
+use web_sys::js_sys::Float32Array;
 
 use super::game_config::AudioConfig;
 
@@ -240,7 +241,7 @@ impl GameOscillator {
             .map_err(GameError::js("Could not connect gain to destination"))?;
 
         let start_time = start as f64;
-        let end_time = start_time + duration as f64;
+        let end_time = start_time + duration as f64; // Define end_time here
 
         // Get attack and release times from config
         let attack_time = audio_config.attack_time;
@@ -266,7 +267,7 @@ impl GameOscillator {
             .map_err(GameError::js("Could not set release start gain"))?;
         self.gain
             .gain()
-            .linear_ramp_to_value_at_time(0.0, end_time)
+            .linear_ramp_to_value_at_time(0.0, end_time) // Use end_time here
             .map_err(GameError::js("Could not schedule release ramp"))?;
 
         self.osc
@@ -429,9 +430,9 @@ impl GameDistortion {
         // Amount parameter controls how hard we drive the signal
         input_gain.gain().set_value(1.0 + params.amount * 10.0);
 
-        // Create distortion curve
-        let samples = 44100;
-        let mut curve: Vec<f32> = (0..samples)
+        // Declare samples here
+        let samples = 44100; 
+        let curve: Vec<f32> = (0..samples)
             .map(|i| {
                 let x = (i as f32 / (samples - 1) as f32) * 2.0 - 1.0; // Map to [-1, 1]
 
@@ -459,7 +460,7 @@ impl GameDistortion {
             .collect();
 
         // Create Float32Array for the curve
-        wave_shaper.set_curve(Some(curve.as_mut_slice()));
+        wave_shaper.set_curve_opt_f32_array(Some(&Float32Array::from(curve.as_slice())));
 
         // Set oversample for better quality
         wave_shaper.set_oversample(OverSampleType::N2x);
