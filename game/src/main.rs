@@ -33,6 +33,7 @@ async fn run() -> GameResult<()> {
             CardType::SineOscillator,
             CardType::SquareOscillator,
             CardType::Distortion,
+            CardType::LowPassFilter,
         ],
         graph_widget: GraphWidgetConfig {
             location: vec2(0.5, 0.5),

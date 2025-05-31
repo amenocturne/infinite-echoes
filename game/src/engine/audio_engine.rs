@@ -473,7 +473,21 @@ impl GameDistortion {
         wave_shaper.set_oversample(OverSampleType::N2x);
 
         // Set output gain to compensate for level changes (reduce volume)
-        output_gain.gain().set_value(0.3 / (1.0 + params.amount));
+        // NOTE: Adjusted gain compensation for a more balanced output
+        let compensation_gain = match params.curve_type {
+            DistortionCurve::SoftClip => {
+                // For soft clipping, a less aggressive compensation is needed.
+                // This formula aims to keep the output level more consistent.
+                // It's an empirical value, can be tweaked.
+                1.0 / (1.0 + params.amount * 0.5) // Reduced impact of amount on compensation
+            }
+            DistortionCurve::HardClip => {
+                // For hard clipping, more aggressive compensation might be needed.
+                // This is similar to the previous logic but can be adjusted.
+                0.3 / (1.0 + params.amount)
+            }
+        };
+        output_gain.gain().set_value(compensation_gain);
 
         // Connect the chain: input_gain -> wave_shaper -> output_gain
         input_gain
