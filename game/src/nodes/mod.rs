@@ -67,6 +67,7 @@ impl AudioNode {
                 0.0,
             )),
             CardType::Distortion => Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip)),
+            CardType::Reverb => Self::AudioEffect(AudioEffect::new_reverb(1.0, 0.5, 1.0)),
             CardType::NoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Chord)),
         }
     }

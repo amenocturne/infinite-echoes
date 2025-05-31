@@ -5,6 +5,7 @@ use web_sys::BiquadFilterType;
 pub enum AudioEffect {
     Filter(FilterParameters),
     Distortion(DistortionParameters),
+    Reverb(ReverbParameters)
 }
 
 #[derive(Clone, PartialEq)]
@@ -19,6 +20,13 @@ pub struct FilterParameters {
 pub struct DistortionParameters {
     pub amount: f32,
     pub curve_type: DistortionCurve,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ReverbParameters {
+    pub decay_time: f32, // How long the reverb tail lasts
+    pub wet_level: f32,  // Amount of processed signal
+    pub dry_level: f32,  // Amount of original signal
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -69,6 +77,14 @@ impl AudioEffect {
         AudioEffect::Distortion(DistortionParameters { amount, curve_type })
     }
 
+    pub fn new_reverb(decay_time: f32, wet_level: f32, dry_level: f32) -> Self {
+        AudioEffect::Reverb(ReverbParameters {
+            decay_time,
+            wet_level,
+            dry_level,
+        })
+    }
+
     // Default constructors
     pub fn default_filter() -> Self {
         Self::new_filter(FilterType::LowPass, 1000.0, 1.0, 0.0)
@@ -79,6 +95,10 @@ impl AudioEffect {
         Self::new_distortion(0.5, DistortionCurve::SoftClip)
     }
 
+    pub fn default_reverb() -> Self {
+        Self::new_reverb(2.0, 0.5, 0.5) // Default decay 2s, 50% wet/dry
+    }
+
     // Helper methods to check effect type
     pub fn is_filter(&self) -> bool {
         matches!(self, AudioEffect::Filter(_))
@@ -86,6 +106,10 @@ impl AudioEffect {
 
     pub fn is_distortion(&self) -> bool {
         matches!(self, AudioEffect::Distortion(_))
+    }
+
+    pub fn is_reverb(&self) -> bool {
+        matches!(self, AudioEffect::Reverb(_))
     }
 
     // Getter methods with pattern matching
@@ -99,6 +123,13 @@ impl AudioEffect {
     pub fn as_distortion(&self) -> Option<&DistortionParameters> {
         match self {
             AudioEffect::Distortion(params) => Some(params),
+            _ => None,
+        }
+    }
+
+    pub fn as_reverb(&self) -> Option<&ReverbParameters> {
+        match self {
+            AudioEffect::Reverb(params) => Some(params),
             _ => None,
         }
     }

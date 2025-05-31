@@ -37,6 +37,7 @@ pub enum CardType {
     HighPassFilter,
     BandPassFilter,
     Distortion,
+    Reverb,
 }
 
 impl CardType {
@@ -53,6 +54,7 @@ impl CardType {
             CardType::HighPassFilter => Shape::Blank,
             CardType::BandPassFilter => Shape::Blank,
             CardType::Distortion => Shape::Blank,
+            CardType::Reverb => Shape::Blank,
         }
     }
     pub fn as_type(&self) -> AudioNodeType {
@@ -68,6 +70,7 @@ impl CardType {
             CardType::HighPassFilter => AudioNodeType::AudioEffect,
             CardType::BandPassFilter => AudioNodeType::AudioEffect,
             CardType::Distortion => AudioNodeType::AudioEffect,
+            CardType::Reverb => AudioNodeType::AudioEffect,
         }
     }
 }

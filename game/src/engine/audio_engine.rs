@@ -9,6 +9,7 @@ use crate::nodes::audio_effect::DistortionCurve;
 use crate::nodes::audio_effect::DistortionParameters;
 use crate::nodes::audio_effect::FilterParameters;
 use crate::nodes::audio_effect::FilterType;
+use crate::nodes::audio_effect::ReverbParameters;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::note_generator::MusicTime;
 use crate::nodes::oscillator::WaveShape;
@@ -16,6 +17,7 @@ use web_sys::js_sys::Float32Array;
 use web_sys::AudioContext;
 use web_sys::AudioNode as WebAudioNode;
 use web_sys::BiquadFilterNode;
+use web_sys::ConvolverNode;
 use web_sys::GainNode;
 use web_sys::OscillatorNode;
 use web_sys::OscillatorType;
@@ -23,6 +25,7 @@ use web_sys::OverSampleType;
 use web_sys::WaveShaperNode;
 
 use super::game_config::AudioConfig;
+use crate::core::random;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AudioState {
@@ -89,6 +92,10 @@ impl AudioEngine {
                 AudioEffect::Distortion(distortion_params) => {
                     let distortion = GameDistortion::new(&self.audio_context, distortion_params)?;
                     effect_nodes.push(Box::new(distortion));
+                }
+                AudioEffect::Reverb(reverb_params) => {
+                    let reverb = GameReverb::new(&self.audio_context, reverb_params)?;
+                    effect_nodes.push(Box::new(reverb));
                 }
             }
         }
@@ -517,6 +524,99 @@ impl GameDistortion {
     }
 }
 
+pub struct GameReverb {
+    input_gain: GainNode,
+    convolver: ConvolverNode,
+    output_gain: GainNode,
+    parameters: ReverbParameters,
+}
+
+impl GameReverb {
+    fn new(audio_context: &AudioContext, params: &ReverbParameters) -> GameResult<GameReverb> {
+        let input_gain = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create input gain for reverb"))?;
+        let convolver = audio_context
+            .create_convolver()
+            .map_err(GameError::js("Could not create convolver node"))?;
+        let output_gain = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create output gain for reverb"))?;
+
+        // Generate a simple impulse response (decaying noise)
+        let sample_rate = audio_context.sample_rate();
+        let length = (sample_rate * params.decay_time) as usize;
+        let mut impulse_data = vec![0.0f32; length];
+
+        // Parameters for impulse response generation
+        let pre_delay_samples = (sample_rate * 0.02) as usize; // 20ms pre-delay
+        let decay_exponent = 2.0; // Controls the steepness of the exponential decay
+
+        // Fill with decaying random noise
+        for i in 0..length {
+            let mut sample_value = 0.0f32;
+
+            if i >= pre_delay_samples {
+                // Apply exponential decay after pre-delay
+                let normalized_time = (i - pre_delay_samples) as f32 / (length - pre_delay_samples) as f32;
+                let decay = (1.0 - normalized_time).powf(decay_exponent);
+                sample_value = (random() * 2.0 - 1.0) * decay;
+            }
+            // Before pre_delay_samples, sample_value remains 0.0
+
+            impulse_data[i] = sample_value;
+        }
+
+        let impulse_buffer = audio_context
+            .create_buffer(1, length as u32, sample_rate)
+            .map_err(GameError::js("Could not create audio buffer for impulse"))?;
+
+        impulse_buffer
+            .copy_to_channel(&impulse_data, 0)
+            .map_err(GameError::js("Could not copy impulse data to buffer"))?;
+
+        convolver.set_buffer(Some(&impulse_buffer));
+
+        // Set wet/dry levels
+        input_gain.gain().set_value(params.dry_level); // Dry signal passes through input_gain
+        output_gain.gain().set_value(params.wet_level); // Wet signal comes from convolver
+
+        // Connect: input_gain (dry) -> destination
+        //          input_gain -> convolver -> output_gain (wet) -> destination
+        // The input_gain will be connected to the main chain, and the convolver's output
+        // will be mixed in parallel.
+
+        // For the AudioEffectNode trait, we need a single input and output.
+        // We'll use input_gain as the input and output_gain as the output,
+        // and handle the dry signal path externally or by mixing internally.
+        // For simplicity, let's make the convolver the main path and use input/output gains
+        // for wet/dry mix.
+
+        // Connect input_gain -> convolver -> output_gain
+        input_gain
+            .connect_with_audio_node(&convolver)
+            .map_err(GameError::js("Could not connect input gain to convolver"))?;
+        convolver
+            .connect_with_audio_node(&output_gain)
+            .map_err(GameError::js("Could not connect convolver to output gain"))?;
+
+        Ok(GameReverb {
+            input_gain,
+            convolver,
+            output_gain,
+            parameters: params.clone(),
+        })
+    }
+
+    fn get_input_node(&self) -> &GainNode {
+        &self.input_gain
+    }
+
+    fn get_output_node(&self) -> &GainNode {
+        &self.output_gain
+    }
+}
+
 // Trait to unify different effect types
 trait AudioEffectNode {
     fn get_input_node(&self) -> &dyn AsRef<WebAudioNode>;
@@ -534,6 +634,16 @@ impl AudioEffectNode for GameFilter {
 }
 
 impl AudioEffectNode for GameDistortion {
+    fn get_input_node(&self) -> &dyn AsRef<WebAudioNode> {
+        &self.input_gain
+    }
+
+    fn get_output_node(&self) -> &dyn AsRef<WebAudioNode> {
+        &self.output_gain
+    }
+}
+
+impl AudioEffectNode for GameReverb {
     fn get_input_node(&self) -> &dyn AsRef<WebAudioNode> {
         &self.input_gain
     }
