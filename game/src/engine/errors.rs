@@ -25,6 +25,10 @@ impl GameError {
             }
         }
     }
+
+    pub fn show(&self) -> String {
+        self.message.clone()
+    }
 }
 
 pub type GameResult<T> = Result<T, GameError>;

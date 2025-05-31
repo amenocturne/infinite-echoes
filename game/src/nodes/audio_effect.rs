@@ -1,9 +1,9 @@
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct AudioEffect {
     effect_type: AudioEffectType,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AudioEffectType {
     Filter,
     Distortion,

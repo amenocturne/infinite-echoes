@@ -1,7 +1,6 @@
 use macroquad::color::Color;
 use macroquad::color::GRAY;
 use macroquad::math::Vec2;
-use macroquad::shapes::draw_rectangle;
 
 use crate::engine::errors::GameResult;
 use crate::nodes::AudioNodeType;

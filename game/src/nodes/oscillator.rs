@@ -1,9 +1,9 @@
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Oscillator {
     pub wave_shape: WaveShape,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum WaveShape {
     Sine,
     Square,

@@ -1,11 +1,11 @@
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 use crate::core::GameTime;
 
 /// Defines number of ticks in a quarter note
 const PULSES_PER_QUARTER_NOTE: u32 = 480;
 
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct NoteGenerator {
     pub loop_length: MusicTime,
     pub notes: Vec<NoteEvent>,
@@ -43,7 +43,7 @@ impl From<NoteDuration> for MusicTime {
 /// Represents time in musical terms, independently of BPM
 ///
 /// Given the BPM, you can convert `MusicTime` to `GameTime`
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct MusicTime {
     ticks: u32,
 }
@@ -71,9 +71,19 @@ impl Add for MusicTime {
     }
 }
 
+impl Mul<u32> for MusicTime{
+    type Output = MusicTime;
+
+    fn mul(self, rhs: u32) -> Self::Output {
+        Self {
+            ticks: self.ticks * rhs,
+        }
+    }
+}
+
 // ---------------------------------- Note ------------------------------
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct NoteEvent {
     pub note: Note,
     pub start: MusicTime,
@@ -88,9 +98,16 @@ impl NoteEvent {
             duration,
         }
     }
+
+    pub fn shifted(&self, time: MusicTime) -> Self {
+        Self {
+            start: self.start + time,
+            ..*self
+        }
+    }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Note {
     pub octave: i32,
     pub note_name: NoteName,

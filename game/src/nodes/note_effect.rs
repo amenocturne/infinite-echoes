@@ -1,11 +1,11 @@
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct NoteEffect {
     effect_type: NoteEffectType,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum NoteEffectType {
-    Chord
+    Chord,
 }
 impl NoteEffect {
     pub fn new(effect_type: NoteEffectType) -> Self {

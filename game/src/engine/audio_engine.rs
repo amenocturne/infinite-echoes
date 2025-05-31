@@ -1,4 +1,6 @@
-use miniquad::info;
+use std::cell::Cell;
+use std::cell::RefCell;
+
 use web_sys::AudioContext;
 use web_sys::GainNode;
 use web_sys::OscillatorNode;
@@ -12,48 +14,83 @@ use crate::nodes::note_generator::MusicTime;
 use crate::nodes::note_generator::NoteEvent;
 use crate::nodes::oscillator::WaveShape;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum AudioState {
+    NotPlaying,
+    Playing,
+}
+
 pub struct AudioEngine {
     audio_context: AudioContext,
+    oscillators: Vec<RefCell<GameOscillator>>,
+    state: Cell<AudioState>,
 }
 impl AudioEngine {
     pub fn new() -> GameResult<AudioEngine> {
         let audio_context =
             AudioContext::new().map_err(GameError::js("Could not construct AudioContext"))?;
-        Ok(AudioEngine { audio_context })
+        Ok(AudioEngine {
+            audio_context,
+            oscillators: vec![],
+            state: Cell::new(AudioState::NotPlaying),
+        })
     }
 
-    pub fn interpret_graph(&self, audio_graph: &AudioGraph) -> GameResult<()> {
+    pub fn is_playing(&self) -> bool {
+        self.state.get() == AudioState::Playing
+    }
+
+    pub fn stop_all(&mut self) -> GameResult<()> {
+        self.state.set(AudioState::NotPlaying);
+        for osc in &self.oscillators {
+            osc.borrow_mut().stop_immediate()?;
+        }
+        self.oscillators = vec![];
+        Ok(())
+    }
+
+    pub fn interpret_graph(
+        &mut self,
+        bpm: u32,
+        times: u32,
+        audio_graph: &AudioGraph,
+    ) -> GameResult<()> {
+        self.state.set(AudioState::Playing);
         let note_generators = &audio_graph.note_generators();
         let oscillator = &audio_graph
             .oscillator()
-            .ok_or(GameError::msg("Invalid garph: no oscillator found"))?; // TODO:
-        let audio_context = &self.audio_context;
+            .ok_or(GameError::msg("Invalid garph: no oscillator found"))?;
 
-        let bpm = 120;
-        // let loop_length_secs = note_generator.loop_length.to_seconds(bpm); // TODO:
-
-        let now = audio_context.current_time();
+        let when = self.audio_context.current_time();
 
         let mut notes = vec![];
         let mut acc_loop_start: MusicTime = MusicTime::new(0);
         for ng in note_generators {
             for ne in &ng.notes {
-                let shifted_event = NoteEvent {
-                    start: ne.start + acc_loop_start,
-                    ..*ne
-                };
-                notes.push(shifted_event);
+                notes.push(ne.shifted(acc_loop_start));
             }
             acc_loop_start = acc_loop_start + ng.loop_length;
         }
 
-        for note_event in notes {
+        let mut notes_repeated: Vec<NoteEvent> = vec![];
+        for i in 0..times {
+            let shifted_notes: Vec<NoteEvent> = notes
+                .iter()
+                .map(|n| n.shifted(audio_graph.loop_length() * i))
+                .collect();
+            for sn in shifted_notes {
+                notes_repeated.push(sn);
+            }
+        }
+
+        for note_event in notes_repeated {
             let freq = note_event.note.to_frequancy();
-            let start = now + note_event.start.to_seconds(bpm);
+            let start = when + note_event.start.to_seconds(bpm);
             let duration = note_event.duration.to_seconds(bpm);
 
             let osc = GameOscillator::new(&self.audio_context, oscillator.wave_shape)?;
             osc.play(&self.audio_context, freq, start, duration)?;
+            self.oscillators.push(RefCell::new(osc));
         }
         Ok(())
     }
@@ -63,6 +100,7 @@ pub struct GameOscillator {
     osc: OscillatorNode,
     gain: GainNode,
     wave_shape: WaveShape,
+    is_stopped: bool,
 }
 
 impl GameOscillator {
@@ -77,6 +115,7 @@ impl GameOscillator {
             osc,
             gain,
             wave_shape,
+            is_stopped: false,
         })
     }
 
@@ -105,6 +144,25 @@ impl GameOscillator {
         self.osc
             .stop_with_when(start_time + duration as f64)
             .map_err(GameError::js("Couldn't schedule stop"))?;
+        Ok(())
+    }
+
+    fn stop_immediate(&mut self) -> GameResult<()> {
+        self.osc
+            .stop()
+            .map_err(GameError::js("Could not stop oscillator"))?;
+
+        self.is_stopped = true;
+
+        Ok(())
+    }
+
+    fn stop_at(&mut self, when: GameTime) -> GameResult<()> {
+        self.osc
+            .stop_with_when(when as f64)
+            .map_err(GameError::js("Could not schedule stop"))?;
+
+        self.is_stopped = true; // TODO: maybe should be also delayed
         Ok(())
     }
 }

@@ -24,6 +24,8 @@ fn handle_error(e: GameError) {
 async fn run() -> GameResult<()> {
     let game_config = GameConfig {
         card_size: vec2(0.075, 0.1),
+        bpm: 120,
+        look_ahead_secs: 0.2,
         initial_deck: vec![
             CardType::NoteGenerator,
             CardType::NoteGenerator,

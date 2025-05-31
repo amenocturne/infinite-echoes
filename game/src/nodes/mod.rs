@@ -17,7 +17,7 @@ pub mod note_effect;
 pub mod note_generator;
 pub mod oscillator;
 
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum AudioNode {
     NoteGenerator(NoteGenerator),
     NoteEffect(NoteEffect),
@@ -26,6 +26,13 @@ pub enum AudioNode {
 }
 
 impl AudioNode {
+    pub fn as_note_generator(&self) -> Option<&NoteGenerator> {
+        match self {
+            AudioNode::NoteGenerator(note_generator) => Some(note_generator),
+            _ => None,
+        }
+    }
+
     pub fn from_card(card: &CardType) -> Self {
         match card {
             CardType::NoteGenerator => Self::NoteGenerator(NoteGenerator::new(
@@ -33,15 +40,20 @@ impl AudioNode {
                 vec![
                     NoteEvent::new(note!("C3"), MusicTime::ZERO, NoteDuration::Quarter.into()),
                     NoteEvent::new(
-                        note!("D3"),
-                        NoteDuration::Quarter.into(),
-                        NoteDuration::Quarter.into(),
-                    ),
-                    NoteEvent::new(
-                        note!("E3"),
+                        note!("C3"),
                         NoteDuration::Half.into(),
                         NoteDuration::Quarter.into(),
                     ),
+                    // NoteEvent::new(
+                    //     note!("D3"),
+                    //     NoteDuration::Quarter.into(),
+                    //     NoteDuration::Quarter.into(),
+                    // ),
+                    // NoteEvent::new(
+                    //     note!("E3"),
+                    //     NoteDuration::Half.into(),
+                    //     NoteDuration::Quarter.into(),
+                    // ),
                 ],
             )),
             CardType::SineOscillator => Self::Oscillator(Oscillator::new(WaveShape::Sine)),

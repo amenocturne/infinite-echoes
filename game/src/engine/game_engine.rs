@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::time::Duration;
+
 use macroquad::color::BLACK;
 use macroquad::input::is_key_pressed;
 use macroquad::input::is_mouse_button_down;
@@ -9,7 +12,6 @@ use macroquad::math::Vec2;
 use macroquad::window::clear_background;
 use macroquad::window::screen_height;
 use macroquad::window::screen_width;
-use miniquad::info;
 use miniquad::KeyCode;
 use miniquad::MouseButton;
 
@@ -28,12 +30,13 @@ use super::{
 };
 
 pub struct GameEngine {
-    state: GameState,
+    state: RefCell<GameState>,
     render_ctx: RenderCtx,
+    config: GameConfig,
     // engines
-    audio_engine: AudioEngine,
+    audio_engine: RefCell<AudioEngine>,
     drag_manager: DragManager,
-    pub scheduler: Scheduler,
+    audio_scheduler: Scheduler,
     // TODO: Maybe put them into separate enum for different game states
     audio_graph_widget: AudioGraphWidget,
     cards_row_widget: CardsRowWidget,
@@ -41,26 +44,30 @@ pub struct GameEngine {
 }
 
 impl GameEngine {
-    pub fn new(audio_engine: AudioEngine, render_ctx: RenderCtx, game_config: GameConfig) -> Self {
-        let state = GameState::new(game_config.initial_deck);
+    pub fn new(audio_engine: AudioEngine, render_ctx: RenderCtx, config: GameConfig) -> Self {
+        let state = GameState::new(config.initial_deck.clone());
         let audio_graph_widget = AudioGraphWidget::new(
-            game_config.graph_widget.location,
-            game_config.graph_widget.size,
-            game_config.card_size,
+            config.graph_widget.location,
+            config.graph_widget.size,
+            config.card_size,
         );
         let cards_row_widget = CardsRowWidget::new(
-            game_config.cards_widget.location,
-            game_config.cards_widget.size,
-            game_config.card_size,
+            config.cards_widget.location,
+            config.cards_widget.size,
+            config.card_size,
             state.card_deck.clone(),
         );
-        let debug_hud = game_config.debug_hud.map(|h| DebugHud::new(h.buffer_size));
+        let debug_hud = config
+            .debug_hud
+            .clone()
+            .map(|ref h| DebugHud::new(h.buffer_size));
         Self {
-            state,
+            state: RefCell::new(state),
             render_ctx,
-            audio_engine,
+            config,
+            audio_engine: RefCell::new(audio_engine),
             drag_manager: DragManager::new(),
-            scheduler: Scheduler::new(),
+            audio_scheduler: Scheduler::new(),
             audio_graph_widget,
             cards_row_widget,
             debug_hud,
@@ -108,7 +115,6 @@ impl GameEngine {
         let mouse_pos: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
 
-        // Handle mouse input with DragManager - THIS IS THE KEY PART
         if is_mouse_button_pressed(MouseButton::Left) {
             self.drag_manager
                 .handle_mouse_press(mouse_pos, &mut buffers);
@@ -120,43 +126,68 @@ impl GameEngine {
 
         if is_mouse_button_released(MouseButton::Left) {
             self.drag_manager.handle_mouse_release(&mut buffers);
+            self.audio_scheduler.schedule(GameEvent::UpdateGraph, None)
         }
 
-        if is_key_pressed(KeyCode::Space) {
-            self.scheduler.schedule(GameEvent::InterpretGraph, None);
+        let is_playing = self.audio_engine.borrow().is_playing();
+        let is_different = self.state.borrow().current_graph != self.state.borrow().playing_graph;
+        let should_interpert = !is_playing || is_different;
+        if is_key_pressed(KeyCode::Space) && should_interpert {
+            self.audio_scheduler
+                .schedule(GameEvent::InterpretGraph, None);
+        }
+        if is_key_pressed(KeyCode::Space) && !should_interpert {
+            self.audio_scheduler
+                .schedule(GameEvent::StopAudioGraph, None);
         }
     }
 
-    pub fn interpret_graph(&self) -> GameResult<()> {
-        // Get cards from the audio graph widget
-        let card_types = self
-            .audio_graph_widget
-            .cards()
-            .iter()
-            .map(|card| card.borrow().card_type()) // Convert AudioNodeType to CardType
-            .collect();
-
-        if let Some(audio_graph) = AudioGraph::from_cards(card_types) {
-            self.audio_engine.interpret_graph(&audio_graph)?;
-            self.state.audio_graph.set(Some(audio_graph));
-        }
-
+    fn stop_audio_graph(&self) -> GameResult<()> {
+        self.audio_scheduler.clear(); // TODO: maybe should be removed
+        self.audio_engine.borrow_mut().stop_all()?;
         Ok(())
     }
 
     fn process_events(&mut self) -> GameResult<()> {
-        self.scheduler.process_events(&mut |event| {
-            if let Err(e) = self.process_event(event) {
-                // Log error but don't crash the game
-                println!("Error processing event: {:?}", e);
-            }
-        });
+        self.audio_scheduler
+            .process_events(&mut |event| self.process_event(event));
         Ok(())
     }
 
-    fn process_event(&self, event: GameEvent) -> GameResult<()> {
+    fn process_event(&self, event: GameEvent) -> GameResult<Vec<(GameEvent, Option<Duration>)>> {
         match event {
-            GameEvent::InterpretGraph => self.interpret_graph(),
+            GameEvent::InterpretGraph => {
+                let mut state = self.state.borrow_mut();
+                let maybe_graph = &state.current_graph;
+                if let Some(audio_graph) = maybe_graph {
+                    self.stop_audio_graph()?;
+                    self.audio_engine.borrow_mut().interpret_graph(
+                        self.config.bpm,
+                        100,
+                        &audio_graph,
+                    )?;
+                    state.playing_graph = Some(audio_graph.clone());
+                    Ok(vec![])
+                } else {
+                    Ok(vec![(GameEvent::StopAudioGraph, None)])
+                }
+            }
+            GameEvent::StopAudioGraph => {
+                self.stop_audio_graph()?;
+                Ok(vec![])
+            }
+            GameEvent::UpdateGraph => {
+                let card_types = self
+                    .audio_graph_widget
+                    .cards()
+                    .iter()
+                    .map(|card| card.borrow().card_type())
+                    .collect();
+                if let Some(audio_graph) = AudioGraph::from_cards(card_types) {
+                    self.state.borrow_mut().current_graph = Some(audio_graph.clone());
+                }
+                Ok(vec![])
+            }
         }
     }
 }

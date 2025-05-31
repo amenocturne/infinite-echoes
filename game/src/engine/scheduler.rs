@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell, RefMut};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::time::Duration;
@@ -8,29 +8,52 @@ use crate::core::GameTime;
 use macroquad::time::get_time;
 use miniquad::info;
 
+use super::errors::GameResult;
 use super::game_state::GameEvent;
 
 pub struct Scheduler {
     queue: RefCell<BinaryHeap<ScheduledEvent>>,
+    clear_on_next: Cell<bool>,
 }
 
 impl Scheduler {
     pub fn new() -> Self {
         Self {
             queue: RefCell::new(BinaryHeap::new()),
+            clear_on_next: Cell::new(false),
         }
     }
 
     pub fn schedule(&self, event: GameEvent, delay: Option<Duration>) {
+        self.schedule_with_queue_ref(event, delay, &mut self.queue.borrow_mut());
+    }
+
+    fn schedule_with_queue_ref(
+        &self,
+        event: GameEvent,
+        delay: Option<Duration>,
+        queue_ref: &mut RefMut<BinaryHeap<ScheduledEvent>>,
+    ) {
         let trigger_time = delay.map(|d| get_time() + d.as_secs_f64());
-        self.queue.borrow_mut().push(ScheduledEvent {
+        queue_ref.push(ScheduledEvent {
             trigger_time,
             event,
         })
     }
 
-    pub fn process_events(&self, handler: &mut dyn Fn(GameEvent)) {
+    pub fn clear(&self) {
+        self.clear_on_next.set(true);
+    }
+
+    pub fn process_events(
+        &self,
+        handler: &mut dyn Fn(GameEvent) -> GameResult<Vec<(GameEvent, Option<Duration>)>>,
+    ) {
         let mut queue = self.queue.borrow_mut(); // Get one mutable borrow
+        if self.clear_on_next.get() {
+            queue.clear();
+            self.clear_on_next.set(false);
+        }
 
         while let Some(event) = queue.peek() {
             let current_time = get_time();
@@ -41,15 +64,33 @@ impl Scheduler {
                     if t <= current_time {
                         // Since we already have the mutable borrow, we can pop directly
                         let popped_event = queue.pop().unwrap().event;
-                        handler(popped_event);
+                        match handler(popped_event) {
+                            Ok(events) => {
+                                for (event, delay) in events {
+                                    self.schedule_with_queue_ref(event, delay, &mut queue);
+                                }
+                            }
+                            Err(e) => {
+                                info!("Error occured: {}", e.show());
+                            }
+                        }
                     } else {
-                        break; // Event is in the future, stop processing
+                        break;
                     }
                 }
                 None => {
                     // Since we already have the mutable borrow, we can pop directly
                     let popped_event = queue.pop().unwrap().event;
-                    handler(popped_event);
+                    match handler(popped_event) {
+                        Ok(events) => {
+                            for (event, delay) in events {
+                                self.schedule_with_queue_ref(event, delay, &mut queue);
+                            }
+                        }
+                        Err(e) => {
+                            info!("Error occured: {}", e.show());
+                        }
+                    }
                 }
             }
         }

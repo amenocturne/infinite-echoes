@@ -1,14 +1,13 @@
 use std::cell::RefCell;
 
-use miniquad::info;
-
 use crate::render::widgets::card_widget::CardType;
 
 use super::audio_effect::AudioEffect;
-use super::note_generator::NoteGenerator;
+use super::note_generator::{MusicTime, NoteGenerator};
 use super::oscillator::Oscillator;
 use super::{AudioNode, AudioNodeType};
 
+#[derive(PartialEq, Eq, Clone)]
 pub struct AudioGraph {
     nodes: Vec<RefCell<AudioNode>>,
 }
@@ -33,6 +32,19 @@ impl AudioGraph {
         let nodes = vec![ngs, osc, aes].concat();
 
         AudioGraph { nodes }
+    }
+
+    // TODO: enhance computing it using note effects
+    pub fn loop_length(&self) -> MusicTime {
+        let mut len = MusicTime::ZERO;
+        for n in &self.nodes {
+            len = len
+                + n.borrow()
+                    .as_note_generator()
+                    .map(|ng| ng.loop_length)
+                    .unwrap_or(MusicTime::ZERO);
+        }
+        len
     }
 
     pub fn from_cards(cards: Vec<CardType>) -> Option<Self> {
