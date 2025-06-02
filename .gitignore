@@ -2,3 +2,13 @@ target
 dist
 deploy
 .aider*
+build
+
+# Contracts
+
+contracts/node_modules
+contracts/temp
+contracts/build
+contracts/dist
+**/.DS_Store
+contracts/package.ts
