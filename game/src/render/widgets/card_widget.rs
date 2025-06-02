@@ -4,6 +4,7 @@ use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_effect::FilterType;
+use crate::nodes::note_effect::ChangeLenType;
 use crate::nodes::note_effect::ScaleType;
 use crate::nodes::note_generator::NoteName;
 use crate::nodes::oscillator::WaveShape;
@@ -34,6 +35,7 @@ pub enum CardType {
     // Note Effects
     NoteEffect,
     ScaleEffect(NoteName, ScaleType),
+    ChangeLen(ChangeLenType),
     // Oscillators
     Oscillator(WaveShape),
     // Audio Effects
@@ -49,6 +51,7 @@ impl CardType {
             // Note Effects
             CardType::NoteEffect => Shape::Blank,
             CardType::ScaleEffect(_, _) => Shape::Blank,
+            CardType::ChangeLen(_) => Shape::Blank,
             // Oscillators
             CardType::Oscillator(WaveShape::Sine) => Shape::SineWave,
             CardType::Oscillator(WaveShape::Square) => Shape::SquareWave,
@@ -64,6 +67,7 @@ impl CardType {
             // Note Effects
             CardType::NoteEffect => AudioNodeType::NoteEffect,
             CardType::ScaleEffect(_, _) => AudioNodeType::NoteEffect,
+            CardType::ChangeLen(_) => AudioNodeType::NoteEffect,
             // Oscillators
             CardType::Oscillator(_) => AudioNodeType::Oscillator,
             // Audio Effects
@@ -72,7 +76,7 @@ impl CardType {
             CardType::Reverb => AudioNodeType::AudioEffect,
         }
     }
-    
+
     pub fn get_note_name(&self) -> Option<NoteName> {
         match self {
             CardType::NoteGenerator(note_name) => Some(*note_name),

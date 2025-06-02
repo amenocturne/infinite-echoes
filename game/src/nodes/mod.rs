@@ -1,5 +1,7 @@
 use audio_effect::AudioEffect;
-use note_effect::{NoteEffect, NoteEffectType, Scale};
+use note_effect::Scale;
+use note_effect::NoteEffectType;
+use note_effect::NoteEffect;
 use note_generator::NoteGenerator;
 use oscillator::Oscillator;
 
@@ -55,6 +57,7 @@ impl AudioNode {
             CardType::ScaleEffect(root, scale_type) => Self::NoteEffect(
                 NoteEffect::new(NoteEffectType::Scale(Scale::new(*root, *scale_type)))
             ),
+            CardType::ChangeLen(amount) => Self::NoteEffect(NoteEffect::new(NoteEffectType::ChangeLen(*amount))),
         }
     }
 

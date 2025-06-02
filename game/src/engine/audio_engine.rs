@@ -137,7 +137,7 @@ impl AudioEngine {
         let generator = audio_graph.process_note_generators();
 
         // Calculate total loop length in seconds
-        let loop_length_seconds = audio_graph.loop_length().to_seconds(bpm);
+        let loop_length_seconds = generator.loop_length.to_seconds(bpm);
 
         // Calculate how many loops to schedule based on max_schedule_ahead
         let loops_to_schedule =
@@ -148,7 +148,7 @@ impl AudioEngine {
         for i in 0..loops_to_schedule {
             let shifted_notes: Vec<_> = generator.notes
                 .iter()
-                .map(|n: &_| n.shifted(audio_graph.loop_length() * i as u32))
+                .map(|n: &_| n.shifted(generator.loop_length * i as u32))
                 .collect();
             for sn in shifted_notes {
                 notes_repeated.push(sn);

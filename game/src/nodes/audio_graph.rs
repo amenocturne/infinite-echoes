@@ -4,7 +4,6 @@ use crate::render::widgets::card_widget::CardType;
 
 use super::audio_effect::AudioEffect;
 use super::note_effect::NoteEffect;
-use super::note_generator::MusicTime;
 use super::note_generator::NoteGenerator;
 use super::oscillator::Oscillator;
 use super::{AudioNode, AudioNodeType};
@@ -51,6 +50,7 @@ impl AudioGraph {
                         current_generators = Vec::new();
                         current_effects = Vec::new();
                     }
+                    consuming_effects = false;
                 }
             }
         }
@@ -75,52 +75,6 @@ impl AudioGraph {
         }
 
         NoteGenerator::combine(result.as_slice())
-    }
-
-    pub fn generator_effect_pairs(&self) -> Vec<(Vec<NoteGenerator>, Vec<NoteEffect>)> {
-        let mut result = Vec::new();
-        let mut current_generators = Vec::new();
-        let mut current_effects = Vec::new();
-
-        for node_ref in &self.nodes {
-            let node = node_ref.borrow();
-
-            match &*node {
-                AudioNode::NoteGenerator(ng) => {
-                    // If we already have generators and effects, add them to result
-                    if !current_generators.is_empty() && !current_effects.is_empty() {
-                        result.push((current_generators, current_effects));
-                        current_generators = Vec::new();
-                        current_effects = Vec::new();
-                    }
-
-                    // Add this generator to the current batch
-                    current_generators.push(ng.clone());
-                }
-                AudioNode::NoteEffect(effect) => {
-                    // Add this effect to the current batch
-                    current_effects.push(effect.clone());
-                }
-                AudioNode::Oscillator(_) | AudioNode::AudioEffect(_) => {
-                    // We've reached a processing boundary
-                    // If we have generators and effects, add them to result
-                    if !current_generators.is_empty() && !current_effects.is_empty() {
-                        result.push((current_generators, current_effects));
-                    }
-
-                    // Reset for next section
-                    current_generators = Vec::new();
-                    current_effects = Vec::new();
-                }
-            }
-        }
-
-        // Add any remaining generators and effects
-        if !current_generators.is_empty() && !current_effects.is_empty() {
-            result.push((current_generators, current_effects));
-        }
-
-        result
     }
 
     pub fn note_effects(&self) -> Vec<NoteEffect> {
@@ -158,18 +112,6 @@ impl AudioGraph {
         AudioGraph { nodes }
     }
 
-    // TODO: enhance computing it using note effects
-    pub fn loop_length(&self) -> MusicTime {
-        let mut len = MusicTime::ZERO;
-        for n in &self.nodes {
-            len = len
-                + n.borrow()
-                    .as_note_generator()
-                    .map(|ng| ng.loop_length)
-                    .unwrap_or(MusicTime::ZERO);
-        }
-        len
-    }
 
     pub fn from_cards(cards: Vec<CardType>) -> Option<Self> {
         if Self::is_valid(&cards) {

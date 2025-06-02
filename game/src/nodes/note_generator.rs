@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Div, Mul};
 
 use crate::core::GameTime;
 
@@ -15,37 +15,36 @@ impl NoteGenerator {
     pub fn new(loop_length: MusicTime, notes: Vec<NoteEvent>) -> NoteGenerator {
         NoteGenerator { loop_length, notes }
     }
-    
+
     pub fn from_note_name(note_name: NoteName) -> NoteGenerator {
         // Create a single note in the third octave with 1/4 length
         let note = Note::new(3, note_name);
         let note_event = NoteEvent::new(note, MusicTime::ZERO, NoteDuration::Quarter.into());
-        
+
         // Create a note generator with a loop length of one quarter note
         NoteGenerator::new(NoteDuration::Quarter.into(), vec![note_event])
     }
-    
+
     /// Combine multiple note generators into a single one
     pub fn combine(generators: &[NoteGenerator]) -> NoteGenerator {
         if generators.is_empty() {
             return NoteGenerator::new(MusicTime::ZERO, vec![]);
         }
-        
+
         let mut combined_notes = Vec::new();
         let mut acc_loop_start = MusicTime::ZERO;
         let mut total_loop_length = MusicTime::ZERO;
-        
+
         for generator in generators {
-            // Add notes from this generator with the accumulated start time
             for note in &generator.notes {
                 combined_notes.push(note.shifted(acc_loop_start));
             }
-            
+
             // Update the accumulated start time and total loop length
             acc_loop_start = acc_loop_start + generator.loop_length;
             total_loop_length = total_loop_length + generator.loop_length;
         }
-        
+
         NoteGenerator::new(total_loop_length, combined_notes)
     }
 }
@@ -104,12 +103,22 @@ impl Add for MusicTime {
     }
 }
 
-impl Mul<u32> for MusicTime{
+impl Mul<u32> for MusicTime {
     type Output = MusicTime;
 
     fn mul(self, rhs: u32) -> Self::Output {
         Self {
             ticks: self.ticks * rhs,
+        }
+    }
+}
+
+impl Div<u32> for MusicTime {
+    type Output = MusicTime;
+
+    fn div(self, rhs: u32) -> Self::Output {
+        Self {
+            ticks: self.ticks / rhs,
         }
     }
 }
