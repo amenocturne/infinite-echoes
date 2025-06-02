@@ -19,10 +19,14 @@ jobs:
           override: true
 
       - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli
 
       - name: Install just
-        run: cargo install just
+        uses: extractions/setup-just@v1
+        with:
+          just-version: '1.13.0'
 
       - name: Build and pack
         run: just pack
