@@ -6,10 +6,10 @@ use note_effect::NoteEffect;
 use note_effect::NoteEffectType;
 use note_generator::MusicTime;
 use note_generator::{NoteDuration, NoteEvent, NoteGenerator};
-use oscillator::{Oscillator, WaveShape};
+use oscillator::Oscillator;
 
-use crate::render::widgets::card_widget::CardType;
-use crate::nodes::audio_effect::DistortionCurve; // Import DistortionCurve
+use crate::nodes::audio_effect::DistortionCurve;
+use crate::render::widgets::card_widget::CardType; // Import DistortionCurve
 
 pub mod audio_effect;
 pub mod audio_graph;
@@ -46,27 +46,13 @@ impl AudioNode {
                     ),
                 ],
             )),
-            CardType::SineOscillator => Self::Oscillator(Oscillator::new(WaveShape::Sine)),
-            CardType::SquareOscillator => Self::Oscillator(Oscillator::new(WaveShape::Square)),
-            CardType::LowPassFilter => Self::AudioEffect(AudioEffect::new_filter(
-                audio_effect::FilterType::LowPass,
-                1000.0,
-                1.0,
-                0.0,
-            )),
-            CardType::HighPassFilter => Self::AudioEffect(AudioEffect::new_filter(
-                audio_effect::FilterType::HighPass,
-                1000.0,
-                1.0,
-                0.0,
-            )),
-            CardType::BandPassFilter => Self::AudioEffect(AudioEffect::new_filter(
-                audio_effect::FilterType::BandPass,
-                1000.0,
-                1.0,
-                0.0,
-            )),
-            CardType::Distortion => Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip)),
+            CardType::Oscillator(wave) => Self::Oscillator(Oscillator::new(*wave)),
+            CardType::Filter(filter_type) => {
+                Self::AudioEffect(AudioEffect::new_filter(*filter_type, 1000.0, 1.0, 0.0)) // TODO: add parameters to cards on frequency and q
+            }
+            CardType::Distortion => {
+                Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip))
+            }
             CardType::Reverb => Self::AudioEffect(AudioEffect::new_reverb(1.0, 0.5, 1.0)),
             CardType::NoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Chord)),
         }

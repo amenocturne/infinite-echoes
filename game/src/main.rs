@@ -13,6 +13,7 @@ use engine::game_config::DebugHudConfig;
 use engine::game_config::GameConfig;
 use engine::game_config::GraphWidgetConfig;
 use engine::game_engine::GameEngine;
+use nodes::oscillator::WaveShape;
 use render::widgets::card_widget::CardType;
 use render::RenderCtx;
 
@@ -30,8 +31,8 @@ async fn run() -> GameResult<()> {
         initial_deck: vec![
             CardType::NoteGenerator,
             CardType::NoteGenerator,
-            CardType::SineOscillator,
-            CardType::SquareOscillator,
+            CardType::Oscillator(WaveShape::Sine),
+            CardType::Oscillator(WaveShape::Square),
             // CardType::Distortion,
             CardType::Reverb,
         ],

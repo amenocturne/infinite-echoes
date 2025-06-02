@@ -5,7 +5,7 @@ use web_sys::BiquadFilterType;
 pub enum AudioEffect {
     Filter(FilterParameters),
     Distortion(DistortionParameters),
-    Reverb(ReverbParameters)
+    Reverb(ReverbParameters),
 }
 
 #[derive(Clone, PartialEq)]
@@ -29,7 +29,7 @@ pub struct ReverbParameters {
     pub dry_level: f32,  // Amount of original signal
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FilterType {
     LowPass,
     HighPass,

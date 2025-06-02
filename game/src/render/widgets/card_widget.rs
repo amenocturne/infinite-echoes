@@ -3,6 +3,8 @@ use macroquad::color::GRAY;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::nodes::audio_effect::FilterType;
+use crate::nodes::oscillator::WaveShape;
 use crate::nodes::AudioNodeType;
 use crate::render::hover::Hover;
 use crate::render::rectangle_boundary::RectangleBoundary;
@@ -30,12 +32,9 @@ pub enum CardType {
     // Note Effects
     NoteEffect,
     // Oscillators
-    SineOscillator,
-    SquareOscillator,
+    Oscillator(WaveShape),
     // Audio Effects
-    LowPassFilter,
-    HighPassFilter,
-    BandPassFilter,
+    Filter(FilterType),
     Distortion,
     Reverb,
 }
@@ -47,12 +46,10 @@ impl CardType {
             // Note Effects
             CardType::NoteEffect => Shape::Blank,
             // Oscillators
-            CardType::SineOscillator => Shape::SineWave,
-            CardType::SquareOscillator => Shape::SquareWave,
+            CardType::Oscillator(WaveShape::Sine) => Shape::SineWave,
+            CardType::Oscillator(WaveShape::Square) => Shape::SquareWave,
             // Audio Effects
-            CardType::LowPassFilter => Shape::Blank,
-            CardType::HighPassFilter => Shape::Blank,
-            CardType::BandPassFilter => Shape::Blank,
+            CardType::Filter(_) => Shape::Blank,
             CardType::Distortion => Shape::Blank,
             CardType::Reverb => Shape::Blank,
         }
@@ -63,12 +60,9 @@ impl CardType {
             // Note Effects
             CardType::NoteEffect => AudioNodeType::NoteEffect,
             // Oscillators
-            CardType::SineOscillator => AudioNodeType::Oscillator,
-            CardType::SquareOscillator => AudioNodeType::Oscillator,
+            CardType::Oscillator(_) => AudioNodeType::Oscillator,
             // Audio Effects
-            CardType::LowPassFilter => AudioNodeType::AudioEffect,
-            CardType::HighPassFilter => AudioNodeType::AudioEffect,
-            CardType::BandPassFilter => AudioNodeType::AudioEffect,
+            CardType::Filter(_) => AudioNodeType::AudioEffect,
             CardType::Distortion => AudioNodeType::AudioEffect,
             CardType::Reverb => AudioNodeType::AudioEffect,
         }
