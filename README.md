@@ -1,9 +1,6 @@
 <div align="center">
   <img src="resources/logo.png" alt="Infinite Echoes Logo" width="200">
-  <h1>Infinite Echoes</h1>
 </div>
-
-## About
 
 Infinite Echoes is an interactive audio creation game that allows users to
 create, save, and share unique audio compositions as NFTs on the TON blockchain.
