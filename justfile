@@ -4,6 +4,11 @@ game_js := dist_dir + "/game.js"
 deploy_dir := "deploy"
 target_dir := "target"
 
+# Contracts
+contracts_dir := "contracts"
+contracts_build_dir := contracts_dir + "/build"
+contracts_modules_dir := contracts_dir + "/node_modules"
+
 build:
   cargo build --package game --release --target wasm32-unknown-unknown
   wasm-bindgen {{compiled_wasm}} --out-dir dist --target web
@@ -38,3 +43,14 @@ clean:
   rm -rf {{dist_dir}}
   rm -rf {{deploy_dir}}
   rm -rf {{target_dir}}
+  rm -rf {{contracts_build_dir}}
+  rm -rf {{contracts_modules_dir}}
+
+test-contracts: build-contracts
+  cd {{contracts_dir}}; npx blueprint test
+
+build-contracts: install-contract-dependencies
+  cd {{contracts_dir}}; npx blueprint build --all
+
+install-contract-dependencies:
+  cd {{contracts_dir}}; npm install
