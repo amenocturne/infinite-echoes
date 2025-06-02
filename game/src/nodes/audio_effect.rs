@@ -33,12 +33,12 @@ pub struct ReverbParameters {
 pub enum FilterType {
     LowPass,
     HighPass,
-    BandPass,
-    LowShelf,
-    HighShelf,
-    Peaking,
+    // BandPass,
+    // LowShelf,
+    // HighShelf,
+    // Peaking,
     Notch,
-    AllPass,
+    // AllPass,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -52,12 +52,12 @@ impl FilterType {
         match self {
             FilterType::LowPass => BiquadFilterType::Lowpass,
             FilterType::HighPass => BiquadFilterType::Highpass,
-            FilterType::BandPass => BiquadFilterType::Bandpass,
-            FilterType::LowShelf => BiquadFilterType::Lowshelf,
-            FilterType::HighShelf => BiquadFilterType::Highshelf,
-            FilterType::Peaking => BiquadFilterType::Peaking,
+            // FilterType::BandPass => BiquadFilterType::Bandpass,
+            // FilterType::LowShelf => BiquadFilterType::Lowshelf,
+            // FilterType::HighShelf => BiquadFilterType::Highshelf,
+            // FilterType::Peaking => BiquadFilterType::Peaking,
             FilterType::Notch => BiquadFilterType::Notch,
-            FilterType::AllPass => BiquadFilterType::Allpass,
+            // FilterType::AllPass => BiquadFilterType::Allpass,
         }
     }
 }

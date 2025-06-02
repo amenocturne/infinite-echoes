@@ -1,11 +1,11 @@
+pub mod drag_manager;
+pub mod draggable_card_buffer;
 pub mod hover;
 pub mod rectangle;
+pub mod rectangle_boundary;
 pub mod shapes;
 pub mod texture;
 pub mod widgets;
-pub mod rectangle_boundary;
-pub mod draggable_card_buffer;
-pub mod drag_manager;
 
 use std::collections::HashMap;
 
@@ -35,9 +35,19 @@ impl RenderCtx {
 
     async fn load_assets() -> GameResult<Assets> {
         let files = [
-            (TextureAsset::Piano, "resources/piano.png"),
-            (TextureAsset::SineWave, "resources/sine.png"),
-            (TextureAsset::SquareWave, "resources/square.png"),
+            (TextureAsset::DISTORTION, "resources/distortion.png"),
+            (TextureAsset::FASTER, "resources/faster.png"),
+            (TextureAsset::HIGHPASS, "resources/highpass.png"),
+            (TextureAsset::LOGO, "resources/logo.png"),
+            (TextureAsset::LOWPASS, "resources/lowpass.png"),
+            (TextureAsset::NOTCH, "resources/notch.png"),
+            (TextureAsset::NOTE, "resources/note.png"),
+            (TextureAsset::PIANO, "resources/piano.png"),
+            (TextureAsset::SINE, "resources/sine.png"),
+            (TextureAsset::SLOWER, "resources/slower.png"),
+            (TextureAsset::SQUARE, "resources/square.png"),
+            (TextureAsset::REVERB, "resources/reverb.png"),
+            (TextureAsset::CHORD, "resources/chord.png"),
         ];
 
         let mut assets = HashMap::new();

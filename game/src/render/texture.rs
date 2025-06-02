@@ -8,9 +8,19 @@ use super::RenderCtx;
 
 #[derive(Hash, PartialEq, Eq)]
 pub enum TextureAsset {
-    Piano,
-    SineWave,
-    SquareWave,
+    DISTORTION,
+    FASTER,
+    HIGHPASS,
+    LOGO,
+    LOWPASS,
+    NOTCH,
+    NOTE,
+    PIANO,
+    SINE,
+    SLOWER,
+    SQUARE,
+    REVERB,
+    CHORD,
 }
 
 pub struct Texture {

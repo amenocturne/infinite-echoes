@@ -33,7 +33,6 @@ pub struct Card {
 pub enum CardType {
     NoteGenerator(NoteName),
     // Note Effects
-    NoteEffect,
     ScaleEffect(NoteName, ScaleType),
     ChangeLen(ChangeLenType),
     // Oscillators
@@ -47,25 +46,26 @@ pub enum CardType {
 impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
-            CardType::NoteGenerator(_) => Shape::Piano,
+            CardType::NoteGenerator(_) => Shape::NOTE,
             // Note Effects
-            CardType::NoteEffect => Shape::Blank,
-            CardType::ScaleEffect(_, _) => Shape::Blank,
-            CardType::ChangeLen(_) => Shape::Blank,
+            CardType::ScaleEffect(_, _) => Shape::CHORD, // TODO:
+            CardType::ChangeLen(ChangeLenType::Half) => Shape::FASTER,
+            CardType::ChangeLen(ChangeLenType::Double) => Shape::SLOWER,
             // Oscillators
-            CardType::Oscillator(WaveShape::Sine) => Shape::SineWave,
-            CardType::Oscillator(WaveShape::Square) => Shape::SquareWave,
+            CardType::Oscillator(WaveShape::Sine) => Shape::SINE,
+            CardType::Oscillator(WaveShape::Square) => Shape::SQUARE,
             // Audio Effects
-            CardType::Filter(_) => Shape::Blank,
-            CardType::Distortion => Shape::Blank,
-            CardType::Reverb => Shape::Blank,
+            CardType::Filter(FilterType::Notch) => Shape::NOTCH,
+            CardType::Filter(FilterType::LowPass) => Shape::LOWPASS,
+            CardType::Filter(FilterType::HighPass) => Shape::HIGHPASS,
+            CardType::Distortion => Shape::DISTORTION,
+            CardType::Reverb => Shape::REVERB,
         }
     }
     pub fn as_type(&self) -> AudioNodeType {
         match self {
             CardType::NoteGenerator(_) => AudioNodeType::NoteGenerator,
             // Note Effects
-            CardType::NoteEffect => AudioNodeType::NoteEffect,
             CardType::ScaleEffect(_, _) => AudioNodeType::NoteEffect,
             CardType::ChangeLen(_) => AudioNodeType::NoteEffect,
             // Oscillators

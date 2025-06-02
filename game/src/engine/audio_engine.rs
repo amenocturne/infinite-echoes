@@ -8,7 +8,6 @@ use crate::nodes::audio_effect::AudioEffect;
 use crate::nodes::audio_effect::DistortionCurve;
 use crate::nodes::audio_effect::DistortionParameters;
 use crate::nodes::audio_effect::FilterParameters;
-use crate::nodes::audio_effect::FilterType;
 use crate::nodes::audio_effect::ReverbParameters;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::nodes::oscillator::WaveShape;
@@ -383,12 +382,12 @@ impl GameFilter {
         filter.q().set_value(params.q);
 
         // Set gain for filters that support it
-        if matches!(
-            params.filter_type,
-            FilterType::Peaking | FilterType::LowShelf | FilterType::HighShelf
-        ) {
-            filter.gain().set_value(params.gain);
-        }
+        // if matches!(
+        //     params.filter_type,
+        //     FilterType::Peaking | FilterType::LowShelf | FilterType::HighShelf
+        // ) {
+        //     filter.gain().set_value(params.gain);
+        // }
 
         Ok(GameFilter {
             filter,
