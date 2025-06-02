@@ -25,6 +25,7 @@ use crate::render::{drag_manager::DragManager, draggable_card_buffer::DraggableC
 
 use super::errors::GameResult;
 use super::game_state::GameEvent;
+use super::ton_wallet::TonWallet;
 use super::{
     audio_engine::AudioEngine, game_config::GameConfig, game_state::GameState, scheduler::Scheduler,
 };
@@ -41,6 +42,8 @@ pub struct GameEngine {
     audio_graph_widget: AudioGraphWidget,
     cards_row_widget: CardsRowWidget,
     debug_hud: Option<DebugHud>,
+    // TON wallet integration
+    ton_wallet: RefCell<TonWallet>,
 }
 
 impl GameEngine {
@@ -71,6 +74,7 @@ impl GameEngine {
             audio_graph_widget,
             cards_row_widget,
             debug_hud,
+            ton_wallet: RefCell::new(TonWallet::new()),
         }
     }
 
@@ -106,6 +110,9 @@ impl GameEngine {
         let buffer_refs: Vec<&dyn DraggableCardBuffer> =
             vec![&self.cards_row_widget, &self.audio_graph_widget];
         self.drag_manager.snap(&buffer_refs);
+        
+        // Update TON wallet status
+        self.ton_wallet.borrow_mut().update();
     }
 
     fn handle_input(&mut self) {
