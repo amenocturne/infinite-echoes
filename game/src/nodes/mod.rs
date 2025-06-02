@@ -1,11 +1,7 @@
-use crate::nodes::note_generator::Note;
-use crate::nodes::note_generator::NoteName;
 use audio_effect::AudioEffect;
-use macros::note;
 use note_effect::NoteEffect;
 use note_effect::NoteEffectType;
-use note_generator::MusicTime;
-use note_generator::{NoteDuration, NoteEvent, NoteGenerator};
+use note_generator::NoteGenerator;
 use oscillator::Oscillator;
 
 use crate::nodes::audio_effect::DistortionCurve;
@@ -35,20 +31,13 @@ impl AudioNode {
 
     pub fn from_card(card: &CardType) -> Self {
         match card {
-            CardType::NoteGenerator => Self::NoteGenerator(NoteGenerator::new(
-                NoteDuration::Whole.into(),
-                vec![
-                    NoteEvent::new(note!("C3"), MusicTime::ZERO, NoteDuration::Quarter.into()),
-                    NoteEvent::new(
-                        note!("C3"),
-                        NoteDuration::Half.into(),
-                        NoteDuration::Quarter.into(),
-                    ),
-                ],
-            )),
+            CardType::NoteGenerator(note_name) => {
+                Self::NoteGenerator(NoteGenerator::from_note_name(*note_name))
+            }
             CardType::Oscillator(wave) => Self::Oscillator(Oscillator::new(*wave)),
             CardType::Filter(filter_type) => {
-                Self::AudioEffect(AudioEffect::new_filter(*filter_type, 1000.0, 1.0, 0.0)) // TODO: add parameters to cards on frequency and q
+                Self::AudioEffect(AudioEffect::new_filter(*filter_type, 1000.0, 1.0, 0.0))
+                // TODO: add parameters to cards on frequency and q
             }
             CardType::Distortion => {
                 Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip))

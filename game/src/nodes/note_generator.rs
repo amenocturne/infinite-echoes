@@ -15,6 +15,15 @@ impl NoteGenerator {
     pub fn new(loop_length: MusicTime, notes: Vec<NoteEvent>) -> NoteGenerator {
         NoteGenerator { loop_length, notes }
     }
+    
+    pub fn from_note_name(note_name: NoteName) -> NoteGenerator {
+        // Create a single note in the third octave with 1/4 length
+        let note = Note::new(3, note_name);
+        let note_event = NoteEvent::new(note, MusicTime::ZERO, NoteDuration::Quarter.into());
+        
+        // Create a note generator with a loop length of one quarter note
+        NoteGenerator::new(NoteDuration::Quarter.into(), vec![note_event])
+    }
 }
 
 /// Enum for ease of use of music durations
@@ -146,7 +155,7 @@ impl Note {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NoteName {
     C,
     CSharp,

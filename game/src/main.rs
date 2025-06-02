@@ -13,6 +13,7 @@ use engine::game_config::DebugHudConfig;
 use engine::game_config::GameConfig;
 use engine::game_config::GraphWidgetConfig;
 use engine::game_engine::GameEngine;
+use nodes::note_generator::NoteName;
 use nodes::oscillator::WaveShape;
 use render::widgets::card_widget::CardType;
 use render::RenderCtx;
@@ -29,8 +30,8 @@ async fn run() -> GameResult<()> {
         bpm: 120,
         look_ahead_secs: 0.2,
         initial_deck: vec![
-            CardType::NoteGenerator,
-            CardType::NoteGenerator,
+            CardType::NoteGenerator(NoteName::C),
+            CardType::NoteGenerator(NoteName::G),
             CardType::Oscillator(WaveShape::Sine),
             CardType::Oscillator(WaveShape::Square),
             // CardType::Distortion,
