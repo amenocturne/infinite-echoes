@@ -3,16 +3,140 @@ use std::cell::RefCell;
 use crate::render::widgets::card_widget::CardType;
 
 use super::audio_effect::AudioEffect;
-use super::note_generator::{MusicTime, NoteGenerator};
+use super::note_effect::NoteEffect;
+use super::note_generator::MusicTime;
+use super::note_generator::NoteGenerator;
 use super::oscillator::Oscillator;
 use super::{AudioNode, AudioNodeType};
 
-#[derive(PartialEq,Clone)]
+#[derive(PartialEq, Clone)]
 pub struct AudioGraph {
     nodes: Vec<RefCell<AudioNode>>,
 }
 
 impl AudioGraph {
+    /// Process the audio graph and return a list of processed note generators
+    /// Groups note generators into blocks, applies effects to the combined group,
+    /// and returns the processed blocks in sequence
+    pub fn process_note_generators(&self) -> NoteGenerator {
+        let mut blocks: Vec<(Vec<NoteGenerator>, Vec<NoteEffect>)> = Vec::new();
+        let mut current_generators: Vec<NoteGenerator> = Vec::new();
+        let mut current_effects: Vec<NoteEffect> = Vec::new();
+        let mut consuming_effects = false;
+
+        for node_ref in &self.nodes {
+            match &*node_ref.borrow() {
+                AudioNode::NoteGenerator(ng) => {
+                    if !consuming_effects {
+                        // Add this generator to the current block
+                        current_generators.push(ng.clone());
+                    } else {
+                        consuming_effects = false;
+                        blocks.push((current_generators, current_effects));
+                        current_generators = Vec::new();
+                        current_generators.push(ng.clone());
+                        current_effects = Vec::new();
+                    }
+                }
+                AudioNode::NoteEffect(effect) => {
+                    // Add this effect to the current block
+                    consuming_effects = true;
+                    current_effects.push(effect.clone());
+                }
+                AudioNode::Oscillator(_) | AudioNode::AudioEffect(_) => {
+                    // We've reached a processing boundary
+                    if !current_generators.is_empty() {
+                        // Save the current block
+                        blocks.push((current_generators, current_effects));
+                        current_generators = Vec::new();
+                        current_effects = Vec::new();
+                    }
+                }
+            }
+        }
+
+        // Add any remaining block
+        if !current_generators.is_empty() {
+            blocks.push((current_generators, current_effects));
+        }
+
+        let mut result: Vec<NoteGenerator> = Vec::new();
+        // Second pass: process each block
+        for (generators, effects) in blocks {
+            if generators.is_empty() {
+                continue;
+            }
+            let combined_generator = NoteGenerator::combine(&generators);
+            let mut processed_generator = combined_generator;
+            for effect in &effects {
+                processed_generator = effect.apply(processed_generator);
+            }
+            result.push(processed_generator);
+        }
+
+        NoteGenerator::combine(result.as_slice())
+    }
+
+    pub fn generator_effect_pairs(&self) -> Vec<(Vec<NoteGenerator>, Vec<NoteEffect>)> {
+        let mut result = Vec::new();
+        let mut current_generators = Vec::new();
+        let mut current_effects = Vec::new();
+
+        for node_ref in &self.nodes {
+            let node = node_ref.borrow();
+
+            match &*node {
+                AudioNode::NoteGenerator(ng) => {
+                    // If we already have generators and effects, add them to result
+                    if !current_generators.is_empty() && !current_effects.is_empty() {
+                        result.push((current_generators, current_effects));
+                        current_generators = Vec::new();
+                        current_effects = Vec::new();
+                    }
+
+                    // Add this generator to the current batch
+                    current_generators.push(ng.clone());
+                }
+                AudioNode::NoteEffect(effect) => {
+                    // Add this effect to the current batch
+                    current_effects.push(effect.clone());
+                }
+                AudioNode::Oscillator(_) | AudioNode::AudioEffect(_) => {
+                    // We've reached a processing boundary
+                    // If we have generators and effects, add them to result
+                    if !current_generators.is_empty() && !current_effects.is_empty() {
+                        result.push((current_generators, current_effects));
+                    }
+
+                    // Reset for next section
+                    current_generators = Vec::new();
+                    current_effects = Vec::new();
+                }
+            }
+        }
+
+        // Add any remaining generators and effects
+        if !current_generators.is_empty() && !current_effects.is_empty() {
+            result.push((current_generators, current_effects));
+        }
+
+        result
+    }
+
+    pub fn note_effects(&self) -> Vec<NoteEffect> {
+        self.nodes
+            .iter()
+            .filter_map(|node| {
+                let borrowed = node.borrow();
+                if let AudioNode::NoteEffect(ref effect) = *borrowed {
+                    Some(effect.clone())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     pub fn new(
         note_generators: Vec<NoteGenerator>,
         oscillator: Oscillator,

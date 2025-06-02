@@ -11,7 +11,6 @@ use crate::nodes::audio_effect::FilterParameters;
 use crate::nodes::audio_effect::FilterType;
 use crate::nodes::audio_effect::ReverbParameters;
 use crate::nodes::audio_graph::AudioGraph;
-use crate::nodes::note_generator::MusicTime;
 use crate::nodes::oscillator::WaveShape;
 use web_sys::js_sys::Float32Array;
 use web_sys::AudioContext;
@@ -73,7 +72,6 @@ impl AudioEngine {
         audio_config: &AudioConfig,
     ) -> GameResult<()> {
         self.state.set(AudioState::Playing);
-        let note_generators = &audio_graph.note_generators();
         let oscillator = &audio_graph
             .oscillator()
             .ok_or(GameError::msg("Invalid graph: no oscillator found"))?;
@@ -135,15 +133,8 @@ impl AudioEngine {
             self.effects.push(RefCell::new(effect));
         }
 
-        // Prepare notes
-        let mut notes = vec![];
-        let mut acc_loop_start: MusicTime = MusicTime::new(0);
-        for ng in note_generators {
-            for ne in &ng.notes {
-                notes.push(ne.shifted(acc_loop_start));
-            }
-            acc_loop_start = acc_loop_start + ng.loop_length;
-        }
+        // Process note generators with their effects
+        let generator = audio_graph.process_note_generators();
 
         // Calculate total loop length in seconds
         let loop_length_seconds = audio_graph.loop_length().to_seconds(bpm);
@@ -155,9 +146,9 @@ impl AudioEngine {
         // Create and schedule oscillators for many loops ahead
         let mut notes_repeated = vec![];
         for i in 0..loops_to_schedule {
-            let shifted_notes: Vec<_> = notes
+            let shifted_notes: Vec<_> = generator.notes
                 .iter()
-                .map(|n| n.shifted(audio_graph.loop_length() * i as u32))
+                .map(|n: &_| n.shifted(audio_graph.loop_length() * i as u32))
                 .collect();
             for sn in shifted_notes {
                 notes_repeated.push(sn);
@@ -558,7 +549,8 @@ impl GameReverb {
 
             if i >= pre_delay_samples {
                 // Apply exponential decay after pre-delay
-                let normalized_time = (i - pre_delay_samples) as f32 / (length - pre_delay_samples) as f32;
+                let normalized_time =
+                    (i - pre_delay_samples) as f32 / (length - pre_delay_samples) as f32;
                 let decay = (1.0 - normalized_time).powf(decay_exponent);
                 sample_value = (random() * 2.0 - 1.0) * decay;
             }

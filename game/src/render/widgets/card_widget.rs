@@ -4,6 +4,7 @@ use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
 use crate::nodes::audio_effect::FilterType;
+use crate::nodes::note_effect::ScaleType;
 use crate::nodes::note_generator::NoteName;
 use crate::nodes::oscillator::WaveShape;
 use crate::nodes::AudioNodeType;
@@ -32,6 +33,7 @@ pub enum CardType {
     NoteGenerator(NoteName),
     // Note Effects
     NoteEffect,
+    ScaleEffect(NoteName, ScaleType),
     // Oscillators
     Oscillator(WaveShape),
     // Audio Effects
@@ -46,6 +48,7 @@ impl CardType {
             CardType::NoteGenerator(_) => Shape::Piano,
             // Note Effects
             CardType::NoteEffect => Shape::Blank,
+            CardType::ScaleEffect(_, _) => Shape::Blank,
             // Oscillators
             CardType::Oscillator(WaveShape::Sine) => Shape::SineWave,
             CardType::Oscillator(WaveShape::Square) => Shape::SquareWave,
@@ -60,6 +63,7 @@ impl CardType {
             CardType::NoteGenerator(_) => AudioNodeType::NoteGenerator,
             // Note Effects
             CardType::NoteEffect => AudioNodeType::NoteEffect,
+            CardType::ScaleEffect(_, _) => AudioNodeType::NoteEffect,
             // Oscillators
             CardType::Oscillator(_) => AudioNodeType::Oscillator,
             // Audio Effects

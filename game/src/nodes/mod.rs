@@ -1,6 +1,5 @@
 use audio_effect::AudioEffect;
-use note_effect::NoteEffect;
-use note_effect::NoteEffectType;
+use note_effect::{NoteEffect, NoteEffectType, Scale};
 use note_generator::NoteGenerator;
 use oscillator::Oscillator;
 
@@ -19,6 +18,15 @@ pub enum AudioNode {
     NoteEffect(NoteEffect),
     Oscillator(Oscillator),
     AudioEffect(AudioEffect),
+}
+
+impl AudioNode {
+    pub fn as_note_effect(&self) -> Option<&NoteEffect> {
+        match self {
+            AudioNode::NoteEffect(effect) => Some(effect),
+            _ => None,
+        }
+    }
 }
 
 impl AudioNode {
@@ -44,6 +52,9 @@ impl AudioNode {
             }
             CardType::Reverb => Self::AudioEffect(AudioEffect::new_reverb(1.0, 0.5, 1.0)),
             CardType::NoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Chord)),
+            CardType::ScaleEffect(root, scale_type) => Self::NoteEffect(
+                NoteEffect::new(NoteEffectType::Scale(Scale::new(*root, *scale_type)))
+            ),
         }
     }
 

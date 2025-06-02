@@ -24,6 +24,30 @@ impl NoteGenerator {
         // Create a note generator with a loop length of one quarter note
         NoteGenerator::new(NoteDuration::Quarter.into(), vec![note_event])
     }
+    
+    /// Combine multiple note generators into a single one
+    pub fn combine(generators: &[NoteGenerator]) -> NoteGenerator {
+        if generators.is_empty() {
+            return NoteGenerator::new(MusicTime::ZERO, vec![]);
+        }
+        
+        let mut combined_notes = Vec::new();
+        let mut acc_loop_start = MusicTime::ZERO;
+        let mut total_loop_length = MusicTime::ZERO;
+        
+        for generator in generators {
+            // Add notes from this generator with the accumulated start time
+            for note in &generator.notes {
+                combined_notes.push(note.shifted(acc_loop_start));
+            }
+            
+            // Update the accumulated start time and total loop length
+            acc_loop_start = acc_loop_start + generator.loop_length;
+            total_loop_length = total_loop_length + generator.loop_length;
+        }
+        
+        NoteGenerator::new(total_loop_length, combined_notes)
+    }
 }
 
 /// Enum for ease of use of music durations
