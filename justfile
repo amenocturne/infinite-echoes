@@ -9,6 +9,17 @@ contracts_dir := "contracts"
 contracts_build_dir := contracts_dir + "/build"
 contracts_modules_dir := contracts_dir + "/node_modules"
 
+############################# All #############################
+
+clean:
+  rm -rf {{dist_dir}}
+  rm -rf {{deploy_dir}}
+  rm -rf {{target_dir}}
+  rm -rf {{contracts_build_dir}}
+  rm -rf {{contracts_modules_dir}}
+
+############################# Game Only #############################
+
 build:
   cargo build --package game --release --target wasm32-unknown-unknown
   wasm-bindgen {{compiled_wasm}} --out-dir dist --target web
@@ -39,12 +50,8 @@ pack: build download-runtime
   mkdir -p {{deploy_dir}}/resources
   cp -R ./resources/* {{deploy_dir}}/resources/
 
-clean:
-  rm -rf {{dist_dir}}
-  rm -rf {{deploy_dir}}
-  rm -rf {{target_dir}}
-  rm -rf {{contracts_build_dir}}
-  rm -rf {{contracts_modules_dir}}
+
+############################ Contracts Only #############################3
 
 test-contracts: build-contracts
   cd {{contracts_dir}}; npx blueprint test
