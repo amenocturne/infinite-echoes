@@ -2,9 +2,29 @@
   "$schema": "https://raw.githubusercontent.com/tact-lang/tact/main/src/config/configSchema.json",
   "projects": [
     {
-      "name": "Counter",
-      "path": "contracts/counter.tact",
-      "output": "build/Counter",
+      "name": "EchoVault",
+      "path": "contracts/EchoVault.tact",
+      "output": "build/EchoVault",
+      "options": {
+        "debug": false,
+        "external": false
+      },
+      "mode": "full"
+    },
+    {
+      "name": "EchoPiece",
+      "path": "contracts/EchoPiece.tact",
+      "output": "build/EchoPiece",
+      "options": {
+        "debug": false,
+        "external": false
+      },
+      "mode": "full"
+    },
+    {
+      "name": "EchoRegistry",
+      "path": "contracts/EchoRegistry.tact",
+      "output": "build/EchoRegistry",
       "options": {
         "debug": false,
         "external": false
