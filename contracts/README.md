@@ -1,5 +1,14 @@
 # contracts
 
+## Setup
+
+For testing purposes create the following variables in .env file
+```
+WALLET_MNEMONIC="..."
+WALLET_VERSION=v4
+TON_NETWORK=testenet
+```
+
 ## Project structure
 
 -   `contracts` - source code of all the smart contracts of the project and their dependencies.
