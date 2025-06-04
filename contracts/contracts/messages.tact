@@ -12,7 +12,10 @@ message UpgradePieceCode{
 message UpdateFeeParams{
   deployValue: Int;
   messageValue: Int;
+}
+message UpdateSecurityParams{
   minActionFee: Int;
+  coolDownSeconds: Int;
 }
 
 // User interactions

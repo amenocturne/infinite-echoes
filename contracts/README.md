@@ -1,5 +1,10 @@
 # Contracts
 
+## Security
+
+1. Use proof of stake to disallow DDOS attack for creating many vaults (for creating a vault a wallet must have required amount of TON)
+2. Use rate limiting, to disallow DDOS attack on creating many pieces for a given vault
+
 ## Setup
 
 For testing purposes create the following variables in .env file

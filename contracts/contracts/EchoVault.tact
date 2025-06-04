@@ -9,13 +9,16 @@ contract EchoVault(
   owner: Address,
   registry: Address,
   version: Int as uint32,
-  pieces: AddressList
+  pieces: AddressList,
+  lastActionTime: Int,
+  coolDownSeconds: Int
 ) with Ownable{
 
   receive() {}
 
   receive(msg: AddPiece){
     require(sender() == self.registry, "Only registry can add new pieces");
+    require(now() - self.lastActionTime >= self.coolDownSeconds, "Too many requests");
     self.pieces.push(msg.pieceAddress);
   }
 }

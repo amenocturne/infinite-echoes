@@ -14,7 +14,11 @@ import "./EchoVault.tact";
 struct FeeParams{
   deployValue: Int;
   messageValue: Int;
+}
+
+struct SecurityParams{
   minActionFee: Int;
+  coolDownSeconds: Int;
 }
 
 contract EchoRegistry with Ownable{
@@ -23,6 +27,7 @@ contract EchoRegistry with Ownable{
   vaultMeta: UpgradableContractMeta;
   vaults: map<Address, Address>;
   feeParams: FeeParams;
+  securityParams: SecurityParams;
 
   init(vaultCode: Cell, pieceCode: Cell) {
     self.vaultMeta = initUpgradableContractmeta(vaultCode);
@@ -30,7 +35,10 @@ contract EchoRegistry with Ownable{
     self.feeParams = FeeParams{
       deployValue: ton("0.02"),
       messageValue: ton("0.005"),
+    };
+    self.securityParams = SecurityParams{
       minActionFee: ton("0.005"),
+      coolDownSeconds: 30,
     };
     self.owner = sender();
   }
@@ -54,7 +62,13 @@ contract EchoRegistry with Ownable{
     self.feeParams = FeeParams{
       deployValue: msg.deployValue,
       messageValue: msg.messageValue,
-      minActionFee: msg.minActionFee
+    }
+  }
+  receive(msg: UpdateSecurityParams) {
+    require(sender() == self.owner, "Only owner can upgrade code of pieces");
+    self.securityParams = SecurityParams{
+      minActionFee: msg.minActionFee,
+      coolDownSeconds: msg.coolDownSeconds
     }
   }
 
@@ -83,7 +97,7 @@ contract EchoRegistry with Ownable{
 
     let stateInit = StateInit{
       code: self.vaultMeta.code,
-      data: initOf EchoVault(user, myAddress(), self.vaultMeta.version, emptyAddressList()).toCell()
+      data: initOf EchoVault(user, myAddress(), self.vaultMeta.version, emptyAddressList(), now(), self.securityParams.coolDownSeconds).toCell()
     };
 
     let vaultAddress = contractAddress(stateInit);
@@ -117,7 +131,7 @@ contract EchoRegistry with Ownable{
   }
 
   fun proofOfStakeCheck(value: Int){
-    require(value >= self.feeParams.minActionFee, "Insufficient anti-spam fee");
+    require(value >= self.securityParams.minActionFee, "Insufficient anti-spam fee");
   }
 
   // ------------------------------- Getters ----------------------------------
@@ -134,7 +148,11 @@ contract EchoRegistry with Ownable{
     return self.pieceMeta.version;
   }
 
-  get fun getFeeParams(user: Address): FeeParams {
+  get fun getFeeParams(): FeeParams {
     return self.feeParams;
+  }
+
+  get fun getSecurityParams(): SecurityParams {
+    return self.securityParams;
   }
 }
