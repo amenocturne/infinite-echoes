@@ -22,4 +22,16 @@ contract EchoVault(
     self.lastActionTime = now();
     self.pieces.push(msg.pieceAddress);
   }
+
+  get fun getPieces(): map<Int as uint16, Address> {
+    return self.pieces.addresses;
+  }
+
+  get fun getPieceCount(): Int {
+    return self.pieces.length;
+  }
+
+  get fun containsPiece(address: Address): Bool {
+    return self.pieces.contains(address)
+  }
 }
