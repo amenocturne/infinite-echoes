@@ -19,6 +19,7 @@ contract EchoVault(
   receive(msg: AddPiece){
     require(sender() == self.registry, "Only registry can add new pieces");
     require(now() - self.lastActionTime >= self.coolDownSeconds, "Too many requests");
+    self.lastActionTime = now();
     self.pieces.push(msg.pieceAddress);
   }
 }
