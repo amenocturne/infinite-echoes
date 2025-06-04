@@ -242,13 +242,15 @@
   <div id="wallet-ui">
     <div id="wallet-status">Not connected</div>
     <div id="ton-connect-ui" style="margin-top: 10px; min-height: 40px; min-width: 180px;"></div>
+    <div id="contract-info" style="margin-top: 10px; font-size: 12px;"></div>
   </div>
 
   <!-- Game Canvas -->
   <canvas id="glcanvas" tabindex="1"></canvas>
 
-  <!-- TON Wallet Integration -->
-  <script src="ton-wallet.js"></script>
+  <!-- TON Integration -->
+  <script src="ton-api.js"></script>
+  <script src="ton-wallet.js" defer></script>
   <script src="/miniquad_runtime.js"></script>
   <script type="module">
     import init, {set_wasm} from "./game.js";

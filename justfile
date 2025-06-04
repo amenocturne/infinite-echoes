@@ -39,10 +39,7 @@ download-runtime:
 pack: build download-runtime
   mkdir -p {{deploy_dir}}
   # Copy web files
-  cp ./web/index.html {{deploy_dir}}/
-  cp ./web/miniquad_runtime.js {{deploy_dir}}/
-  cp ./web/ton-wallet.js {{deploy_dir}}/
-  cp ./web/tonconnect-manifest.json {{deploy_dir}}/
+  cp ./web/* {{deploy_dir}}/
   # Copy game files
   cp ./dist/game_bg.wasm {{deploy_dir}}/
   cp ./dist/game.js {{deploy_dir}}/

@@ -1,8 +1,18 @@
 // TON Wallet integration
 let tonConnectUI;
+let contractInfo = {
+    pieceVersion: null,
+    vaultVersion: null,
+    feeParams: null,
+    securityParams: null
+};
 
 // Initialize TON wallet bridge for communication with WASM
 window.tonBridge = {
+    // Get contract information
+    getContractInfo: () => {
+        return contractInfo;
+    },
     // Will be called from WASM to check connection status
     isWalletConnected: () => {
         return tonConnectUI && tonConnectUI.connected;
@@ -31,9 +41,67 @@ window.tonBridge = {
     }
 };
 
+// Function to fetch and update contract information
+async function fetchContractInfo() {
+    try {
+        // Check if tonApi is available
+        if (!window.tonApi) {
+            console.warn("TON API not available yet, will retry in 1 second");
+            setTimeout(fetchContractInfo, 1000);
+            return null;
+        }
+        
+        // Fetch contract information
+        const pieceVersion = await window.tonApi.getPieceVersion();
+        const vaultVersion = await window.tonApi.getVaultVersion();
+        const feeParams = await window.tonApi.getFeeParams();
+        const securityParams = await window.tonApi.getSecurityParams();
+        
+        // Update the global contract info
+        contractInfo = {
+            pieceVersion,
+            vaultVersion,
+            feeParams,
+            securityParams
+        };
+        
+        // Update the UI
+        updateContractInfoDisplay();
+        
+        console.log("Contract info loaded:", contractInfo);
+        return contractInfo;
+    } catch (error) {
+        console.error("Error fetching contract info:", error);
+        // Retry after a delay if there was an error
+        setTimeout(fetchContractInfo, 3000);
+        return null;
+    }
+}
+
+// Update the contract info display
+function updateContractInfoDisplay() {
+    const contractInfoElement = document.getElementById('contract-info');
+    if (!contractInfoElement) return;
+    
+    if (contractInfo && contractInfo.pieceVersion !== null) {
+        contractInfoElement.innerHTML = `
+            <div>Piece Version: ${contractInfo.pieceVersion}</div>
+            ${contractInfo.vaultVersion !== null ? `<div>Vault Version: ${contractInfo.vaultVersion}</div>` : ''}
+        `;
+    } else {
+        contractInfoElement.innerHTML = '<div>Loading contract info...</div>';
+    }
+}
+
 // Wait for the document to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM loaded, setting up TON wallet UI");
+    
+    // Initialize contract info display
+    updateContractInfoDisplay();
+    
+    // Fetch contract information
+    fetchContractInfo();
 
     // Create a container for the TON Connect button
     const container = document.getElementById('ton-connect-ui');
