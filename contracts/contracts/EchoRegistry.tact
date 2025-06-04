@@ -1,10 +1,3 @@
-// Master Contract that manages EchoVault contracts
-// Responsibilities:
-// - Manages Echo Vaults (creation, mapping from user address to their EchoVault)
-
-// Useful References:
-// - https://github.com/tact-lang/contract-wallet/blob/main/sources/contract.tact
-
 import "@stdlib/ownable";
 import "./address_list.tact";
 import "./upgradable_contract_meta.tact";
