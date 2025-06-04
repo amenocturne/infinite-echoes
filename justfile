@@ -53,6 +53,9 @@ pack: build download-runtime
 
 ############################ Contracts Only #############################3
 
+deploy-contracts: build-contracts
+  cd {{contracts_dir}}; npx blueprint run
+
 test-contracts: build-contracts
   cd {{contracts_dir}}; npx blueprint test
 
