@@ -6,27 +6,38 @@
 // - https://github.com/tact-lang/contract-wallet/blob/main/sources/contract.tact
 
 import "@stdlib/ownable";
-import "./constants.tact";
 import "./address_list.tact";
 import "./upgradable_contract_meta.tact";
 import "./EchoPiece.tact";
 import "./EchoVault.tact";
+
+struct FeeParams{
+  deployValue: Int;
+  messageValue: Int;
+  minActionFee: Int;
+}
 
 contract EchoRegistry with Ownable{
   owner: Address;
   pieceMeta: UpgradableContractMeta;
   vaultMeta: UpgradableContractMeta;
   vaults: map<Address, Address>;
+  feeParams: FeeParams;
 
-  init(vaultCode: Cell, pieceCode: Cell){
+  init(vaultCode: Cell, pieceCode: Cell) {
     self.vaultMeta = initUpgradableContractmeta(vaultCode);
     self.pieceMeta = initUpgradableContractmeta(pieceCode);
+    self.feeParams = FeeParams{
+      deployValue: ton("0.02"),
+      messageValue: ton("0.005"),
+      minActionFee: ton("0.005"),
+    };
     self.owner = sender();
   }
 
   receive() {}
 
-  // --------------------------- Code Upgrades --------------------------------
+  // --------------------------- Configuration --------------------------------
 
   receive(msg: UpgradeVaultCode) {
     require(sender() == self.owner, "Only owner can upgrade code of vaults");
@@ -38,18 +49,29 @@ contract EchoRegistry with Ownable{
     self.pieceMeta.upgradeCode(msg.code);
   }
 
+  receive(msg: UpdateFeeParams) {
+    require(sender() == self.owner, "Only owner can upgrade code of pieces");
+    self.feeParams = FeeParams{
+      deployValue: msg.deployValue,
+      messageValue: msg.messageValue,
+      minActionFee: msg.minActionFee
+    }
+  }
+
   // ------------------ Piece And Vault Creation ------------------------------
 
   receive(msg: CreatePiece) {
+    self.proofOfStakeCheck(context().value);
     let senderAddress = sender();
     let vaultAddress = self.getOrCreateVault(senderAddress);
     let pieceAddress = self.createPiece(vaultAddress, msg.pieceData, msg.remixedFrom);
     send(SendParameters{
       to: vaultAddress,
-      value: MESSAGE_VALUE,
+      value: self.feeParams.messageValue,
       bounce: false,
       body: AddPiece {pieceAddress: pieceAddress}.toCell()
-    })
+    });
+    cashback(sender());
   }
 
 
@@ -68,7 +90,7 @@ contract EchoRegistry with Ownable{
 
     deploy(DeployParameters {
       bounce: false,
-      value: DEPLOYMENT_VALUE,
+      value: self.feeParams.deployValue,
       init: stateInit
     });
 
@@ -87,11 +109,15 @@ contract EchoRegistry with Ownable{
 
     deploy(DeployParameters {
       bounce: false,
-      value: DEPLOYMENT_VALUE,
+      value: self.feeParams.deployValue,
       init: stateInit
     });
 
     return pieceAddress
+  }
+
+  fun proofOfStakeCheck(value: Int){
+    require(value >= self.feeParams.minActionFee, "Insufficient anti-spam fee");
   }
 
   // ------------------------------- Getters ----------------------------------
@@ -100,11 +126,15 @@ contract EchoRegistry with Ownable{
     return self.vaults.get(user);
   }
 
-  get fun getPieceVersion(user: Address): Int {
+  get fun getPieceVersion(): Int {
     return self.pieceMeta.version;
   }
 
-  get fun getVaultVersion(user: Address): Int {
+  get fun getVaultVersion(): Int {
     return self.pieceMeta.version;
+  }
+
+  get fun getFeeParams(user: Address): FeeParams {
+    return self.feeParams;
   }
 }
