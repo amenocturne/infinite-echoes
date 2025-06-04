@@ -3,5 +3,15 @@
 // - Stores metadata about a piece (creator, creation time, remixed from )
 // - Implements NFT TEP-62 standard
 
-contract EchoVault {
+import "@stdlib/ownable";
+
+contract EchoPiece(
+  vault: Address,
+  remixedFrom: Address?,
+  created: Int as uint32,
+  version: Int as uint32,
+  data: Cell
+) {
+  receive() {}
+
 }
