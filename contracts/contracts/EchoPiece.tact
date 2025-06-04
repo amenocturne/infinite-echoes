@@ -14,4 +14,15 @@ contract EchoPiece(
 ) {
   receive() {}
 
+  get fun getVault(): Address {
+    return self.vault
+  }
+
+  get fun getData(): Cell {
+    return self.data
+  }
+
+  get fun getVersion(): Int {
+    return self.version
+  }
 }
