@@ -37,7 +37,7 @@ download-runtime:
 	if [ ! -f "./web/miniquad_runtime.js" ]; then wget "https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"; mv mq_js_bundle.js ./web/miniquad_runtime.js; else echo "File exists, skipping"; fi
 
 # Pack all static content into a directory for deployment
-pack: build download-runtime
+pack: build download-runtime ton-install-dependencies ton-build
   mkdir -p {{deploy_dir}}
   # Copy web files
   cp ./web/* {{deploy_dir}}/
@@ -47,6 +47,9 @@ pack: build download-runtime
   # Copy all resources
   mkdir -p {{deploy_dir}}/resources
   cp -R ./resources/* {{deploy_dir}}/resources/
+  mkdir -p {{deploy_dir}}/{{ton_integration_dir}}
+  cp  {{ton_integration_dir}}/dist/bundle.js {{deploy_dir}}/{{ton_integration_dir}}
+  cp ./web/miniquad_runtime.js {{deploy_dir}}/miniquad_runtime.js
 
 
 ############################ Contracts Only #############################3
@@ -67,5 +70,8 @@ install-contract-dependencies:
 ############################ Ton Integration #############################3
 
 
-build-ton:
+ton-build:
   cd {{ton_integration_dir}}; npm run build
+
+ton-install-dependencies:
+  cd {{ton_integration_dir}}; npm i

@@ -249,12 +249,12 @@
   <canvas id="glcanvas" tabindex="1"></canvas>
 
   <!-- TON Integration -->
+  <!-- miniquad_runtime.js must be loaded before bundle.js -->
+  <script src="miniquad_runtime.js"></script>
   <script src="ton-api.js"></script>
   <script src="ton-wallet.js" defer></script>
-  <script src="/miniquad_runtime.js"></script>
+  <script src="ton_integration/bundle.js" defer></script>
   <script type="module">
-    import init, {set_wasm} from "./game.js";
-
     // Particle system
     function createParticle() {
       const particle = document.createElement('div');
@@ -342,29 +342,22 @@
             titleScreen.parentNode.removeChild(titleScreen);
           }
 
-          // Ensure canvas has focus and is ready for input
-          canvas.focus();
-          canvas.click(); // Trigger click to ensure it's active
+          // Call the game initialization function from the bundled script
+          // This assumes runMiniquadGame is exposed globally by the bundle.
+          if (window.runMiniquadGame) {
+            window.runMiniquadGame();
+          } else {
+            console.error("runMiniquadGame not found on window object. Make sure ton_integration/dist/bundle.js exposes it.");
+          }
 
           console.log('Title screen removed, game should be interactive');
         }, 500);
       });
 
-      // Initialize game
-      canvas.removeAttribute("hidden");
-      impl_run();
+      // The game is now started by the button click, not directly on DOMContentLoaded
+      // canvas.removeAttribute("hidden");
+      // impl_run(); // This is now handled by runMiniquadGame
     });
-
-    async function impl_run() {
-      let wbg = await init();
-      miniquad_add_plugin({
-        register_plugin: (a) => (a.wbg = wbg),
-        on_init: () => set_wasm(wasm_exports),
-        version: "0.1",
-        name: "wbg",
-      });
-      load("./game_bg.wasm");
-    }
 
     document.addEventListener('contextmenu', event => event.preventDefault());
   </script>
