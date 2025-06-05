@@ -3,6 +3,7 @@ dist_dir := "dist"
 game_js := dist_dir + "/game.js"
 deploy_dir := "deploy"
 target_dir := "target"
+ton_integration_dir := "ton_integration"
 
 # Contracts
 contracts_dir := "contracts"
@@ -61,3 +62,10 @@ build-contracts: install-contract-dependencies
 
 install-contract-dependencies:
   cd {{contracts_dir}}; npm install
+
+
+############################ Ton Integration #############################3
+
+
+build-ton:
+  cd {{ton_integration_dir}}; npm run build

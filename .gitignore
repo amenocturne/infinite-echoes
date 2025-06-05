@@ -4,6 +4,7 @@ deploy
 .aider*
 build
 .env
+**/.DS_Store
 
 # Contracts
 
@@ -11,5 +12,9 @@ contracts/node_modules
 contracts/temp
 contracts/build
 contracts/dist
-**/.DS_Store
 contracts/package.ts
+
+# Ton Integration
+
+ton_integration/node_modules
+ton_integration/dist
