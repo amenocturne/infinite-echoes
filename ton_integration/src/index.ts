@@ -6,6 +6,7 @@ declare global {
 }
 
 import init from "../../dist/game"; // No longer importing set_wasm directly from here
+import { initParticles } from "./particles"; // Import initParticles
 
 console.log("Hello from TypeScript!");
 
@@ -32,3 +33,8 @@ export async function runMiniquadGame() {
     load("../game_bg.wasm");
 }
 (window as any).runMiniquadGame = runMiniquadGame;
+
+// Initialize particles when the script loads
+document.addEventListener('DOMContentLoaded', () => {
+    initParticles();
+});
