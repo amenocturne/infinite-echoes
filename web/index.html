@@ -23,6 +23,11 @@
       z-index: 0;
     }
 
+    /* Add this style to ensure the canvas has a background color */
+    canvas {
+      background-color: black; /* Or any color that matches your game's initial background */
+    }
+
     /* TON Wallet UI */
     #wallet-ui {
       position: absolute;
@@ -145,6 +150,24 @@
       transform: translateY(0);
     }
 
+    /* Loading Spinner Styles */
+    #loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-top: 20px; /* Adjust as needed */
+      display: none; /* Hidden by default */
+      z-index: 15;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     /* Particles Container */
     #particles-container {
       position: absolute;
@@ -236,6 +259,7 @@
     <p id="game-subtitle">Cards Into Soundscapes</p>
 
     <button id="start-button">Start Playing</button>
+    <div id="loading-spinner"></div> <!-- New loading spinner element -->
   </div>
 
   <!-- TON Wallet UI -->
@@ -248,8 +272,6 @@
   <!-- Game Canvas -->
   <canvas id="glcanvas" tabindex="1"></canvas>
 
-  <!-- TON Integration -->
-  <!-- miniquad_runtime.js must be loaded before bundle.js -->
   <script src="miniquad_runtime.js"></script>
   <script src="ton-api.js"></script>
   <script src="ton-wallet.js" defer></script>
@@ -323,6 +345,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const titleScreen = document.getElementById('title-screen');
       const startButton = document.getElementById('start-button');
+      const loadingSpinner = document.getElementById('loading-spinner'); // Get the spinner element
       const canvas = document.getElementById('glcanvas');
 
       // Initialize particles after a short delay to prevent initial stuck particles
@@ -330,28 +353,35 @@
 
       // Start button click handler
       startButton.addEventListener('click', () => {
+        // Hide the start button and show the spinner
+        startButton.style.display = 'none';
+        loadingSpinner.style.display = 'block';
+
         // Immediately disable pointer events on title screen
         titleScreen.style.pointerEvents = 'none';
 
-        // Add fade out class
-        titleScreen.classList.add('fade-out');
+        // Call the game initialization function from the bundled script
+        // This assumes runMiniquadGame is exposed globally by the bundle.
+        if (window.runMiniquadGame) {
+          window.runMiniquadGame();
+        } else {
+          console.error("runMiniquadGame not found on window object. Make sure ton_integration/dist/bundle.js exposes it.");
+        }
 
-        // Completely remove the element after fade
+        // The title screen will fade out and be removed after a short delay.
+        // This delay should be long enough for the spinner to be seen,
+        // but short enough that the game can start rendering.
+        // The actual removal should ideally happen when the game is truly ready.
+        // For now, we'll keep the fade-out for visual transition.
         setTimeout(() => {
-          if (titleScreen.parentNode) {
-            titleScreen.parentNode.removeChild(titleScreen);
-          }
-
-          // Call the game initialization function from the bundled script
-          // This assumes runMiniquadGame is exposed globally by the bundle.
-          if (window.runMiniquadGame) {
-            window.runMiniquadGame();
-          } else {
-            console.error("runMiniquadGame not found on window object. Make sure ton_integration/dist/bundle.js exposes it.");
-          }
-
-          console.log('Title screen removed, game should be interactive');
-        }, 500);
+          titleScreen.classList.add('fade-out');
+          setTimeout(() => {
+            if (titleScreen.parentNode) {
+              titleScreen.parentNode.removeChild(titleScreen);
+            }
+            console.log('Title screen removed, game should be interactive');
+          }, 500); // Matches the fade-out transition duration
+        }, 100); // Small delay before starting fade-out, so spinner is visible
       });
 
       // The game is now started by the button click, not directly on DOMContentLoaded
