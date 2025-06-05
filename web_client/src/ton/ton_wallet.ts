@@ -1,6 +1,5 @@
 import { contractInfo, fetchContractInfo, updateContractInfoDisplay } from './ton_api';
-
-declare const TON_CONNECT_UI: any;
+import { TonConnectUI, THEME } from '@tonconnect/ui';
 
 interface Wallet {
   account: {
@@ -8,7 +7,7 @@ interface Wallet {
   };
 }
 
-let tonConnectUI: any;
+let tonConnectUI: TonConnectUI;
 
 export async function initializeTonConnectUI(): Promise<void> {
   const container = document.getElementById('ton-connect-ui');
@@ -32,40 +31,13 @@ export async function initializeTonConnectUI(): Promise<void> {
   container.innerHTML = '';
   container.appendChild(customButton);
 
-  const loadTonConnectUIScript = () => {
-    return new Promise<void>((resolve, reject) => {
-      if (typeof TON_CONNECT_UI !== 'undefined') {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js';
-      script.async = true;
-
-      script.onload = () => {
-        console.log('TON Connect UI script loaded successfully');
-        resolve();
-      };
-
-      script.onerror = () => {
-        console.error('Failed to load TON Connect UI script');
-        reject(new Error('Failed to load TON Connect UI script'));
-      };
-
-      document.head.appendChild(script);
-    });
-  };
-
   try {
-    await loadTonConnectUIScript();
-
     console.log('Initializing TON Connect UI');
 
-    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    tonConnectUI = new TonConnectUI({
       manifestUrl: 'https://infinite-echoes.app/tonconnect-manifest.json',
       uiPreferences: {
-        theme: 'DARK',
+        theme: THEME.DARK,
       },
       ...(window.Telegram && window.Telegram.WebApp
         ? {

@@ -25,5 +25,9 @@
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.0.4"
+  },
+  "dependencies": {
+    "@ton/core": "^0.60.1",
+    "@tonconnect/ui": "^2.1.0"
   }
 }
