@@ -15,27 +15,22 @@
   <!-- Link to external CSS file -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body style="margin: 0; padding: 0; height: 100vh; width: 100vw">
-  <!-- Title Screen Overlay -->
-  <div id="title-screen">
-    <!-- Particles Container -->
-    <div id="particles-container"></div>
 
+<body style="margin: 0; padding: 0; height: 100vh; width: 100vw">
+  <div id="title-screen">
+    <div id="particles-container"></div>
     <h1 id="game-title">INFINITE ECHOES</h1>
     <p id="game-subtitle">Cards Into Soundscapes</p>
-
     <button id="start-button">Start Playing</button>
-    <div id="loading-spinner"></div> <!-- New loading spinner element -->
+    <div id="loading-spinner"></div>
   </div>
 
-  <!-- TON Wallet UI -->
   <div id="wallet-ui">
     <div id="wallet-status">Not connected</div>
     <div id="ton-connect-ui" style="margin-top: 10px; min-height: 40px; min-width: 180px;"></div>
     <div id="contract-info" style="margin-top: 10px; font-size: 12px;"></div>
   </div>
 
-  <!-- Game Canvas -->
   <canvas id="glcanvas" tabindex="1"></canvas>
 
   <script src="miniquad_runtime.js"></script>
@@ -43,35 +38,24 @@
   <script src="ton-wallet.js" defer></script>
   <script src="ton_integration/bundle.js" defer></script>
   <script type="module">
-    // Title screen functionality
     document.addEventListener('DOMContentLoaded', () => {
       const titleScreen = document.getElementById('title-screen');
       const startButton = document.getElementById('start-button');
       const loadingSpinner = document.getElementById('loading-spinner'); // Get the spinner element
       const canvas = document.getElementById('glcanvas');
 
-      // Start button click handler
       startButton.addEventListener('click', () => {
-        // Hide the start button and show the spinner
         startButton.style.display = 'none';
         loadingSpinner.style.display = 'block';
 
-        // Immediately disable pointer events on title screen
         titleScreen.style.pointerEvents = 'none';
 
-        // Call the game initialization function from the bundled script
-        // This assumes runMiniquadGame is exposed globally by the bundle.
         if (window.runMiniquadGame) {
           window.runMiniquadGame();
         } else {
           console.error("runMiniquadGame not found on window object. Make sure ton_integration/dist/bundle.js exposes it.");
         }
 
-        // The title screen will fade out and be removed after a short delay.
-        // This delay should be long enough for the spinner to be seen,
-        // but short enough that the game can start rendering.
-        // The actual removal should ideally happen when the game is truly ready.
-        // For now, we'll keep the fade-out for visual transition.
         setTimeout(() => {
           titleScreen.classList.add('fade-out');
           setTimeout(() => {
@@ -79,13 +63,10 @@
               titleScreen.parentNode.removeChild(titleScreen);
             }
             console.log('Title screen removed, game should be interactive');
-          }, 500); // Matches the fade-out transition duration
-        }, 100); // Small delay before starting fade-out, so spinner is visible
+          }, 500);
+        }, 100);
       });
 
-      // The game is now started by the button click, not directly on DOMContentLoaded
-      // canvas.removeAttribute("hidden");
-      // impl_run(); // This is now handled by runMiniquadGame
     });
 
     document.addEventListener('contextmenu', event => event.preventDefault());

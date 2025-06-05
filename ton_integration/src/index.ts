@@ -8,8 +8,6 @@ declare global {
 import init from "../../dist/game"; // No longer importing set_wasm directly from here
 import { initParticles } from "./particles"; // Import initParticles
 
-console.log("Hello from TypeScript!");
-
 /**
  * Initializes and runs the miniquad game.
  * This function encapsulates the logic previously found in web/index.html for game loading.
