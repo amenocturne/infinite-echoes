@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>Infinite Echoes</title>
 
-  <!-- Favicons -->
   <link rel="apple-touch-icon" sizes="180x180" href="/resources/favicons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/resources/favicons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/resources/favicons/favicon-16x16.png">
@@ -12,7 +11,6 @@
   <link rel="mask-icon" href="/resources/favicons/safari-pinned-tab.svg" color="#5bbad5">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
-  <!-- Link to external CSS file -->
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -34,13 +32,12 @@
   <canvas id="glcanvas" tabindex="1"></canvas>
 
   <script src="miniquad_runtime.js"></script>
-  <!-- Removed ton-api.js and ton-wallet.js, now bundled into ton_integration/bundle.js -->
   <script src="ton_integration/bundle.js" defer></script>
   <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
       const titleScreen = document.getElementById('title-screen');
       const startButton = document.getElementById('start-button');
-      const loadingSpinner = document.getElementById('loading-spinner'); // Get the spinner element
+      const loadingSpinner = document.getElementById('loading-spinner');
       const canvas = document.getElementById('glcanvas');
 
       startButton.addEventListener('click', () => {
@@ -65,7 +62,6 @@
           }, 500);
         }, 100);
       });
-
     });
 
     document.addEventListener('contextmenu', event => event.preventDefault());

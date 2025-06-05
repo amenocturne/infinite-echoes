@@ -1,4 +1,3 @@
-// TON API Client for interacting with TON blockchain
 const TON_TESTNET_API = 'https://testnet.toncenter.com/api/v2/jsonRPC';
 const REGISTRY_ADDRESS = 'kQAlmlGXp3ElXKyeLSEXnhacMq117VjqOuzN9r8AJPVEpchv';
 
@@ -9,7 +8,6 @@ interface ContractInfo {
     securityParams: { minActionFee: string; coolDownSeconds: number } | null;
 }
 
-// Function to call contract getter methods
 async function callContractGetter(address: string, method: string, stack: any[] = []): Promise<any | null> {
     try {
         const response = await fetch(TON_TESTNET_API, {
@@ -44,17 +42,14 @@ async function callContractGetter(address: string, method: string, stack: any[] 
     }
 }
 
-// Get the current piece version from the registry
 export async function getPieceVersion(): Promise<number | null> {
     const result = await callContractGetter(REGISTRY_ADDRESS, 'getPieceVersion');
     if (result && result.exit_code === 0 && result.stack.length > 0) {
-        // Parse the result - TON returns [["num",value]] format
         return parseInt(result.stack[0][1], 10);
     }
     return null;
 }
 
-// Get the current vault version from the registry
 export async function getVaultVersion(): Promise<number | null> {
     const result = await callContractGetter(REGISTRY_ADDRESS, 'getVaultVersion');
     if (result && result.exit_code === 0 && result.stack.length > 0) {
@@ -63,7 +58,6 @@ export async function getVaultVersion(): Promise<number | null> {
     return null;
 }
 
-// Get fee parameters from the registry
 export async function getFeeParams(): Promise<{ deployValue: string; messageValue: string } | null> {
     const result = await callContractGetter(REGISTRY_ADDRESS, 'getFeeParams');
     if (result && result.exit_code === 0 && result.stack.length >= 2) {
@@ -75,7 +69,6 @@ export async function getFeeParams(): Promise<{ deployValue: string; messageValu
     return null;
 }
 
-// Get security parameters from the registry
 export async function getSecurityParams(): Promise<{ minActionFee: string; coolDownSeconds: number } | null> {
     const result = await callContractGetter(REGISTRY_ADDRESS, 'getSecurityParams');
     if (result && result.exit_code === 0 && result.stack.length >= 2) {
@@ -87,7 +80,6 @@ export async function getSecurityParams(): Promise<{ minActionFee: string; coolD
     return null;
 }
 
-// Global object to hold contract info, accessible by ton_wallet.ts
 export let contractInfo: ContractInfo = {
     pieceVersion: null,
     vaultVersion: null,
@@ -95,16 +87,13 @@ export let contractInfo: ContractInfo = {
     securityParams: null
 };
 
-// Function to fetch and update contract information
 export async function fetchContractInfo(): Promise<ContractInfo | null> {
     try {
-        // Fetch contract information
         const pieceVersion = await getPieceVersion();
         const vaultVersion = await getVaultVersion();
         const feeParams = await getFeeParams();
         const securityParams = await getSecurityParams();
 
-        // Update the global contract info
         contractInfo = {
             pieceVersion,
             vaultVersion,
@@ -112,20 +101,17 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
             securityParams
         };
 
-        // Update the UI
         updateContractInfoDisplay();
 
         console.log("Contract info loaded:", contractInfo);
         return contractInfo;
     } catch (error) {
         console.error("Error fetching contract info:", error);
-        // Retry after a delay if there was an error
         setTimeout(fetchContractInfo, 3000);
         return null;
     }
 }
 
-// Update the contract info display
 export function updateContractInfoDisplay(): void {
     const contractInfoElement = document.getElementById('contract-info');
     if (!contractInfoElement) return;
