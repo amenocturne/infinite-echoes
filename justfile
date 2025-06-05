@@ -29,11 +29,19 @@ clean:
 
 build:
   cargo build --package game --release --target wasm32-unknown-unknown
+  mkdir -p {{dist_dir}} # Ensure dist directory exists
   wasm-bindgen {{compiled_wasm}} --out-dir dist --target web
-  sed -i '' -e "s/import \* as __wbg_star0 from 'env';//" {{game_js}}
-  sed -i '' -e "s/let wasm;/let wasm; window.set_wasm = (w) => wasm = w;/" {{game_js}}
-  sed -i '' -e "s/imports\['env'\] = __wbg_star0;/return imports.wbg\;/" {{game_js}}
-  sed -i '' -e "s/const imports = __wbg_get_imports();/return __wbg_get_imports();/" {{game_js}}
+  @if [ "$(uname)" = "Darwin" ]; then \
+    sed -i '' "s#import \* as __wbg_star0 from 'env';##" {{game_js}}; \
+    sed -i '' "s#let wasm;#let wasm; window.set_wasm = (w) => wasm = w;#" {{game_js}}; \
+    sed -i '' "s#imports\['env'\] = __wbg_star0;#return imports.wbg\;#" {{game_js}}; \
+    sed -i '' "s#const imports = __wbg_get_imports();#return __wbg_get_imports();#" {{game_js}}; \
+  else \
+    sed -i "s#import \* as __wbg_star0 from 'env';##" {{game_js}}; \
+    sed -i "s#let wasm;#let wasm; window.set_wasm = (w) => wasm = w;#" {{game_js}}; \
+    sed -i "s#imports\['env'\] = __wbg_star0;#return imports.wbg\;#" {{game_js}}; \
+    sed -i "s#const imports = __wbg_get_imports();#return __wbg_get_imports();#" {{game_js}}; \
+  fi
 
 run: build download-runtime pack
   python3 -m http.server 1234 -d {{deploy_dir}}
