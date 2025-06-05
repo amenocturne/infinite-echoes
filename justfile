@@ -51,7 +51,7 @@ download-runtime:
 	if [ ! -f "./web/miniquad_runtime.js" ]; then wget "https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"; mv mq_js_bundle.js ./web/miniquad_runtime.js; else echo "File exists, skipping"; fi
 
 # Pack all static content into a directory for deployment
-pack: build download-runtime ton-install-dependencies ton-build
+pack: build download-runtime web-install-dependencies web-build
   mkdir -p {{deploy_dir}}
   # Copy web files (excluding ton-api.js and ton-wallet.js)
   cp ./web/index.html {{deploy_dir}}/
@@ -86,8 +86,11 @@ install-contract-dependencies:
 ############################ Web Client #############################3
 
 
-ton-build:
+web-build:
   cd {{web_client_dir}}; npm run build
 
-ton-install-dependencies:
+web-format:
+  cd {{web_client_dir}}; npm run format
+
+web-install-dependencies:
   cd {{web_client_dir}}; npm i
