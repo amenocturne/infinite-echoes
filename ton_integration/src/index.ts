@@ -3,10 +3,12 @@ declare global {
     var load: (wasmPath: string) => void;
     var wasm_exports: any; // This will hold the exports from your WASM module
     var set_wasm: (w: any) => void; // Declare our custom global set_wasm function
+    var Telegram: any; // Declare Telegram global for TWA
 }
 
 import init from "../../dist/game"; // No longer importing set_wasm directly from here
 import { initParticles } from "./particles"; // Import initParticles
+import { setupTonWalletIntegration } from "./ton_wallet"; // Import the setup function for TON wallet
 
 /**
  * Initializes and runs the miniquad game.
@@ -32,7 +34,8 @@ export async function runMiniquadGame() {
 }
 (window as any).runMiniquadGame = runMiniquadGame;
 
-// Initialize particles when the script loads
+// Initialize particles and TON wallet when the script loads
 document.addEventListener('DOMContentLoaded', () => {
     initParticles();
+    setupTonWalletIntegration(); // Call the new setup function for TON wallet
 });

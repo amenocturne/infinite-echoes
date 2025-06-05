@@ -39,8 +39,11 @@ download-runtime:
 # Pack all static content into a directory for deployment
 pack: build download-runtime ton-install-dependencies ton-build
   mkdir -p {{deploy_dir}}
-  # Copy web files
-  cp ./web/* {{deploy_dir}}/
+  # Copy web files (excluding ton-api.js and ton-wallet.js)
+  cp ./web/index.html {{deploy_dir}}/
+  cp ./web/style.css {{deploy_dir}}/
+  cp ./web/miniquad_runtime.js {{deploy_dir}}/ # miniquad_runtime.js stays in web/ and is copied
+  cp ./web/tonconnect-manifest.json {{deploy_dir}}/
   # Copy game files
   cp ./dist/game_bg.wasm {{deploy_dir}}/
   cp ./dist/game.js {{deploy_dir}}/
@@ -49,7 +52,6 @@ pack: build download-runtime ton-install-dependencies ton-build
   cp -R ./resources/* {{deploy_dir}}/resources/
   mkdir -p {{deploy_dir}}/{{ton_integration_dir}}
   cp  {{ton_integration_dir}}/dist/bundle.js {{deploy_dir}}/{{ton_integration_dir}}
-  cp ./web/miniquad_runtime.js {{deploy_dir}}/miniquad_runtime.js
 
 
 ############################ Contracts Only #############################3
