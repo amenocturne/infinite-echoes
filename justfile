@@ -3,7 +3,11 @@ dist_dir := "dist"
 game_js := dist_dir + "/game.js"
 deploy_dir := "deploy"
 target_dir := "target"
+
+# Ton integration
 ton_integration_dir := "ton_integration"
+ton_integration_build_dir := ton_integration_dir + "/build"
+ton_integration_modules_dir := ton_integration_dir + "/node_modules"
 
 # Contracts
 contracts_dir := "contracts"
@@ -18,6 +22,8 @@ clean:
   rm -rf {{target_dir}}
   rm -rf {{contracts_build_dir}}
   rm -rf {{contracts_modules_dir}}
+  rm -rf {{ton_integration_build_dir}}
+  rm -rf {{ton_integration_modules_dir}}
 
 ############################# Game Only #############################
 
