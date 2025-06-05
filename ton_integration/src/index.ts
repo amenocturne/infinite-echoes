@@ -7,8 +7,8 @@ declare global {
 }
 
 import { initParticles } from "./particles";
-import { setupTonWalletIntegration } from "./ton_wallet";
-import { runMiniquadGame } from "./game_loader"; // Import runMiniquadGame
+import { setupTonWalletIntegration } from "./ton/ton_wallet";
+import { runMiniquadGame } from "./game_loader";
 
 (window as any).runMiniquadGame = runMiniquadGame;
 
