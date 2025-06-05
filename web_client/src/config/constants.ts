@@ -1,6 +1,7 @@
 // Application constants
-export const TON_TESTNET_API = 'https://testnet.toncenter.com/api/v2/jsonRPC';
-export const REGISTRY_ADDRESS = 'kQAlmlGXp3ElXKyeLSEXnhacMq117VjqOuzN9r8AJPVEpchv';
+export const TON_TESTNET_API = 'https://testnet.tonapi.io/v2/blockchain/accounts';
+export const TON_API_TOKEN = 'AE4JXL6HYJ3COLAAAAANTD6QYMQT2HB363XPK4SUJDTAAC5T6T653PQZAR6OFKXM7T7VPGY';
+export const REGISTRY_ADDRESS = '0:259a5197a771255cac9e2d21179e169c32ad75ed58ea3aeccdf6bf0024f544a5';
 export const MANIFEST_URL = 'https://infinite-echoes.app/tonconnect-manifest.json';
 
 // Particle system constants

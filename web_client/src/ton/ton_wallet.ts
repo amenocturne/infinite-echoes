@@ -1,4 +1,4 @@
-import { contractInfo, fetchContractInfo, updateContractInfoDisplay } from './ton_api';
+import { contractInfo, fetchContractInfo, updateContractInfoDisplay, getVaultAddress } from './ton_api';
 import { TonConnectUI, THEME } from '@tonconnect/ui';
 import { Address, beginCell, Cell, toNano } from '@ton/core';
 import {
@@ -107,12 +107,22 @@ function updateWalletStatus(connected: boolean): void {
 
   if (connected && tonConnectUI && tonConnectUI.account) {
     const address = tonConnectUI.account.address;
+    console.log("Address", address)
     const formattedAddress = formatAddress(address);
     walletStatus.textContent = `Connected: ${formattedAddress}`;
     walletStatus.classList.add('connected');
+
+    // Refresh contract info to get vault address
+    fetchContractInfo();
   } else {
     walletStatus.textContent = 'Not connected';
     walletStatus.classList.remove('connected');
+
+    // Clear vault address when disconnected
+    if (contractInfo) {
+      contractInfo.userVaultAddress = null;
+      updateContractInfoDisplay();
+    }
   }
 }
 
@@ -158,7 +168,7 @@ export async function createNewPiece(
       validUntil: Math.floor(Date.now() / 1000) + TRANSACTION_CONFIG.VALID_SECONDS,
       messages: [
         {
-          address: REGISTRY_ADDRESS,
+          address: REGISTRY_ADDRESS.startsWith('0:') ? REGISTRY_ADDRESS : `0:${REGISTRY_ADDRESS}`,
           amount: toNano(TRANSACTION_CONFIG.DEFAULT_AMOUNT).toString(),
           payload: finalPayload,
         },
@@ -186,6 +196,18 @@ export async function createNewPiece(
   isWalletConnected: (): boolean => !!(tonConnectUI && tonConnectUI.connected),
 
   getUserAddress: (): string | null => tonConnectUI?.account?.address || null,
+
+  getUserVaultAddress: (): string | null => contractInfo.userVaultAddress,
+
+  refreshVaultAddress: async (): Promise<string | null> => {
+    if (!tonConnectUI?.account?.address) return null;
+    const vaultAddress = await getVaultAddress(tonConnectUI.account.address);
+    if (contractInfo) {
+      contractInfo.userVaultAddress = vaultAddress;
+      updateContractInfoDisplay();
+    }
+    return vaultAddress;
+  },
 
   saveAudioGraph: async (audioGraphData: string): Promise<boolean> => {
     console.log('Save audio graph requested:', audioGraphData);

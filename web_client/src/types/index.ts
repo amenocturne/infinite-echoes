@@ -3,17 +3,37 @@ export interface ContractInfo {
   pieceVersion: number | null;
   vaultVersion: number | null;
   feeParams: {
-    deployValue: string;
-    messageValue: string;
+    deployValue: number;
+    messageValue: number;
   } | null;
   securityParams: {
-    minActionFee: string;
+    minActionFee: number;
     coolDownSeconds: number;
   } | null;
+  userVaultAddress: string | null;
 }
 
 export interface Wallet {
   account: {
     address: string;
   };
+}
+
+// TonBridge interface for global window object
+export interface TonBridge {
+  getContractInfo: () => ContractInfo;
+  isWalletConnected: () => boolean;
+  getUserAddress: () => string | null;
+  getUserVaultAddress: () => string | null;
+  refreshVaultAddress: () => Promise<string | null>;
+  saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
+  loadAudioGraph: (nftAddress: string) => Promise<string | null>;
+  createNewPiece: (pieceRawData: string, remixedFrom?: any) => Promise<boolean>;
+}
+
+// Extend Window interface
+declare global {
+  interface Window {
+    tonBridge: TonBridge;
+  }
 }
