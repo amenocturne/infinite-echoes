@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack"); // Import webpack
 
 module.exports = {
   entry: "./src/index.ts",
@@ -14,6 +15,9 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".js"],
+    fallback: {
+      "buffer": require.resolve("buffer/") // Add fallback for buffer
+    }
   },
   output: {
     filename: "bundle.js",
@@ -32,4 +36,9 @@ module.exports = {
     port: 9000,
     open: true,
   },
+  plugins: [ // Add plugins section
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'], // Provide Buffer global
+    }),
+  ],
 };

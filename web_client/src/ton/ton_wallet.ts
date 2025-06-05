@@ -1,5 +1,7 @@
 import { contractInfo, fetchContractInfo, updateContractInfoDisplay } from './ton_api';
 import { TonConnectUI, THEME } from '@tonconnect/ui';
+import { Address, beginCell, Cell, toNano } from '@ton/core';
+import { CreatePiece, storeCreatePiece } from '../contracts/build/EchoRegistry/EchoRegistry_EchoRegistry';
 
 interface Wallet {
   account: {
@@ -12,7 +14,7 @@ let tonConnectUI: TonConnectUI;
 export async function initializeTonConnectUI(): Promise<void> {
   const container = document.getElementById('ton-connect-ui');
   if (!container) {
-    console.error('Container #ton-connect-ui not found');
+    console.error('Container #ton-connect-ui not found!');
     return;
   }
 
@@ -104,6 +106,58 @@ function updateWalletStatus(connected: boolean): void {
   }
 }
 
+// Function to send a message to the registry contract to create a new piece
+// Accepts raw data (string) and constructs the Cell internally.
+export async function createNewPiece(pieceRawData: string, remixedFrom: Address | null = null): Promise<boolean> {
+  if (!tonConnectUI || !tonConnectUI.connected) {
+    console.error('Wallet not connected. Please connect your wallet first.');
+    alert('Wallet not connected. Please connect your wallet first.');
+    return false;
+  }
+
+  const REGISTRY_ADDRESS = 'kQAlmlGXp3ElXKyeLSEXnhacMq117VjqOuzN9r8AJPVEpchv'; // This should ideally come from a config or ton_api
+
+  try {
+    // Construct the Cell from the raw data
+    const pieceDataCell = beginCell().storeStringTail(pieceRawData).endCell();
+
+    // Use the generated message wrapper to construct the payload
+    const createPieceMessage: CreatePiece = {
+      $$type: 'CreatePiece',
+      pieceData: pieceDataCell,
+      remixedFrom: remixedFrom,
+    };
+
+    // Corrected payload generation using storeCreatePiece
+    const payloadCell = beginCell();
+    storeCreatePiece(createPieceMessage)(payloadCell); // Use the store function from the generated wrapper
+    const finalPayload = payloadCell.endCell().toBoc().toString('base64');
+
+    const finalTransaction = {
+      validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutes
+      messages: [
+        {
+          address: REGISTRY_ADDRESS,
+          amount: toNano('0.1').toString(), // Example amount, adjust as needed for fees
+          payload: finalPayload,
+        },
+      ],
+    };
+
+
+    console.log('Sending transaction to create new piece:', finalTransaction);
+    const result = await tonConnectUI.sendTransaction(finalTransaction);
+    console.log('Transaction sent:', result);
+    alert('Transaction sent successfully! Check your wallet for status.');
+    return true;
+  } catch (error) {
+    console.error('Error sending transaction to create new piece:', error);
+    alert(`Failed to send transaction: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
+}
+
+
 (window as any).tonBridge = {
   getContractInfo: () => {
     return contractInfo;
@@ -117,7 +171,7 @@ function updateWalletStatus(connected: boolean): void {
       return tonConnectUI.account.address;
     }
     return null;
-  },
+    },
 
   saveAudioGraph: async (audioGraphData: string): Promise<boolean> => {
     console.log('Save audio graph requested:', audioGraphData);
@@ -128,6 +182,7 @@ function updateWalletStatus(connected: boolean): void {
     console.log('Load audio graph requested:', nftAddress);
     return null;
   },
+  createNewPiece: createNewPiece, // Expose the new function
 };
 
 export function setupTonWalletIntegration(): void {

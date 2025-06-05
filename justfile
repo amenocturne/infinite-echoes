@@ -8,10 +8,12 @@ target_dir := "target"
 web_client_dir := "web_client"
 web_client_build_dir := web_client_dir + "/build"
 web_client_modules_dir := web_client_dir + "/node_modules"
+web_client_src_dir := web_client_dir + "/src" # This will be the new location for copied contracts
+web_client_contracts_dir := web_client_src_dir + "/contracts" # This will be the new location for copied contracts
 
 # Contracts
 contracts_dir := "contracts"
-contracts_build_dir := contracts_dir + "/build"
+contracts_build_dir := contracts_dir + "/build" # Original build output from blueprint
 contracts_modules_dir := contracts_dir + "/node_modules"
 
 ############################# All #############################
@@ -24,6 +26,7 @@ clean:
   rm -rf {{contracts_modules_dir}}
   rm -rf {{web_client_build_dir}}
   rm -rf {{web_client_modules_dir}}
+  rm -rf {{web_client_contracts_dir}} # Clean the copied contracts too
 
 ############################# Game Only #############################
 
@@ -86,7 +89,7 @@ install-contract-dependencies:
 ############################ Web Client #############################3
 
 
-web-build:
+web-build: copy-wrappers
   cd {{web_client_dir}}; npm run build
 
 web-format:
@@ -94,3 +97,9 @@ web-format:
 
 web-install-dependencies:
   cd {{web_client_dir}}; npm i
+
+# Updated copy-wrappers recipe
+copy-wrappers: build-contracts
+  find {{contracts_build_dir}} -type f -name "*.ts" \
+  | xargs -I {} bash -c \
+  'mkdir -p "{{web_client_src_dir}}/$(dirname {})"; cp "{}" "{{web_client_src_dir}}/{}"'

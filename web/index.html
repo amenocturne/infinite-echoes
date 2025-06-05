@@ -27,18 +27,20 @@
     <div id="wallet-status">Not connected</div>
     <div id="ton-connect-ui" style="margin-top: 10px; min-height: 40px; min-width: 180px;"></div>
     <div id="contract-info" style="margin-top: 10px; font-size: 12px;"></div>
+    <button id="create-piece-btn" style="margin-top: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Sample Piece</button>
   </div>
 
   <canvas id="glcanvas" tabindex="1"></canvas>
 
   <script src="miniquad_runtime.js"></script>
   <script src="web_client/bundle.js" defer></script>
-  <script type="module">
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
       const titleScreen = document.getElementById('title-screen');
       const startButton = document.getElementById('start-button');
       const loadingSpinner = document.getElementById('loading-spinner');
       const canvas = document.getElementById('glcanvas');
+      const createPieceButton = document.getElementById('create-piece-btn');
 
       startButton.addEventListener('click', () => {
         startButton.style.display = 'none';
@@ -61,6 +63,18 @@
             console.log('Title screen removed, game should be interactive');
           }, 500);
         }, 100);
+      });
+
+      createPieceButton.addEventListener('click', async () => {
+        if (window.tonBridge && window.tonBridge.createNewPiece) {
+          // Pass a simple string as raw data. The createNewPiece function will convert it to a Cell.
+          const samplePieceData = `SampleData-${Date.now()}`;
+          console.log('Attempting to create new piece with sample data:', samplePieceData);
+          await window.tonBridge.createNewPiece(samplePieceData);
+        } else {
+          console.error('tonBridge.createNewPiece is not available.');
+          alert('TON wallet integration not fully loaded or connected.');
+        }
       });
     });
 
