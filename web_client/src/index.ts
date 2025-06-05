@@ -6,13 +6,13 @@ declare global {
   var Telegram: any;
 }
 
-import { initParticles } from "./particles";
-import { setupTonWalletIntegration } from "./ton/ton_wallet";
-import { runMiniquadGame } from "./game_loader";
+import { initParticles } from './particles';
+import { setupTonWalletIntegration } from './ton/ton_wallet';
+import { runMiniquadGame } from './game_loader';
 
 (window as any).runMiniquadGame = runMiniquadGame;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   initParticles();
   setupTonWalletIntegration();
 });

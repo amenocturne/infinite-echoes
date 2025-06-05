@@ -24,4 +24,12 @@ module.exports = {
     maxAssetSize: 1024 * 1024,
     maxEntrypointSize: 1024 * 1024,
   },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    compress: true,
+    port: 9000,
+    open: true,
+  },
 };
