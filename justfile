@@ -4,10 +4,10 @@ game_js := dist_dir + "/game.js"
 deploy_dir := "deploy"
 target_dir := "target"
 
-# Ton integration
-ton_integration_dir := "ton_integration"
-ton_integration_build_dir := ton_integration_dir + "/build"
-ton_integration_modules_dir := ton_integration_dir + "/node_modules"
+# Web Client
+web_client_dir := "web_client"
+web_client_build_dir := web_client_dir + "/build"
+web_client_modules_dir := web_client_dir + "/node_modules"
 
 # Contracts
 contracts_dir := "contracts"
@@ -22,8 +22,8 @@ clean:
   rm -rf {{target_dir}}
   rm -rf {{contracts_build_dir}}
   rm -rf {{contracts_modules_dir}}
-  rm -rf {{ton_integration_build_dir}}
-  rm -rf {{ton_integration_modules_dir}}
+  rm -rf {{web_client_build_dir}}
+  rm -rf {{web_client_modules_dir}}
 
 ############################# Game Only #############################
 
@@ -56,8 +56,8 @@ pack: build download-runtime ton-install-dependencies ton-build
   # Copy all resources
   mkdir -p {{deploy_dir}}/resources
   cp -R ./resources/* {{deploy_dir}}/resources/
-  mkdir -p {{deploy_dir}}/{{ton_integration_dir}}
-  cp  {{ton_integration_dir}}/dist/bundle.js {{deploy_dir}}/{{ton_integration_dir}}
+  mkdir -p {{deploy_dir}}/{{web_client_dir}}
+  cp  {{web_client_dir}}/dist/bundle.js {{deploy_dir}}/{{web_client_dir}}
 
 
 ############################ Contracts Only #############################3
@@ -75,11 +75,11 @@ install-contract-dependencies:
   cd {{contracts_dir}}; npm install
 
 
-############################ Ton Integration #############################3
+############################ Web Client #############################3
 
 
 ton-build:
-  cd {{ton_integration_dir}}; npm run build
+  cd {{web_client_dir}}; npm run build
 
 ton-install-dependencies:
-  cd {{ton_integration_dir}}; npm i
+  cd {{web_client_dir}}; npm i

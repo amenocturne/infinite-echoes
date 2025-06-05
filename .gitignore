@@ -16,5 +16,5 @@ contracts/package.ts
 
 # Ton Integration
 
-ton_integration/node_modules
-ton_integration/dist
+web_client/node_modules
+web_client/dist
