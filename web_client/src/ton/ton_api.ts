@@ -1,18 +1,14 @@
-const TON_TESTNET_API = 'https://testnet.toncenter.com/api/v2/jsonRPC';
-const REGISTRY_ADDRESS = 'kQAlmlGXp3ElXKyeLSEXnhacMq117VjqOuzN9r8AJPVEpchv';
+import { TON_TESTNET_API, REGISTRY_ADDRESS } from '../config/constants';
+import { ContractInfo } from '../types';
 
-interface ContractInfo {
-  pieceVersion: number | null;
-  vaultVersion: number | null;
-  feeParams: { deployValue: string; messageValue: string } | null;
-  securityParams: { minActionFee: string; coolDownSeconds: number } | null;
-}
-
+/**
+ * Calls a getter method on a TON contract
+ */
 async function callContractGetter(
   address: string,
   method: string,
-  stack: any[] = [],
-): Promise<any | null> {
+  stack: unknown[] = [],
+): Promise<unknown | null> {
   try {
     const response = await fetch(TON_TESTNET_API, {
       method: 'POST',
@@ -25,12 +21,16 @@ async function callContractGetter(
         jsonrpc: '2.0',
         method: 'runGetMethod',
         params: {
-          address: address,
-          method: method,
-          stack: stack,
+          address,
+          method,
+          stack,
         },
       }),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
     const data = await response.json();
 
@@ -46,28 +46,37 @@ async function callContractGetter(
   }
 }
 
+/**
+ * Gets the current piece version from the registry contract
+ */
 export async function getPieceVersion(): Promise<number | null> {
-  const result = await callContractGetter(REGISTRY_ADDRESS, 'getPieceVersion');
-  if (result && result.exit_code === 0 && result.stack.length > 0) {
+  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getPieceVersion')) as any;
+  if (result?.exit_code === 0 && result.stack?.length > 0) {
     return parseInt(result.stack[0][1], 10);
   }
   return null;
 }
 
+/**
+ * Gets the current vault version from the registry contract
+ */
 export async function getVaultVersion(): Promise<number | null> {
-  const result = await callContractGetter(REGISTRY_ADDRESS, 'getVaultVersion');
-  if (result && result.exit_code === 0 && result.stack.length > 0) {
+  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getVaultVersion')) as any;
+  if (result?.exit_code === 0 && result.stack?.length > 0) {
     return parseInt(result.stack[0][1], 10);
   }
   return null;
 }
 
+/**
+ * Gets the fee parameters from the registry contract
+ */
 export async function getFeeParams(): Promise<{
   deployValue: string;
   messageValue: string;
 } | null> {
-  const result = await callContractGetter(REGISTRY_ADDRESS, 'getFeeParams');
-  if (result && result.exit_code === 0 && result.stack.length >= 2) {
+  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getFeeParams')) as any;
+  if (result?.exit_code === 0 && result.stack?.length >= 2) {
     return {
       deployValue: result.stack[0][1],
       messageValue: result.stack[1][1],
@@ -76,12 +85,15 @@ export async function getFeeParams(): Promise<{
   return null;
 }
 
+/**
+ * Gets the security parameters from the registry contract
+ */
 export async function getSecurityParams(): Promise<{
   minActionFee: string;
   coolDownSeconds: number;
 } | null> {
-  const result = await callContractGetter(REGISTRY_ADDRESS, 'getSecurityParams');
-  if (result && result.exit_code === 0 && result.stack.length >= 2) {
+  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getSecurityParams')) as any;
+  if (result?.exit_code === 0 && result.stack?.length >= 2) {
     return {
       minActionFee: result.stack[0][1],
       coolDownSeconds: parseInt(result.stack[1][1], 10),
@@ -97,12 +109,17 @@ export let contractInfo: ContractInfo = {
   securityParams: null,
 };
 
+/**
+ * Fetches all contract information from the registry
+ */
 export async function fetchContractInfo(): Promise<ContractInfo | null> {
   try {
-    const pieceVersion = await getPieceVersion();
-    const vaultVersion = await getVaultVersion();
-    const feeParams = await getFeeParams();
-    const securityParams = await getSecurityParams();
+    const [pieceVersion, vaultVersion, feeParams, securityParams] = await Promise.all([
+      getPieceVersion(),
+      getVaultVersion(),
+      getFeeParams(),
+      getSecurityParams(),
+    ]);
 
     contractInfo = {
       pieceVersion,
@@ -117,24 +134,28 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
     return contractInfo;
   } catch (error) {
     console.error('Error fetching contract info:', error);
+    // Retry after delay
     setTimeout(fetchContractInfo, 3000);
     return null;
   }
 }
 
+/**
+ * Updates the contract info display in the UI
+ */
 export function updateContractInfoDisplay(): void {
   const contractInfoElement = document.getElementById('contract-info');
   if (!contractInfoElement) return;
 
-  if (contractInfo && contractInfo.pieceVersion !== null) {
+  if (contractInfo.pieceVersion !== null) {
     contractInfoElement.innerHTML = `
-            <div>Piece Version: ${contractInfo.pieceVersion}</div>
-            ${
-              contractInfo.vaultVersion !== null
-                ? `<div>Vault Version: ${contractInfo.vaultVersion}</div>`
-                : ''
-            }
-        `;
+      <div>Piece Version: ${contractInfo.pieceVersion}</div>
+      ${
+        contractInfo.vaultVersion !== null
+          ? `<div>Vault Version: ${contractInfo.vaultVersion}</div>`
+          : ''
+      }
+    `;
   } else {
     contractInfoElement.innerHTML = '<div>Loading contract info...</div>';
   }
