@@ -32,6 +32,7 @@ Install required tools
 ```bash
 cargo install wasm-bindgen-cli
 cargo install just
+cargo install static-web-server
 ```
 
 ## Building, Running, and Deployment

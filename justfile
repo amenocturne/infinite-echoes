@@ -44,7 +44,7 @@ build:
   fi
 
 run: build download-runtime pack
-  python3 -m http.server 1234 -d {{deploy_dir}}
+  static-web-server --root {{deploy_dir}} --port 1234
 
 
 download-runtime:
