@@ -11,7 +11,7 @@ export interface ContractInfo {
   userVaultAddress: string | null;
   pieceCount: number | null;
   pieceAddresses: string[] | null;
-  pieceData: { [address: string]: string } | null;
+  pieceData: { [address: string]: string | null } | null;
 }
 
 export interface Wallet {
@@ -27,7 +27,7 @@ export interface TonBridge {
   getUserAddress: () => string | null;
   getUserVaultAddress: () => string | null;
   getPieceAddresses: () => string[] | null;
-  getPieceData: () => { [address: string]: string } | null;
+  getPieceData: () => { [address: string]: string | null }; // Changed this line
   refreshVaultAddress: () => Promise<string | null>;
   saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;

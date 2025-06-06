@@ -283,8 +283,7 @@ export async function getPieceAddresses(
 
   // First try with the raw address format
   try {
-    const result =
-      (await callContractGetter(vaultAddress, "getPieces")) as any;
+    const result = (await callContractGetter(vaultAddress, "getPieces")) as any;
 
     if (result && result.success && result.stack && result.stack.length > 0) {
       // The result is a dictionary of piece addresses
@@ -296,14 +295,14 @@ export async function getPieceAddresses(
       try {
         // Parse the dictionary using Dictionary utility
         const cell = Cell.fromBase64(
-          Buffer.from(dictCell, "hex").toString("base64")
+          Buffer.from(dictCell, "hex").toString("base64"),
         );
 
         // Load the dictionary with uint16 keys and Address values
         const dict = Dictionary.loadDirect(
           Dictionary.Keys.Uint(16),
           Dictionary.Values.Address(),
-          cell
+          cell,
         );
 
         // Convert dictionary to array of addresses
@@ -367,14 +366,14 @@ export async function getPieceAddresses(
       try {
         // Parse the dictionary using Dictionary utility
         const cell = Cell.fromBase64(
-          Buffer.from(dictCell, "hex").toString("base64")
+          Buffer.from(dictCell, "hex").toString("base64"),
         );
 
         // Load the dictionary with uint16 keys and Address values
         const dict = Dictionary.loadDirect(
           Dictionary.Keys.Uint(16),
           Dictionary.Values.Address(),
-          cell
+          cell,
         );
 
         // Convert dictionary to array of addresses
@@ -412,29 +411,37 @@ export async function getPieceData(
   try {
     const result = (await callContractGetter(pieceAddress, "getData")) as any;
 
-    if (result && result.success && result.stack && result.stack.length > 0) {
-      const cellData = result.stack[0].cell;
-      if (!cellData) {
-        return null;
-      }
+    if (
+      !(result && result.success && result.stack && result.stack.length > 0)
+    ) {
+      console.log("Api did not return correct data");
+      return null;
+    }
 
-      try {
-        // Convert hex to base64 and return the raw data
-        const base64Data = Buffer.from(cellData, "hex").toString("base64");
-        const slice = Cell.fromBase64(base64Data).beginParse();
-        const result = slice
-        .loadStringTail();
-        // .skip(32)
-        return result;
-      } catch (parseError) {
-        console.error(`Error processing piece data for ${pieceAddress}:`, parseError);
-        return null;
-      }
+    const cellData = result.stack[0].cell;
+    if (!cellData) {
+      console.log("No data");
+      return null;
+    }
+
+    try {
+      const base64Data = Buffer.from(cellData, "hex").toString("base64");
+      const slice = Cell.fromBase64(base64Data).beginParse();
+      const result = slice.loadStringTail();
+      console.log("Got result");
+      return result;
+    } catch (parseError) {
+      console.error(
+        `Error processing piece data for ${pieceAddress}:`,
+        parseError,
+      );
+      return null;
     }
   } catch (error) {
     console.error(`Error getting piece data for ${pieceAddress}:`, error);
   }
 
+  console.log("Here");
   return null;
 }
 
@@ -442,36 +449,28 @@ export async function getPieceData(
  * Gets data for all pieces in the provided addresses array
  */
 export async function getAllPieceData(
-  pieceAddresses: string[] | null
-): Promise<{ [address: string]: string } | null> {
+  pieceAddresses: string[] | null,
+): Promise<{ [address: string]: string | null }> {
+  const pieceData: { [address: string]: string | null } = {};
+
   if (!pieceAddresses || pieceAddresses.length === 0) {
-    return null;
+    return pieceData;
   }
 
-  const pieceData: { [address: string]: string } = {};
-
-  // Process pieces one by one to ensure we don't miss any and to better debug issues
   for (let i = 0; i < pieceAddresses.length; i++) {
     const address = pieceAddresses[i];
-
     try {
-      // Get data for this piece
       const data = await getPieceData(address);
-
-      if (data) {
-        pieceData[address] = data;
-      }
+      pieceData[address] = data;
     } catch (error) {
       console.error(`Error processing piece ${address}:`, error);
     }
-
-    // Add a small delay between requests to avoid rate limiting
     if (i < pieceAddresses.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
-  return Object.keys(pieceData).length > 0 ? pieceData : null;
+  return pieceData;
 }
 
 // Track loading state
@@ -524,13 +523,13 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
 
         // Only try to get piece count and addresses if we have a valid vault address
         if (vaultAddress) {
-            const pieceCount = await getPieceCount(vaultAddress);
-            contractInfo.pieceCount = pieceCount;
+          const pieceCount = await getPieceCount(vaultAddress);
+          contractInfo.pieceCount = pieceCount;
 
-            const pieceAddresses = await getPieceAddresses(vaultAddress);
-            contractInfo.pieceAddresses = pieceAddresses;
-            const pieceData = await getAllPieceData(pieceAddresses);
-            contractInfo.pieceData = pieceData;
+          const pieceAddresses = await getPieceAddresses(vaultAddress);
+          contractInfo.pieceAddresses = pieceAddresses;
+          const pieceData = await getAllPieceData(pieceAddresses);
+          contractInfo.pieceData = pieceData;
         } else {
           contractInfo.pieceCount = null;
           contractInfo.pieceAddresses = null;
@@ -579,8 +578,11 @@ export function updateContractInfoDisplay(): void {
       }
 
       // Add piece addresses if available
-      if (contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0) {
-        html += `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
+      if (
+        contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0
+      ) {
+        html +=
+          `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
         // Optionally show the first few addresses
         const maxToShow = Math.min(3, contractInfo.pieceAddresses.length);
         for (let i = 0; i < maxToShow; i++) {
@@ -589,13 +591,17 @@ export function updateContractInfoDisplay(): void {
 
           // Add piece data if available
           if (contractInfo.pieceData && contractInfo.pieceData[address]) {
-            html += ` (Base64 Data: ${contractInfo.pieceData[address].substring(0, 10)}...)`;
+            html += ` (Base64 Data: ${
+              contractInfo.pieceData[address].substring(0, 10)
+            }...)`;
           }
 
           html += `</div>`;
         }
         if (contractInfo.pieceAddresses.length > maxToShow) {
-          html += `<div>...and ${contractInfo.pieceAddresses.length - maxToShow} more</div>`;
+          html += `<div>...and ${
+            contractInfo.pieceAddresses.length - maxToShow
+          } more</div>`;
         }
       }
     } else {
