@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::js_sys::Promise;
+use wasm_bindgen_futures::JsFuture;
 
 // JavaScript bindings for TON wallet functions
 #[wasm_bindgen]
@@ -47,7 +48,11 @@ impl TonWallet {
         // Check initial connection status
         let connected = isWalletConnected();
         let user_address = if connected { getUserAddress() } else { None };
-        let user_vault_address = if connected { getUserVaultAddress() } else { None };
+        let user_vault_address = if connected {
+            getUserVaultAddress()
+        } else {
+            None
+        };
 
         Self {
             connected,
@@ -59,9 +64,17 @@ impl TonWallet {
     /// Update wallet connection status and contract info
     pub fn update(&mut self) {
         self.connected = isWalletConnected();
-        self.user_address = if self.connected { getUserAddress() } else { None };
+        self.user_address = if self.connected {
+            getUserAddress()
+        } else {
+            None
+        };
         // user_vault_address is updated by the JS side when fetchContractInfo is called
-        self.user_vault_address = if self.connected { getUserVaultAddress() } else { None };
+        self.user_vault_address = if self.connected {
+            getUserVaultAddress()
+        } else {
+            None
+        };
     }
 
     /// Check if wallet is connected
@@ -83,7 +96,7 @@ impl TonWallet {
     pub fn formatted_address(&self) -> String {
         if let Some(addr) = &self.user_address {
             if addr.len() > 10 {
-                format!("{}...{}", &addr[..6], &addr[addr.len()-4..])
+                format!("{}...{}", &addr[..6], &addr[addr.len() - 4..])
             } else {
                 addr.clone()
             }
@@ -119,12 +132,12 @@ impl TonWallet {
     }
 
     /// Refresh the user's vault address
-    pub fn refresh_vault_address(&mut self) -> Promise {
-        refreshVaultAddress()
+    pub async fn refresh_vault_address(&mut self) -> Result<JsValue, JsValue> {
+        JsFuture::from(refreshVaultAddress()).await
     }
 
     /// Save audio graph data to the blockchain
-    pub fn save_audio_graph(&self, data: &str) -> Promise {
+    pub fn save_audio_graph(&self, data: &str) -> Promise { // TODO:
         if !self.connected {
             // Create a resolved promise with false value
             return Promise::resolve(&JsValue::from_bool(false));
@@ -133,7 +146,7 @@ impl TonWallet {
     }
 
     /// Load audio graph data from the blockchain
-    pub fn load_audio_graph(&self, address: &str) -> Promise {
+    pub fn load_audio_graph(&self, address: &str) -> Promise { // TODO:
         if !self.connected {
             // Create a resolved promise with null value
             return Promise::resolve(&JsValue::null());
@@ -141,14 +154,12 @@ impl TonWallet {
         loadAudioGraph(address)
     }
 
-    /// Create a new piece on the blockchain
-    pub fn create_new_piece(&self, piece_raw_data: &str, remixed_from: Option<&str>) -> Promise {
+    pub async fn create_new_piece(&self, piece_raw_data: &str, remixed_from: Option<&str>) -> Result<JsValue, JsValue>  {
         if !self.connected {
-            // Create a rejected promise with error message
-            return Promise::reject(&JsValue::from_str("Wallet not connected"));
+            return Result::Err(JsValue::from_str("Wallet not connected"));
         }
 
         let remixed_from_js = remixed_from.map(|s| s.to_string());
-        createNewPiece(piece_raw_data, remixed_from_js)
+        JsFuture::from( createNewPiece(piece_raw_data, remixed_from_js)).await
     }
 }
