@@ -27,7 +27,7 @@ export interface TonBridge {
   getUserAddress: () => string | null;
   getUserVaultAddress: () => string | null;
   getPieceAddresses: () => string[] | null;
-  getPieceData: () => { [address: string]: string | null }; // Changed this line
+  getPieceData: () => { [address: string]: string | null };
   refreshVaultAddress: () => Promise<string | null>;
   saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;

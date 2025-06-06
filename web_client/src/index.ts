@@ -12,18 +12,18 @@ declare global {
 }
 
 import { initParticles } from './particles';
-import { setupTonWalletIntegration } from './ton/ton_wallet';
+import { setupTonWalletIntegration } from './ton';
 import { runMiniquadGame } from './game_loader';
 
 /**
  * Main application entry point
  */
-function initializeApplication(): void {
+async function initializeApplication(): Promise<void> {
   // Initialize background particles
   initParticles();
 
   // Set up TON wallet integration
-  setupTonWalletIntegration();
+  await setupTonWalletIntegration();
 }
 
 // Expose the game loader function globally
