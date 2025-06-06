@@ -142,7 +142,10 @@ export async function createNewPiece(
 
   try {
     // Construct the Cell from the raw data
-    const pieceDataCell = beginCell().storeStringTail(pieceRawData).endCell();
+    const buffer = Buffer.from(pieceRawData);
+    const pieceDataCell = beginCell()
+      .storeBuffer(buffer)
+      .endCell();
 
     // Use the generated message wrapper to construct the payload
     const createPieceMessage: CreatePiece = {
@@ -191,7 +194,7 @@ export async function createNewPiece(
   getUserVaultAddress: (): string | null => contractInfo.userVaultAddress,
 
   getPieceAddresses: (): string[] | null => contractInfo.pieceAddresses,
-  
+
   getPieceData: (): { [address: string]: string } | null => contractInfo.pieceData,
 
   refreshVaultAddress: async (): Promise<string | null> => {

@@ -67,8 +67,8 @@
 
       createPieceButton.addEventListener('click', async () => {
         if (window.tonBridge && window.tonBridge.createNewPiece) {
-          // Pass a simple string as raw data. The createNewPiece function will convert it to a Cell.
-          const samplePieceData = `SampleData-${Date.now()}`;
+          // Pass a binary string as raw data
+          const samplePieceData = "SGVsbG8="; // "Hello"
           console.log('Attempting to create new piece with sample data:', samplePieceData);
           await window.tonBridge.createNewPiece(samplePieceData);
         } else {

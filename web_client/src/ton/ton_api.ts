@@ -400,7 +400,7 @@ export async function getPieceAddresses(
 }
 
 /**
- * Gets data from a piece contract and parses it as a string
+ * Gets data from a piece contract as raw base64 encoded data
  */
 export async function getPieceData(
   pieceAddress: string,
@@ -419,23 +419,15 @@ export async function getPieceData(
       }
 
       try {
+        // Convert hex to base64 and return the raw data
         const base64Data = Buffer.from(cellData, "hex").toString("base64");
-        const cell = Cell.fromBase64(base64Data);
-        const slice = cell.beginParse();
-
-        let dataString = "";
-
-        try {
-          // Try to parse as a string
-          dataString = slice.loadStringTail();
-        } catch (e) {
-          // If string parsing fails, return a placeholder
-          return "[Binary data]";
-        }
-
-        return dataString;
+        const slice = Cell.fromBase64(base64Data).beginParse();
+        const result = slice
+        .loadStringTail();
+        // .skip(32)
+        return result;
       } catch (parseError) {
-        console.error(`Error parsing piece data for ${pieceAddress}:`, parseError);
+        console.error(`Error processing piece data for ${pieceAddress}:`, parseError);
         return null;
       }
     }
@@ -597,10 +589,7 @@ export function updateContractInfoDisplay(): void {
 
           // Add piece data if available
           if (contractInfo.pieceData && contractInfo.pieceData[address]) {
-            const dataPreview = contractInfo.pieceData[address].length > 20
-              ? contractInfo.pieceData[address].substring(0, 20) + '...'
-              : contractInfo.pieceData[address];
-            html += ` (Data: "${dataPreview}")`;
+            html += ` (Base64 Data: ${contractInfo.pieceData[address].substring(0, 10)}...)`;
           }
 
           html += `</div>`;
