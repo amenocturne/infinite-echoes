@@ -44,8 +44,6 @@ export async function initializeTonConnectUI(): Promise<void> {
   container.appendChild(customButton);
 
   try {
-    console.log('Initializing TON Connect UI');
-
     tonConnectUI = new TonConnectUI({
       manifestUrl: MANIFEST_URL,
       uiPreferences: {
@@ -60,11 +58,7 @@ export async function initializeTonConnectUI(): Promise<void> {
         : {}),
     });
 
-    console.log('TON Connect UI initialized successfully');
-
     customButton.addEventListener('click', async () => {
-      console.log('Connect button clicked');
-
       try {
         if (tonConnectUI.connected) {
           await tonConnectUI.disconnect();
@@ -92,7 +86,6 @@ export async function initializeTonConnectUI(): Promise<void> {
     console.error('Error initializing TON Connect UI:', error);
 
     customButton.addEventListener('click', () => {
-      console.error('TON Connect initialization failed:', error);
       alert('TON Connect is not available. Please try again later.');
     });
   }
@@ -107,7 +100,6 @@ function updateWalletStatus(connected: boolean): void {
 
   if (connected && tonConnectUI && tonConnectUI.account) {
     const address = tonConnectUI.account.address;
-    console.log("Address", address)
     const formattedAddress = formatAddress(address);
     walletStatus.textContent = `Connected: ${formattedAddress}`;
     walletStatus.classList.add('connected');
@@ -175,7 +167,6 @@ export async function createNewPiece(
       ],
     };
 
-    console.log('Sending transaction to create new piece:', finalTransaction);
     const result = await tonConnectUI.sendTransaction(finalTransaction);
     console.log('Transaction sent:', result);
     alert('Transaction sent successfully! Check your wallet for status.');
@@ -226,8 +217,6 @@ export async function createNewPiece(
  * Sets up the TON wallet integration
  */
 export function setupTonWalletIntegration(): void {
-  console.log('Setting up TON wallet integration');
-
   // Initialize in sequence
   updateContractInfoDisplay();
   fetchContractInfo();

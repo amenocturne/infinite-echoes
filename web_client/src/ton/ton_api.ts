@@ -73,15 +73,12 @@ async function callContractGetter(
 ): Promise<unknown | null> {
   return apiRateLimiter.schedule(async () => {
     try {
-      console.log(`Calling TON API: ${method}`);
-
       // Format arguments for URL
       const argsParam = args.length > 0
         ? `?args=${args.map((arg) => encodeURIComponent(arg)).join(",")}`
         : "";
 
       const url = `${TON_TESTNET_API}/${address}/methods/${method}${argsParam}`;
-      console.log("API URL:", url);
 
       const response = await fetch(url, {
         method: "GET",
@@ -103,7 +100,6 @@ async function callContractGetter(
       }
 
       const data = await response.json();
-      console.log(`API response for ${method}:`, data);
 
       if (data.error) {
         console.error("TON API error:", data.error);
@@ -173,13 +169,11 @@ export async function getVaultAddress(
   const formattedAddress = userAddress.startsWith("0:")
     ? userAddress
     : `0:${userAddress}`;
-  console.log("Getting vault address for user:", formattedAddress);
 
   const result =
     (await callContractGetter(REGISTRY_ADDRESS, "getVaultAddress", [
       formattedAddress,
     ])) as any;
-  console.log("getVaultAddress raw result:", result);
 
   if (result && result.stack[0] && result.stack[0].type == "cell") {
     const cellData = result.stack[0].cell;
@@ -191,7 +185,6 @@ export async function getVaultAddress(
       testOnly: false, // Set to true for testnet
       bounceable: true, // Set to false for non-bounceable
     });
-    console.log("Found vault address:", addr);
     return addr;
   }
   return null;
@@ -205,20 +198,13 @@ export async function getPieceCount(
 ): Promise<number | null> {
   // Check if vaultAddress is valid
   if (!vaultAddress) {
-    console.log("No vault address provided to getPieceCount");
     return null;
   }
 
-  console.log("Getting piece count for vault address:", vaultAddress);
-
   // First try with the raw address format
   try {
-    console.log("Trying with raw address format first");
-    console.log("Using formatted address:", vaultAddress);
-
     const result =
       (await callContractGetter(vaultAddress, "getPieceCount")) as any;
-    console.log("getPieceCount raw result (direct):", result);
 
     if (
       result &&
@@ -228,7 +214,6 @@ export async function getPieceCount(
       result.stack[0].num
     ) {
       const count = parseInt(result.stack[0].num, 16);
-      console.log("Piece count (direct):", count);
       return count;
     }
   } catch (directError) {
@@ -237,7 +222,6 @@ export async function getPieceCount(
 
   // If direct approach fails, try with friendly address format
   try {
-    console.log("Trying with friendly address format");
     // Parse the raw address and convert to friendly format
     const parts = vaultAddress.split(":");
     if (parts.length !== 2) {
@@ -266,11 +250,8 @@ export async function getPieceCount(
       bounceable: true,
     });
 
-    console.log("Using friendly address format:", friendlyAddress);
-
     const result =
       (await callContractGetter(friendlyAddress, "getPieceCount")) as any;
-    console.log("getPieceCount raw result (friendly):", result);
 
     if (
       result &&
@@ -280,14 +261,12 @@ export async function getPieceCount(
       result.stack[0].num
     ) {
       const count = parseInt(result.stack[0].num, 16);
-      console.log("Piece count (friendly):", count);
       return count;
     }
   } catch (friendlyError) {
     console.error("Error with friendly address format:", friendlyError);
   }
 
-  console.log("All attempts to get piece count failed");
   return null;
 }
 
@@ -338,21 +317,16 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
 
         // Only try to get piece count if we have a valid vault address
         if (vaultAddress) {
-          console.log("Vault address found:", vaultAddress);
-
           // Ensure it's in the correct format
           if (vaultAddress.includes(":")) {
-            console.log("Valid vault address format, getting piece count");
             const pieceCount = await getPieceCount(vaultAddress);
             contractInfo.pieceCount = pieceCount;
           } else {
-            console.log("Vault address missing colon, attempting to format");
             // Try to add the workchain prefix if missing
             const pieceCount = await getPieceCount(vaultAddress);
             contractInfo.pieceCount = pieceCount;
           }
         } else {
-          console.log("No vault address found, skipping piece count");
           contractInfo.pieceCount = null;
         }
       }
