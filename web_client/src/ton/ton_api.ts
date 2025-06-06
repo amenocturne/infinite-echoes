@@ -4,7 +4,7 @@ import {
   TON_TESTNET_API,
 } from "../config/constants";
 import { ContractInfo } from "../types";
-import { Address, Cell } from "@ton/core";
+import { Address, Cell, Dictionary } from "@ton/core";
 
 // Rate limiter for TON API calls
 class ApiRateLimiter {
@@ -270,6 +270,135 @@ export async function getPieceCount(
   return null;
 }
 
+/**
+ * Gets all piece addresses from a user's vault
+ */
+export async function getPieceAddresses(
+  vaultAddress: string | null,
+): Promise<string[] | null> {
+  // Check if vaultAddress is valid
+  if (!vaultAddress) {
+    return null;
+  }
+
+  // First try with the raw address format
+  try {
+    const result =
+      (await callContractGetter(vaultAddress, "getPieces")) as any;
+
+    if (result && result.success && result.stack && result.stack.length > 0) {
+      // The result is a dictionary of piece addresses
+      const dictCell = result.stack[0].cell;
+      if (!dictCell) {
+        return [];
+      }
+
+      try {
+        // Parse the dictionary using Dictionary utility
+        const cell = Cell.fromBase64(
+          Buffer.from(dictCell, "hex").toString("base64")
+        );
+        
+        // Load the dictionary with uint16 keys and Address values
+        const dict = Dictionary.loadDirect(
+          Dictionary.Keys.Uint(16), 
+          Dictionary.Values.Address(),
+          cell
+        );
+        
+        // Convert dictionary to array of addresses
+        const addresses: string[] = [];
+        for (const [_, value] of dict) {
+          addresses.push(value.toString({
+            testOnly: false,
+            bounceable: true,
+          }));
+        }
+        
+        return addresses;
+      } catch (parseError) {
+        console.error("Error parsing piece addresses:", parseError);
+        return [];
+      }
+    }
+  } catch (directError) {
+    console.error("Error with direct address format:", directError);
+  }
+
+  // If direct approach fails, try with friendly address format
+  try {
+    // Parse the raw address and convert to friendly format
+    const parts = vaultAddress.split(":");
+    if (parts.length !== 2) {
+      console.error(
+        "Invalid address format for friendly conversion:",
+        vaultAddress,
+      );
+      return null;
+    }
+
+    const workchain = parseInt(parts[0]);
+    const addressPart = parts[1];
+
+    if (!addressPart) {
+      console.error(
+        "Invalid address part for friendly conversion:",
+        vaultAddress,
+      );
+      return null;
+    }
+
+    // Create Address object and convert to friendly format
+    const address = new Address(workchain, Buffer.from(addressPart, "hex"));
+    const friendlyAddress = address.toString({
+      testOnly: true, // Using testOnly: true for testnet
+      bounceable: true,
+    });
+
+    const result =
+      (await callContractGetter(friendlyAddress, "getPieces")) as any;
+
+    if (result && result.success && result.stack && result.stack.length > 0) {
+      const dictCell = result.stack[0].cell;
+      if (!dictCell) {
+        return [];
+      }
+
+      try {
+        // Parse the dictionary using Dictionary utility
+        const cell = Cell.fromBase64(
+          Buffer.from(dictCell, "hex").toString("base64")
+        );
+        
+        // Load the dictionary with uint16 keys and Address values
+        const dict = Dictionary.loadDirect(
+          Dictionary.Keys.Uint(16), 
+          Dictionary.Values.Address(),
+          cell
+        );
+        
+        // Convert dictionary to array of addresses
+        const addresses: string[] = [];
+        for (const [_, value] of dict) {
+          addresses.push(value.toString({
+            testOnly: true, // Using testOnly: true for testnet
+            bounceable: true,
+          }));
+        }
+        
+        return addresses;
+      } catch (parseError) {
+        console.error("Error parsing piece addresses:", parseError);
+        return [];
+      }
+    }
+  } catch (friendlyError) {
+    console.error("Error with friendly address format:", friendlyError);
+  }
+
+  return null;
+}
+
 // Track loading state
 let isLoadingContractInfo = false;
 
@@ -278,6 +407,7 @@ export let contractInfo: ContractInfo = {
   securityParams: null,
   userVaultAddress: null,
   pieceCount: null,
+  pieceAddresses: null,
 };
 
 /**
@@ -303,6 +433,7 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
       securityParams,
       userVaultAddress: null,
       pieceCount: null,
+      pieceAddresses: null,
     };
 
     // Update display with initial info
@@ -315,19 +446,28 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
         const vaultAddress = await getVaultAddress(userAddress);
         contractInfo.userVaultAddress = vaultAddress;
 
-        // Only try to get piece count if we have a valid vault address
+        // Only try to get piece count and addresses if we have a valid vault address
         if (vaultAddress) {
           // Ensure it's in the correct format
           if (vaultAddress.includes(":")) {
             const pieceCount = await getPieceCount(vaultAddress);
             contractInfo.pieceCount = pieceCount;
+            
+            // Get piece addresses
+            const pieceAddresses = await getPieceAddresses(vaultAddress);
+            contractInfo.pieceAddresses = pieceAddresses;
           } else {
             // Try to add the workchain prefix if missing
             const pieceCount = await getPieceCount(vaultAddress);
             contractInfo.pieceCount = pieceCount;
+            
+            // Get piece addresses
+            const pieceAddresses = await getPieceAddresses(vaultAddress);
+            contractInfo.pieceAddresses = pieceAddresses;
           }
         } else {
           contractInfo.pieceCount = null;
+          contractInfo.pieceAddresses = null;
         }
       }
     }
@@ -369,6 +509,19 @@ export function updateContractInfoDisplay(): void {
       // Add piece count if available
       if (contractInfo.pieceCount !== null) {
         html += `<div>Your Pieces: ${contractInfo.pieceCount}</div>`;
+      }
+      
+      // Add piece addresses if available
+      if (contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0) {
+        html += `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
+        // Optionally show the first few addresses
+        const maxToShow = Math.min(3, contractInfo.pieceAddresses.length);
+        for (let i = 0; i < maxToShow; i++) {
+          html += `<div>- ${formatAddress(contractInfo.pieceAddresses[i])}</div>`;
+        }
+        if (contractInfo.pieceAddresses.length > maxToShow) {
+          html += `<div>...and ${contractInfo.pieceAddresses.length - maxToShow} more</div>`;
+        }
       }
     } else {
       html += `<div>Your Vault: Not created yet</div>`;

@@ -190,6 +190,8 @@ export async function createNewPiece(
 
   getUserVaultAddress: (): string | null => contractInfo.userVaultAddress,
 
+  getPieceAddresses: (): string[] | null => contractInfo.pieceAddresses,
+
   refreshVaultAddress: async (): Promise<string | null> => {
     if (!tonConnectUI?.account?.address) return null;
     const vaultAddress = await getVaultAddress(tonConnectUI.account.address);

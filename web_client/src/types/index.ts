@@ -10,6 +10,7 @@ export interface ContractInfo {
   } | null;
   userVaultAddress: string | null;
   pieceCount: number | null;
+  pieceAddresses: string[] | null;
 }
 
 export interface Wallet {
@@ -24,6 +25,7 @@ export interface TonBridge {
   isWalletConnected: () => boolean;
   getUserAddress: () => string | null;
   getUserVaultAddress: () => string | null;
+  getPieceAddresses: () => string[] | null;
   refreshVaultAddress: () => Promise<string | null>;
   saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;
