@@ -16,15 +16,23 @@ extern "C" {
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn getUserVaultAddress() -> Option<String>;
 
-    // Removed refreshVaultAddress as it requires wasm-bindgen-futures
-    // #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
-    // fn refreshVaultAddress() -> Promise;
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn getPieceAddresses() -> Option<Box<[JsValue]>>;
+
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn getPieceData() -> JsValue;
+
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn refreshVaultAddress() -> Promise;
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn saveAudioGraph(data: &str) -> Promise;
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn loadAudioGraph(address: &str) -> Promise;
+
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn createNewPiece(pieceRawData: &str, remixedFrom: Option<String>) -> Promise;
 }
 
 /// TON wallet integration for the game
@@ -84,13 +92,63 @@ impl TonWallet {
         }
     }
 
-    // Removed refresh_vault_address async function due to dependency constraint
-    // pub async fn refresh_vault_address(&mut self) -> Result<(), JsValue> {
-    //     if self.connected && self.user_address.is_some() {
-    //         let promise = refreshVaultAddress();
-    //         let js_value = wasm_bindgen_futures::JsFuture::from(promise).await?;
-    //         self.user_vault_address = js_value.as_string();
-    //     }
-    //     Ok(())
-    // }
+    /// Get piece addresses from the TON bridge
+    pub fn get_piece_addresses(&self) -> Vec<String> {
+        if !self.connected {
+            return Vec::new();
+        }
+
+        if let Some(addresses) = getPieceAddresses() {
+            let mut result = Vec::new();
+            for i in 0..addresses.len() {
+                if let Some(js_value) = addresses.get(i) {
+                    if let Some(addr) = js_value.as_string() {
+                        result.push(addr);
+                    }
+                }
+            }
+            result
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Get piece data from the TON bridge
+    pub fn get_piece_data(&self) -> JsValue {
+        getPieceData()
+    }
+
+    /// Refresh the user's vault address
+    pub fn refresh_vault_address(&mut self) -> Promise {
+        refreshVaultAddress()
+    }
+
+    /// Save audio graph data to the blockchain
+    pub fn save_audio_graph(&self, data: &str) -> Promise {
+        if !self.connected {
+            // Create a resolved promise with false value
+            return Promise::resolve(&JsValue::from_bool(false));
+        }
+        saveAudioGraph(data)
+    }
+
+    /// Load audio graph data from the blockchain
+    pub fn load_audio_graph(&self, address: &str) -> Promise {
+        if !self.connected {
+            // Create a resolved promise with null value
+            return Promise::resolve(&JsValue::null());
+        }
+        loadAudioGraph(address)
+    }
+
+    /// Create a new piece on the blockchain
+    pub fn create_new_piece(&self, piece_raw_data: &str, remixed_from: Option<&str>) -> Promise {
+        if !self.connected {
+            // Create a rejected promise with error message
+            return Promise::reject(&JsValue::from_str("Wallet not connected"));
+        }
+
+        let remixed_from_js = remixed_from.map(|s| s.to_string());
+        createNewPiece(piece_raw_data, remixed_from_js)
+    }
 }
