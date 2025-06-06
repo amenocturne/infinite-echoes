@@ -4,7 +4,6 @@ contract EchoPiece(
   vault: Address,
   remixedFrom: Address?,
   created: Int as uint32,
-  version: Int as uint32,
   data: Cell
 ) {
   receive() {}
@@ -15,9 +14,5 @@ contract EchoPiece(
 
   get fun getData(): Cell {
     return self.data
-  }
-
-  get fun getVersion(): Int {
-    return self.version
   }
 }

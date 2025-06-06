@@ -1,5 +1,10 @@
-import { TON_API_TOKEN, TON_TESTNET_API, REGISTRY_ADDRESS } from '../config/constants';
-import { ContractInfo } from '../types';
+import {
+  REGISTRY_ADDRESS,
+  TON_API_TOKEN,
+  TON_TESTNET_API,
+} from "../config/constants";
+import { ContractInfo } from "../types";
+import { Address, Cell } from "@ton/core";
 
 // Rate limiter for TON API calls
 class ApiRateLimiter {
@@ -38,7 +43,7 @@ class ApiRateLimiter {
     const timeToWait = Math.max(0, this.lastCallTime + this.minInterval - now);
 
     if (timeToWait > 0) {
-      await new Promise(resolve => setTimeout(resolve, timeToWait));
+      await new Promise((resolve) => setTimeout(resolve, timeToWait));
     }
 
     const task = this.queue.shift();
@@ -72,74 +77,58 @@ async function callContractGetter(
 
       // Format arguments for URL
       const argsParam = args.length > 0
-        ? `?args=${args.map(arg => encodeURIComponent(arg)).join(',')}`
-        : '';
+        ? `?args=${args.map((arg) => encodeURIComponent(arg)).join(",")}`
+        : "";
 
       const url = `${TON_TESTNET_API}/${address}/methods/${method}${argsParam}`;
-      console.log('API URL:', url);
+      console.log("API URL:", url);
 
       const response = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${TON_API_TOKEN}`,
-          'Content-type': 'application/json'
-        }
+          Accept: "application/json",
+          Authorization: `Bearer ${TON_API_TOKEN}`,
+          "Content-type": "application/json",
+        },
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
-        throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+        console.error(
+          `HTTP error! Status: ${response.status}, Response: ${errorText}`,
+        );
+        throw new Error(
+          `HTTP error! Status: ${response.status}, Response: ${errorText}`,
+        );
       }
 
       const data = await response.json();
       console.log(`API response for ${method}:`, data);
 
       if (data.error) {
-        console.error('TON API error:', data.error);
+        console.error("TON API error:", data.error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error calling TON contract:', error);
+      console.error("Error calling TON contract:", error);
       return null;
     }
   });
 }
 
 /**
- * Gets the current piece version from the registry contract
- */
-export async function getPieceVersion(): Promise<number | null> {
-  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getPieceVersion')) as any;
-  console.log('getPieceVersion raw result:', result);
-  if (result && result.success && result.stack[0] && result.stack[0].num) {
-    return parseInt(result.stack[0].num, 16);
-  }
-  return null;
-}
-
-/**
- * Gets the current vault version from the registry contract
- */
-export async function getVaultVersion(): Promise<number | null> {
-  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getVaultVersion')) as any;
-  if (result && result.success && result.stack[0] && result.stack[0].num) {
-    return parseInt(result.stack[0].num, 16);
-  }
-  return null;
-}
-
-/**
  * Gets the fee parameters from the registry contract
  */
-export async function getFeeParams(): Promise<{
-  deployValue: number;
-  messageValue: number;
-} | null> {
-  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getFeeParams')) as any;
+export async function getFeeParams(): Promise<
+  {
+    deployValue: number;
+    messageValue: number;
+  } | null
+> {
+  const result =
+    (await callContractGetter(REGISTRY_ADDRESS, "getFeeParams")) as any;
   if (result && result.success && result.stack[0] && result.stack[1]) {
     // The result is a tuple with deployValue and messageValue
     const deployValue = parseInt(result.stack[0].num, 16);
@@ -155,17 +144,20 @@ export async function getFeeParams(): Promise<{
 /**
  * Gets the security parameters from the registry contract
  */
-export async function getSecurityParams(): Promise<{
-  minActionFee: number;
-  coolDownSeconds: number;
-} | null> {
-  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getSecurityParams')) as any;
+export async function getSecurityParams(): Promise<
+  {
+    minActionFee: number;
+    coolDownSeconds: number;
+  } | null
+> {
+  const result =
+    (await callContractGetter(REGISTRY_ADDRESS, "getSecurityParams")) as any;
   if (result && result.success && result.stack[0] && result.stack[1]) {
     const minActionFee = parseInt(result.stack[0].num, 16);
     const coolDownSeconds = parseInt(result.stack[1].num, 16);
     return {
       minActionFee,
-      coolDownSeconds
+      coolDownSeconds,
     };
   }
   return null;
@@ -174,19 +166,128 @@ export async function getSecurityParams(): Promise<{
 /**
  * Gets the vault address for a specific user
  */
-export async function getVaultAddress(userAddress: string): Promise<string | null> {
+export async function getVaultAddress(
+  userAddress: string,
+): Promise<string | null> {
   // Make sure the address is in the correct format (0:...)
-  const formattedAddress = userAddress.startsWith('0:') ? userAddress : `0:${userAddress}`;
-  console.log('Getting vault address for user:', formattedAddress);
+  const formattedAddress = userAddress.startsWith("0:")
+    ? userAddress
+    : `0:${userAddress}`;
+  console.log("Getting vault address for user:", formattedAddress);
 
-  const result = (await callContractGetter(REGISTRY_ADDRESS, 'getVaultAddress', [formattedAddress])) as any;
-  console.log('getVaultAddress raw result:', result);
+  const result =
+    (await callContractGetter(REGISTRY_ADDRESS, "getVaultAddress", [
+      formattedAddress,
+    ])) as any;
+  console.log("getVaultAddress raw result:", result);
 
   if (result && result.stack[0] && result.stack[0].type == "cell") {
-    const addr = result.stack[0].cell;
-    console.log('Found vault address:', addr);
+    const cellData = result.stack[0].cell;
+    const cell = Cell.fromBase64(
+      Buffer.from(cellData, "hex").toString("base64"),
+    );
+    const slice = cell.beginParse();
+    const addr = slice.loadAddress().toString({
+      testOnly: false, // Set to true for testnet
+      bounceable: true, // Set to false for non-bounceable
+    });
+    console.log("Found vault address:", addr);
     return addr;
   }
+  return null;
+}
+
+/**
+ * Gets the piece count from a user's vault
+ */
+export async function getPieceCount(
+  vaultAddress: string | null,
+): Promise<number | null> {
+  // Check if vaultAddress is valid
+  if (!vaultAddress) {
+    console.log("No vault address provided to getPieceCount");
+    return null;
+  }
+
+  console.log("Getting piece count for vault address:", vaultAddress);
+
+  // First try with the raw address format
+  try {
+    console.log("Trying with raw address format first");
+    console.log("Using formatted address:", vaultAddress);
+
+    const result =
+      (await callContractGetter(vaultAddress, "getPieceCount")) as any;
+    console.log("getPieceCount raw result (direct):", result);
+
+    if (
+      result &&
+      result.success &&
+      result.stack &&
+      result.stack.length > 0 &&
+      result.stack[0].num
+    ) {
+      const count = parseInt(result.stack[0].num, 16);
+      console.log("Piece count (direct):", count);
+      return count;
+    }
+  } catch (directError) {
+    console.error("Error with direct address format:", directError);
+  }
+
+  // If direct approach fails, try with friendly address format
+  try {
+    console.log("Trying with friendly address format");
+    // Parse the raw address and convert to friendly format
+    const parts = vaultAddress.split(":");
+    if (parts.length !== 2) {
+      console.error(
+        "Invalid address format for friendly conversion:",
+        vaultAddress,
+      );
+      return null;
+    }
+
+    const workchain = parseInt(parts[0]);
+    const addressPart = parts[1];
+
+    if (!addressPart) {
+      console.error(
+        "Invalid address part for friendly conversion:",
+        vaultAddress,
+      );
+      return null;
+    }
+
+    // Create Address object and convert to friendly format
+    const address = new Address(workchain, Buffer.from(addressPart, "hex"));
+    const friendlyAddress = address.toString({
+      testOnly: true, // Using testOnly: true for testnet
+      bounceable: true,
+    });
+
+    console.log("Using friendly address format:", friendlyAddress);
+
+    const result =
+      (await callContractGetter(friendlyAddress, "getPieceCount")) as any;
+    console.log("getPieceCount raw result (friendly):", result);
+
+    if (
+      result &&
+      result.success &&
+      result.stack &&
+      result.stack.length > 0 &&
+      result.stack[0].num
+    ) {
+      const count = parseInt(result.stack[0].num, 16);
+      console.log("Piece count (friendly):", count);
+      return count;
+    }
+  } catch (friendlyError) {
+    console.error("Error with friendly address format:", friendlyError);
+  }
+
+  console.log("All attempts to get piece count failed");
   return null;
 }
 
@@ -194,11 +295,10 @@ export async function getVaultAddress(userAddress: string): Promise<string | nul
 let isLoadingContractInfo = false;
 
 export let contractInfo: ContractInfo = {
-  pieceVersion: null,
-  vaultVersion: null,
   feeParams: null,
   securityParams: null,
   userVaultAddress: null,
+  pieceCount: null,
 };
 
 /**
@@ -206,7 +306,7 @@ export let contractInfo: ContractInfo = {
  */
 export async function fetchContractInfo(): Promise<ContractInfo | null> {
   if (isLoadingContractInfo) {
-    console.log('Contract info already loading, skipping duplicate request');
+    console.log("Contract info already loading, skipping duplicate request");
     return null;
   }
 
@@ -215,18 +315,15 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
     updateContractInfoDisplay();
 
     // Fetch basic contract info sequentially to respect rate limits
-    const pieceVersion = await getPieceVersion();
-    const vaultVersion = await getVaultVersion();
     const feeParams = await getFeeParams();
     const securityParams = await getSecurityParams();
 
     // Initialize with basic contract info
     contractInfo = {
-      pieceVersion,
-      vaultVersion,
       feeParams,
       securityParams,
       userVaultAddress: null,
+      pieceCount: null,
     };
 
     // Update display with initial info
@@ -238,13 +335,33 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
       if (userAddress) {
         const vaultAddress = await getVaultAddress(userAddress);
         contractInfo.userVaultAddress = vaultAddress;
+
+        // Only try to get piece count if we have a valid vault address
+        if (vaultAddress) {
+          console.log("Vault address found:", vaultAddress);
+
+          // Ensure it's in the correct format
+          if (vaultAddress.includes(":")) {
+            console.log("Valid vault address format, getting piece count");
+            const pieceCount = await getPieceCount(vaultAddress);
+            contractInfo.pieceCount = pieceCount;
+          } else {
+            console.log("Vault address missing colon, attempting to format");
+            // Try to add the workchain prefix if missing
+            const pieceCount = await getPieceCount(vaultAddress);
+            contractInfo.pieceCount = pieceCount;
+          }
+        } else {
+          console.log("No vault address found, skipping piece count");
+          contractInfo.pieceCount = null;
+        }
       }
     }
 
-    console.log('Contract info loaded:', contractInfo);
+    console.log("Contract info loaded:", contractInfo);
     return contractInfo;
   } catch (error) {
-    console.error('Error fetching contract info:', error);
+    console.error("Error fetching contract info:", error);
     // Retry after delay
     setTimeout(() => fetchContractInfo(), 3000);
     return null;
@@ -258,43 +375,39 @@ export async function fetchContractInfo(): Promise<ContractInfo | null> {
  * Updates the contract info display in the UI
  */
 export function updateContractInfoDisplay(): void {
-  const contractInfoElement = document.getElementById('contract-info');
+  const contractInfoElement = document.getElementById("contract-info");
   if (!contractInfoElement) return;
 
   if (isLoadingContractInfo) {
-    contractInfoElement.innerHTML = '<div>Loading contract info... <span class="loading-spinner"></span></div>';
+    contractInfoElement.innerHTML =
+      '<div>Loading contract info... <span class="loading-spinner"></span></div>';
     return;
   }
 
-  if (contractInfo.pieceVersion !== null) {
-    let html = `
-      <div>Piece Version: ${contractInfo.pieceVersion}</div>
-      ${
-        contractInfo.vaultVersion !== null
-          ? `<div>Vault Version: ${contractInfo.vaultVersion}</div>`
-          : ''
-      }
-    `;
+  let html = ``;
 
-    // Add vault address if available
-    if (window.tonBridge && window.tonBridge.isWalletConnected()) {
-      if (contractInfo.userVaultAddress) {
-        const shortAddress = formatAddress(contractInfo.userVaultAddress);
-        html += `<div>Your Vault: ${shortAddress}</div>`;
-      } else {
-        html += `<div>Your Vault: Not created yet</div>`;
+  // Add vault address if available
+  if (window.tonBridge && window.tonBridge.isWalletConnected()) {
+    if (contractInfo.userVaultAddress) {
+      const shortAddress = formatAddress(contractInfo.userVaultAddress);
+      html += `<div>Your Vault: ${shortAddress}</div>`;
+
+      // Add piece count if available
+      if (contractInfo.pieceCount !== null) {
+        html += `<div>Your Pieces: ${contractInfo.pieceCount}</div>`;
       }
+    } else {
+      html += `<div>Your Vault: Not created yet</div>`;
     }
-
-    contractInfoElement.innerHTML = html;
-  } else {
-    contractInfoElement.innerHTML = '<div>Loading contract info... <span class="loading-spinner"></span></div>';
   }
+
+  contractInfoElement.innerHTML = html;
 }
 
 /**
  * Formats an address for display
  */
 function formatAddress(address: string): string {
-  return address.substring(0, 6) + '...' + address.substring(address.length - 4);
+  return address.substring(0, 6) + "..." +
+    address.substring(address.length - 4);
 }

@@ -16,15 +16,11 @@ struct SecurityParams{
 
 contract EchoRegistry with Ownable{
   owner: Address;
-  pieceMeta: UpgradableContractMeta;
-  vaultMeta: UpgradableContractMeta;
   vaults: map<Address, Address>;
   feeParams: FeeParams;
   securityParams: SecurityParams;
 
-  init(vaultCode: Cell, pieceCode: Cell) {
-    self.vaultMeta = initUpgradableContractmeta(vaultCode);
-    self.pieceMeta = initUpgradableContractmeta(pieceCode);
+  init() {
     self.feeParams = FeeParams{
       deployValue: ton("0.02"),
       messageValue: ton("0.005"),
@@ -40,15 +36,6 @@ contract EchoRegistry with Ownable{
 
   // --------------------------- Configuration --------------------------------
 
-  receive(msg: UpgradeVaultCode) {
-    require(sender() == self.owner, "Only owner can upgrade code of vaults");
-    self.vaultMeta.upgradeCode(msg.code);
-  }
-
-  receive(msg: UpgradePieceCode) {
-    require(sender() == self.owner, "Only owner can upgrade code of pieces");
-    self.pieceMeta.upgradeCode(msg.code);
-  }
 
   receive(msg: UpdateFeeParams) {
     require(sender() == self.owner, "Only owner can upgrade code of pieces");
@@ -63,6 +50,10 @@ contract EchoRegistry with Ownable{
       minActionFee: msg.minActionFee,
       coolDownSeconds: msg.coolDownSeconds
     }
+  }
+  receive(msg: RemoveVault) {
+    require(sender() == self.owner, "Only owner can remove vaults");
+    self.vaults.del(msg.user);
   }
 
   // ------------------ Piece And Vault Creation ------------------------------
@@ -88,10 +79,13 @@ contract EchoRegistry with Ownable{
       return maybeVaultAddr!!
     }
 
-    let stateInit = StateInit{
-      code: self.vaultMeta.code,
-      data: initOf EchoVault(user, myAddress(), self.vaultMeta.version, emptyAddressList(), now(), self.securityParams.coolDownSeconds).toCell()
-    };
+    let stateInit = initOf EchoVault(
+      user,
+      myAddress(),
+      emptyAddressList(),
+      now() - self.securityParams.coolDownSeconds - 1,
+      self.securityParams.coolDownSeconds
+    );
 
     let vaultAddress = contractAddress(stateInit);
 
@@ -107,10 +101,12 @@ contract EchoRegistry with Ownable{
   }
 
   inline fun createPiece(vault: Address, data: Cell, remixedFrom: Address?): Address{
-    let stateInit = StateInit{
-      code: self.pieceMeta.code,
-      data: initOf EchoPiece(vault, remixedFrom, now(), self.pieceMeta.version, data).toCell()
-    };
+    let stateInit = initOf EchoPiece(
+      vault,
+      remixedFrom,
+      now(),
+      data
+    );
 
     let pieceAddress = contractAddress(stateInit);
 
@@ -131,14 +127,6 @@ contract EchoRegistry with Ownable{
 
   get fun getVaultAddress(user: Address): Address? {
     return self.vaults.get(user);
-  }
-
-  get fun getPieceVersion(): Int {
-    return self.pieceMeta.version;
-  }
-
-  get fun getVaultVersion(): Int {
-    return self.pieceMeta.version;
   }
 
   get fun getFeeParams(): FeeParams {

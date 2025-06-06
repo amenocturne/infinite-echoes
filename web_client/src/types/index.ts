@@ -1,7 +1,5 @@
 // Type definitions for the application
 export interface ContractInfo {
-  pieceVersion: number | null;
-  vaultVersion: number | null;
   feeParams: {
     deployValue: number;
     messageValue: number;
@@ -11,6 +9,7 @@ export interface ContractInfo {
     coolDownSeconds: number;
   } | null;
   userVaultAddress: string | null;
+  pieceCount: number | null;
 }
 
 export interface Wallet {

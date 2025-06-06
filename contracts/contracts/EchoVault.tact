@@ -5,7 +5,6 @@ import "./messages.tact";
 contract EchoVault(
   owner: Address,
   registry: Address,
-  version: Int as uint32,
   pieces: AddressList,
   lastActionTime: Int,
   coolDownSeconds: Int

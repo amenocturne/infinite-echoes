@@ -61,7 +61,7 @@ This will create a `deploy` directory with all the necessary files for deploymen
 
 ## Development
 
-The project is structured as a Rust application that compiles to WebAssembly, with a web frontend for user interaction.
+The project is structured as a Rust application that compiles to WebAssembly, with a web frontend for user interactionstate
 
 - `game/` - Core application logic and audio processing
 - `server/` - Development server for local testing
