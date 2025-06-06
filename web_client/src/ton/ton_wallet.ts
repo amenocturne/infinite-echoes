@@ -163,7 +163,7 @@ export async function createNewPiece(
       validUntil: Math.floor(Date.now() / 1000) + TRANSACTION_CONFIG.VALID_SECONDS,
       messages: [
         {
-          address: REGISTRY_ADDRESS.startsWith('0:') ? REGISTRY_ADDRESS : `0:${REGISTRY_ADDRESS}`,
+          address: REGISTRY_ADDRESS,
           amount: toNano(TRANSACTION_CONFIG.DEFAULT_AMOUNT).toString(),
           payload: finalPayload,
         },
