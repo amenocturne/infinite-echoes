@@ -191,6 +191,8 @@ export async function createNewPiece(
   getUserVaultAddress: (): string | null => contractInfo.userVaultAddress,
 
   getPieceAddresses: (): string[] | null => contractInfo.pieceAddresses,
+  
+  getPieceData: (): { [address: string]: string } | null => contractInfo.pieceData,
 
   refreshVaultAddress: async (): Promise<string | null> => {
     if (!tonConnectUI?.account?.address) return null;
