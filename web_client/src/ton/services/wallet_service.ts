@@ -41,8 +41,8 @@ export class WalletService extends BaseService implements Initializable {
         this.notifyWalletStatusListeners(isConnected);
       });
     } catch (error) {
-      this.logError("initialize", error);
-      throw errorHandler.handleError(error, "WalletService.initialize");
+      this.logError('initialize', error);
+      throw errorHandler.handleError(error, 'WalletService.initialize');
     }
   }
 
@@ -51,17 +51,14 @@ export class WalletService extends BaseService implements Initializable {
    */
   async openModal(): Promise<void> {
     if (!this.tonConnectUI) {
-      throw new TonError(
-        "TonConnectUI not initialized",
-        ErrorCode.WALLET_ERROR
-      );
+      throw new TonError('TonConnectUI not initialized', ErrorCode.WALLET_ERROR);
     }
 
     try {
       await this.tonConnectUI.openModal();
     } catch (error) {
-      this.logError("openModal", error);
-      throw errorHandler.handleError(error, "WalletService.openModal");
+      this.logError('openModal', error);
+      throw errorHandler.handleError(error, 'WalletService.openModal');
     }
   }
 
@@ -70,17 +67,14 @@ export class WalletService extends BaseService implements Initializable {
    */
   async disconnect(): Promise<void> {
     if (!this.tonConnectUI) {
-      throw new TonError(
-        "TonConnectUI not initialized",
-        ErrorCode.WALLET_ERROR
-      );
+      throw new TonError('TonConnectUI not initialized', ErrorCode.WALLET_ERROR);
     }
 
     try {
       await this.tonConnectUI.disconnect();
     } catch (error) {
-      this.logError("disconnect", error);
-      throw errorHandler.handleError(error, "WalletService.disconnect");
+      this.logError('disconnect', error);
+      throw errorHandler.handleError(error, 'WalletService.disconnect');
     }
   }
 
@@ -113,23 +107,18 @@ export class WalletService extends BaseService implements Initializable {
    * @param pieceRawData Raw data string for the piece
    * @param remixedFrom Optional address this piece was remixed from
    */
-  async createNewPiece(
-    pieceRawData: string,
-    remixedFrom: Address | null = null,
-  ): Promise<boolean> {
+  async createNewPiece(pieceRawData: string, remixedFrom: Address | null = null): Promise<boolean> {
     if (!this.tonConnectUI || !this.isConnected()) {
       throw new TonError(
-        "Wallet not connected. Please connect your wallet first.",
-        ErrorCode.WALLET_ERROR
+        'Wallet not connected. Please connect your wallet first.',
+        ErrorCode.WALLET_ERROR,
       );
     }
 
     try {
       // Construct the Cell from the raw data
       const buffer = Buffer.from(pieceRawData);
-      const pieceDataCell = beginCell()
-        .storeBuffer(buffer)
-        .endCell();
+      const pieceDataCell = beginCell().storeBuffer(buffer).endCell();
 
       // Use the generated message wrapper to construct the payload
       const createPieceMessage: CreatePiece = {
@@ -158,8 +147,8 @@ export class WalletService extends BaseService implements Initializable {
       console.log('Transaction sent:', result);
       return true;
     } catch (error) {
-      this.logError("createNewPiece", error);
-      throw errorHandler.handleError(error, "WalletService.createNewPiece");
+      this.logError('createNewPiece', error);
+      throw errorHandler.handleError(error, 'WalletService.createNewPiece');
     }
   }
 
@@ -170,13 +159,13 @@ export class WalletService extends BaseService implements Initializable {
    */
   subscribeToWalletStatus(listener: (connected: boolean) => void): () => void {
     this.walletStatusListeners.push(listener);
-    
+
     // Call listener immediately with current status
     listener(this.isConnected());
-    
+
     // Return unsubscribe function
     return () => {
-      this.walletStatusListeners = this.walletStatusListeners.filter(l => l !== listener);
+      this.walletStatusListeners = this.walletStatusListeners.filter((l) => l !== listener);
     };
   }
 
@@ -184,7 +173,7 @@ export class WalletService extends BaseService implements Initializable {
    * Notifies all listeners of wallet status changes
    */
   private notifyWalletStatusListeners(connected: boolean): void {
-    this.walletStatusListeners.forEach(listener => listener(connected));
+    this.walletStatusListeners.forEach((listener) => listener(connected));
   }
 }
 

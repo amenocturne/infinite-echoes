@@ -54,7 +54,7 @@ export class ApiRateLimiter {
       try {
         await task();
       } catch (error) {
-        console.error("Error in rate-limited task:", error);
+        console.error('Error in rate-limited task:', error);
       }
     }
 

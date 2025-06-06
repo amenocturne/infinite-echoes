@@ -5,7 +5,7 @@ export class TonError extends Error {
   constructor(
     message: string,
     public code: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'TonError';
@@ -40,15 +40,13 @@ export class ErrorHandler {
     }
 
     // Convert to string message
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Create a standardized error
     const tonError = new TonError(
       `Error in ${context}: ${errorMessage}`,
       ErrorCode.UNKNOWN_ERROR,
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
 
     // Log the error
@@ -62,10 +60,8 @@ export class ErrorHandler {
    * @param error Error to show
    */
   showError(error: unknown): void {
-    const message = error instanceof Error 
-      ? error.message 
-      : String(error);
-    
+    const message = error instanceof Error ? error.message : String(error);
+
     alert(message);
   }
 }

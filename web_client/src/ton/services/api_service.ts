@@ -1,8 +1,8 @@
-import { Address, Cell, Dictionary } from "@ton/core";
-import { TON_API_TOKEN, TON_TESTNET_API } from "../../config/constants";
-import { apiRateLimiter } from "./rate_limiter";
-import { BaseService } from "./base";
-import { ErrorCode, TonError, errorHandler } from "./error_handler";
+import { Address, Cell, Dictionary } from '@ton/core';
+import { TON_API_TOKEN, TON_TESTNET_API } from '../../config/constants';
+import { apiRateLimiter } from './rate_limiter';
+import { BaseService } from './base';
+import { ErrorCode, TonError, errorHandler } from './error_handler';
 
 /**
  * Service for making API calls to the TON blockchain
@@ -23,18 +23,17 @@ export class ApiService extends BaseService {
     return apiRateLimiter.schedule(async () => {
       try {
         // Format arguments for URL
-        const argsParam = args.length > 0
-          ? `?args=${args.map((arg) => encodeURIComponent(arg)).join(",")}`
-          : "";
+        const argsParam =
+          args.length > 0 ? `?args=${args.map((arg) => encodeURIComponent(arg)).join(',')}` : '';
 
         const url = `${TON_TESTNET_API}/${address}/methods/${method}${argsParam}`;
 
         const response = await fetch(url, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            Accept: "application/json",
+            Accept: 'application/json',
             Authorization: `Bearer ${TON_API_TOKEN}`,
-            "Content-type": "application/json",
+            'Content-type': 'application/json',
           },
         });
 
@@ -42,17 +41,14 @@ export class ApiService extends BaseService {
           const errorText = await response.text();
           throw new TonError(
             `HTTP error! Status: ${response.status}, Response: ${errorText}`,
-            ErrorCode.API_ERROR
+            ErrorCode.API_ERROR,
           );
         }
 
         const data = await response.json();
 
         if (data.error) {
-          throw new TonError(
-            `TON API error: ${data.error}`,
-            ErrorCode.API_ERROR
-          );
+          throw new TonError(`TON API error: ${data.error}`, ErrorCode.API_ERROR);
         }
 
         return data;
@@ -69,11 +65,9 @@ export class ApiService extends BaseService {
    */
   parseCell(cellData: string): Cell {
     try {
-      return Cell.fromBase64(
-        Buffer.from(cellData, "hex").toString("base64")
-      );
+      return Cell.fromBase64(Buffer.from(cellData, 'hex').toString('base64'));
     } catch (error) {
-      throw errorHandler.handleError(error, "parseCell");
+      throw errorHandler.handleError(error, 'parseCell');
     }
   }
 
@@ -83,8 +77,7 @@ export class ApiService extends BaseService {
    * @returns Formatted address
    */
   formatAddress(address: string): string {
-    return address.substring(0, 6) + "..." +
-      address.substring(address.length - 4);
+    return address.substring(0, 6) + '...' + address.substring(address.length - 4);
   }
 }
 

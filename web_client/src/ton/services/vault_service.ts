@@ -1,7 +1,7 @@
-import { Address, Dictionary } from "@ton/core";
-import { BaseService } from "./base";
-import { apiService } from "./api_service";
-import { errorHandler } from "./error_handler";
+import { Address, Dictionary } from '@ton/core';
+import { BaseService } from './base';
+import { apiService } from './api_service';
+import { errorHandler } from './error_handler';
 
 /**
  * Service for interacting with the EchoVault contract
@@ -20,10 +20,7 @@ export class VaultService extends BaseService {
 
     try {
       // First try with the raw address format
-      const result = await apiService.callContractGetter(
-        vaultAddress,
-        "getPieceCount"
-      ) as any;
+      const result = (await apiService.callContractGetter(vaultAddress, 'getPieceCount')) as any;
 
       if (
         result &&
@@ -38,12 +35,12 @@ export class VaultService extends BaseService {
 
       return null;
     } catch (error) {
-      this.logError("getPieceCount", error);
-      
+      this.logError('getPieceCount', error);
+
       // If direct approach fails, try with friendly address format
       try {
         // Parse the raw address and convert to friendly format
-        const parts = vaultAddress.split(":");
+        const parts = vaultAddress.split(':');
         if (parts.length !== 2) {
           return null;
         }
@@ -56,16 +53,16 @@ export class VaultService extends BaseService {
         }
 
         // Create Address object and convert to friendly format
-        const address = new Address(workchain, Buffer.from(addressPart, "hex"));
+        const address = new Address(workchain, Buffer.from(addressPart, 'hex'));
         const friendlyAddress = address.toString({
           testOnly: true, // Using testOnly: true for testnet
           bounceable: true,
         });
 
-        const result = await apiService.callContractGetter(
+        const result = (await apiService.callContractGetter(
           friendlyAddress,
-          "getPieceCount"
-        ) as any;
+          'getPieceCount',
+        )) as any;
 
         if (
           result &&
@@ -78,7 +75,7 @@ export class VaultService extends BaseService {
           return count;
         }
       } catch (friendlyError) {
-        this.logError("getPieceCount (friendly format)", friendlyError);
+        this.logError('getPieceCount (friendly format)', friendlyError);
       }
 
       return null;
@@ -98,10 +95,7 @@ export class VaultService extends BaseService {
 
     try {
       // First try with the raw address format
-      const result = await apiService.callContractGetter(
-        vaultAddress,
-        "getPieces"
-      ) as any;
+      const result = (await apiService.callContractGetter(vaultAddress, 'getPieces')) as any;
 
       if (result && result.success && result.stack && result.stack.length > 0) {
         // The result is a dictionary of piece addresses
@@ -124,27 +118,29 @@ export class VaultService extends BaseService {
           // Convert dictionary to array of addresses
           const addresses: string[] = [];
           for (const [_, value] of dict) {
-            addresses.push(value.toString({
-              testOnly: false,
-              bounceable: true,
-            }));
+            addresses.push(
+              value.toString({
+                testOnly: false,
+                bounceable: true,
+              }),
+            );
           }
 
           return addresses;
         } catch (parseError) {
-          this.logError("Parsing piece addresses", parseError);
+          this.logError('Parsing piece addresses', parseError);
           return [];
         }
       }
 
       return [];
     } catch (error) {
-      this.logError("getPieceAddresses", error);
-      
+      this.logError('getPieceAddresses', error);
+
       // If direct approach fails, try with friendly address format
       try {
         // Parse the raw address and convert to friendly format
-        const parts = vaultAddress.split(":");
+        const parts = vaultAddress.split(':');
         if (parts.length !== 2) {
           return null;
         }
@@ -157,16 +153,13 @@ export class VaultService extends BaseService {
         }
 
         // Create Address object and convert to friendly format
-        const address = new Address(workchain, Buffer.from(addressPart, "hex"));
+        const address = new Address(workchain, Buffer.from(addressPart, 'hex'));
         const friendlyAddress = address.toString({
           testOnly: true, // Using testOnly: true for testnet
           bounceable: true,
         });
 
-        const result = await apiService.callContractGetter(
-          friendlyAddress,
-          "getPieces"
-        ) as any;
+        const result = (await apiService.callContractGetter(friendlyAddress, 'getPieces')) as any;
 
         if (result && result.success && result.stack && result.stack.length > 0) {
           const dictCell = result.stack[0].cell;
@@ -188,20 +181,22 @@ export class VaultService extends BaseService {
             // Convert dictionary to array of addresses
             const addresses: string[] = [];
             for (const [_, value] of dict) {
-              addresses.push(value.toString({
-                testOnly: true, // Using testOnly: true for testnet
-                bounceable: true,
-              }));
+              addresses.push(
+                value.toString({
+                  testOnly: true, // Using testOnly: true for testnet
+                  bounceable: true,
+                }),
+              );
             }
 
             return addresses;
           } catch (parseError) {
-            this.logError("Parsing piece addresses (friendly format)", parseError);
+            this.logError('Parsing piece addresses (friendly format)', parseError);
             return [];
           }
         }
       } catch (friendlyError) {
-        this.logError("getPieceAddresses (friendly format)", friendlyError);
+        this.logError('getPieceAddresses (friendly format)', friendlyError);
       }
 
       return null;

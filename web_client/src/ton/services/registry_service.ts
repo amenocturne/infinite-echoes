@@ -1,8 +1,8 @@
-import { Address } from "@ton/core";
-import { REGISTRY_ADDRESS } from "../../config/constants";
-import { BaseService } from "./base";
-import { apiService } from "./api_service";
-import { errorHandler } from "./error_handler";
+import { Address } from '@ton/core';
+import { REGISTRY_ADDRESS } from '../../config/constants';
+import { BaseService } from './base';
+import { apiService } from './api_service';
+import { errorHandler } from './error_handler';
 
 /**
  * Service for interacting with the EchoRegistry contract
@@ -17,10 +17,7 @@ export class RegistryService extends BaseService {
     messageValue: number;
   } | null> {
     try {
-      const result = await apiService.callContractGetter(
-        REGISTRY_ADDRESS,
-        "getFeeParams"
-      ) as any;
+      const result = (await apiService.callContractGetter(REGISTRY_ADDRESS, 'getFeeParams')) as any;
 
       if (result && result.success && result.stack[0] && result.stack[1]) {
         // The result is a tuple with deployValue and messageValue
@@ -33,7 +30,7 @@ export class RegistryService extends BaseService {
       }
       return null;
     } catch (error) {
-      this.logError("getFeeParams", error);
+      this.logError('getFeeParams', error);
       return null;
     }
   }
@@ -47,10 +44,10 @@ export class RegistryService extends BaseService {
     coolDownSeconds: number;
   } | null> {
     try {
-      const result = await apiService.callContractGetter(
+      const result = (await apiService.callContractGetter(
         REGISTRY_ADDRESS,
-        "getSecurityParams"
-      ) as any;
+        'getSecurityParams',
+      )) as any;
 
       if (result && result.success && result.stack[0] && result.stack[1]) {
         const minActionFee = parseInt(result.stack[0].num, 16);
@@ -62,7 +59,7 @@ export class RegistryService extends BaseService {
       }
       return null;
     } catch (error) {
-      this.logError("getSecurityParams", error);
+      this.logError('getSecurityParams', error);
       return null;
     }
   }
@@ -75,17 +72,13 @@ export class RegistryService extends BaseService {
   async getVaultAddress(userAddress: string): Promise<string | null> {
     try {
       // Make sure the address is in the correct format (0:...)
-      const formattedAddress = userAddress.startsWith("0:")
-        ? userAddress
-        : `0:${userAddress}`;
+      const formattedAddress = userAddress.startsWith('0:') ? userAddress : `0:${userAddress}`;
 
-      const result = await apiService.callContractGetter(
-        REGISTRY_ADDRESS,
-        "getVaultAddress",
-        [formattedAddress]
-      ) as any;
+      const result = (await apiService.callContractGetter(REGISTRY_ADDRESS, 'getVaultAddress', [
+        formattedAddress,
+      ])) as any;
 
-      if (result && result.stack[0] && result.stack[0].type == "cell") {
+      if (result && result.stack[0] && result.stack[0].type == 'cell') {
         const cellData = result.stack[0].cell;
         const cell = apiService.parseCell(cellData);
         const slice = cell.beginParse();
@@ -97,7 +90,7 @@ export class RegistryService extends BaseService {
       }
       return null;
     } catch (error) {
-      this.logError("getVaultAddress", error);
+      this.logError('getVaultAddress', error);
       return null;
     }
   }

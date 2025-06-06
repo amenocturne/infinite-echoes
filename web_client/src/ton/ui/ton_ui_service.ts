@@ -135,11 +135,8 @@ export class TonUIService {
         }
 
         // Add piece addresses if available
-        if (
-          contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0
-        ) {
-          html +=
-            `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
+        if (contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0) {
+          html += `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
           // Optionally show the first few addresses
           const maxToShow = Math.min(3, contractInfo.pieceAddresses.length);
           for (let i = 0; i < maxToShow; i++) {
@@ -148,17 +145,13 @@ export class TonUIService {
 
             // Add piece data if available
             if (contractInfo.pieceData && contractInfo.pieceData[address]) {
-              html += ` (Base64 Data: ${
-                contractInfo.pieceData[address]!.substring(0, 10)
-              }...)`;
+              html += ` (Base64 Data: ${contractInfo.pieceData[address]!.substring(0, 10)}...)`;
             }
 
             html += `</div>`;
           }
           if (contractInfo.pieceAddresses.length > maxToShow) {
-            html += `<div>...and ${
-              contractInfo.pieceAddresses.length - maxToShow
-            } more</div>`;
+            html += `<div>...and ${contractInfo.pieceAddresses.length - maxToShow} more</div>`;
           }
         }
       } else {

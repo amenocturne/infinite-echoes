@@ -1,12 +1,12 @@
-import { Address } from "@ton/core";
-import { ContractInfo } from "../../types";
-import { BaseService, Initializable } from "./base";
-import { errorHandler } from "./error_handler";
-import { pieceService } from "./piece_service";
-import { registryService } from "./registry_service";
-import { tonStateStore } from "./state_store";
-import { vaultService } from "./vault_service";
-import { walletService } from "./wallet_service";
+import { Address } from '@ton/core';
+import { ContractInfo } from '../../types';
+import { BaseService, Initializable } from './base';
+import { errorHandler } from './error_handler';
+import { pieceService } from './piece_service';
+import { registryService } from './registry_service';
+import { tonStateStore } from './state_store';
+import { vaultService } from './vault_service';
+import { walletService } from './wallet_service';
 
 /**
  * Main service for coordinating TON-related functionality
@@ -41,8 +41,8 @@ export class TonService extends BaseService implements Initializable {
       // Fetch initial contract info
       await this.fetchContractInfo();
     } catch (error) {
-      this.logError("initialize", error);
-      throw errorHandler.handleError(error, "TonService.initialize");
+      this.logError('initialize', error);
+      throw errorHandler.handleError(error, 'TonService.initialize');
     }
   }
 
@@ -93,7 +93,7 @@ export class TonService extends BaseService implements Initializable {
 
       return tonStateStore.getState();
     } catch (error) {
-      this.logError("fetchContractInfo", error);
+      this.logError('fetchContractInfo', error);
       // Retry after delay
       setTimeout(() => this.fetchContractInfo(), 3000);
       return null;
@@ -117,7 +117,7 @@ export class TonService extends BaseService implements Initializable {
       tonStateStore.updateState({ userVaultAddress: vaultAddress });
       return vaultAddress;
     } catch (error) {
-      this.logError("refreshVaultAddress", error);
+      this.logError('refreshVaultAddress', error);
       return null;
     }
   }
@@ -127,10 +127,7 @@ export class TonService extends BaseService implements Initializable {
    * @param pieceRawData Raw data string for the piece
    * @param remixedFrom Optional address this piece was remixed from
    */
-  async createNewPiece(
-    pieceRawData: string,
-    remixedFrom: Address | null = null,
-  ): Promise<boolean> {
+  async createNewPiece(pieceRawData: string, remixedFrom: Address | null = null): Promise<boolean> {
     try {
       const result = await walletService.createNewPiece(pieceRawData, remixedFrom);
       if (result) {
@@ -139,7 +136,7 @@ export class TonService extends BaseService implements Initializable {
       }
       return result;
     } catch (error) {
-      this.logError("createNewPiece", error);
+      this.logError('createNewPiece', error);
       errorHandler.showError(error);
       return false;
     }

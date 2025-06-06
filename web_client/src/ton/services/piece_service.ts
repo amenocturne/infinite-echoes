@@ -1,6 +1,6 @@
-import { BaseService } from "./base";
-import { apiService } from "./api_service";
-import { errorHandler } from "./error_handler";
+import { BaseService } from './base';
+import { apiService } from './api_service';
+import { errorHandler } from './error_handler';
 
 /**
  * Service for interacting with EchoPiece contracts
@@ -17,14 +17,9 @@ export class PieceService extends BaseService {
     }
 
     try {
-      const result = await apiService.callContractGetter(
-        pieceAddress,
-        "getData"
-      ) as any;
+      const result = (await apiService.callContractGetter(pieceAddress, 'getData')) as any;
 
-      if (
-        !(result && result.success && result.stack && result.stack.length > 0)
-      ) {
+      if (!(result && result.success && result.stack && result.stack.length > 0)) {
         return null;
       }
 
@@ -54,7 +49,7 @@ export class PieceService extends BaseService {
    * @returns Object mapping addresses to piece data
    */
   async getAllPieceData(
-    pieceAddresses: string[] | null
+    pieceAddresses: string[] | null,
   ): Promise<{ [address: string]: string | null }> {
     const pieceData: { [address: string]: string | null } = {};
 
@@ -71,7 +66,7 @@ export class PieceService extends BaseService {
         this.logError(`Processing piece ${address}`, error);
         pieceData[address] = null;
       }
-      
+
       // Add a small delay between requests to avoid rate limiting
       if (i < pieceAddresses.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));

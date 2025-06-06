@@ -13,35 +13,35 @@ export class TonBridgeService {
     // Create the bridge object
     const bridge: TonBridge = {
       getContractInfo: () => tonService.getContractInfo(),
-      
+
       isWalletConnected: (): boolean => tonService.isWalletConnected(),
-      
+
       getUserAddress: (): string | null => tonService.getUserAddress(),
-      
+
       getUserVaultAddress: (): string | null => tonService.getUserVaultAddress(),
-      
+
       getPieceAddresses: (): string[] | null => tonService.getPieceAddresses(),
-      
+
       getPieceData: (): { [address: string]: string | null } => tonService.getPieceData() || {},
-      
+
       refreshVaultAddress: async (): Promise<string | null> => {
         return tonService.refreshVaultAddress();
       },
-      
+
       saveAudioGraph: async (audioGraphData: string): Promise<boolean> => {
         return tonService.saveAudioGraph(audioGraphData);
       },
-      
+
       loadAudioGraph: async (nftAddress: string): Promise<string | null> => {
         return tonService.loadAudioGraph(nftAddress);
       },
-      
+
       createNewPiece: async (
         pieceRawData: string,
-        remixedFrom: string | null = null
+        remixedFrom: string | null = null,
       ): Promise<boolean> => {
         let remixedFromAddress: Address | null = null;
-        
+
         if (remixedFrom) {
           try {
             remixedFromAddress = Address.parse(remixedFrom);
@@ -49,7 +49,7 @@ export class TonBridgeService {
             console.error('Invalid remixedFrom address:', error);
           }
         }
-        
+
         return tonService.createNewPiece(pieceRawData, remixedFromAddress);
       },
     };

@@ -1,4 +1,4 @@
-import { ContractInfo } from "../../types";
+import { ContractInfo } from '../../types';
 
 /**
  * Store for managing TON-related state
@@ -57,13 +57,13 @@ export class TonStateStore {
    */
   subscribe(listener: (state: ContractInfo) => void): () => void {
     this.listeners.push(listener);
-    
+
     // Call listener immediately with current state
     listener(this.getState());
-    
+
     // Return unsubscribe function
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
@@ -72,7 +72,7 @@ export class TonStateStore {
    */
   private notifyListeners(): void {
     const currentState = this.getState();
-    this.listeners.forEach(listener => listener(currentState));
+    this.listeners.forEach((listener) => listener(currentState));
   }
 }
 

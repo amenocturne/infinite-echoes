@@ -9,10 +9,10 @@ export async function setupTonWalletIntegration(): Promise<void> {
   try {
     // Initialize the bridge
     tonBridgeService.initialize();
-    
+
     // Initialize the UI service
     tonUIService.initialize();
-    
+
     // Initialize the TON service
     await tonService.initialize();
   } catch (error) {
