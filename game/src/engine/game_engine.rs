@@ -41,7 +41,7 @@ pub struct GameEngine {
     // TODO: Maybe put them into separate enum for different game states
     audio_graph_widget: AudioGraphWidget,
     cards_row_widget: CardsRowWidget,
-    debug_hud: Option<DebugHud>,
+    debug_hud: Option<RefCell<DebugHud>>,
     // TON wallet integration
     ton_wallet: RefCell<TonWallet>,
 }
@@ -63,7 +63,7 @@ impl GameEngine {
         let debug_hud = config
             .debug_hud
             .clone()
-            .map(|ref h| DebugHud::new(h.buffer_size));
+            .map(|ref h| RefCell::new(DebugHud::new(h.buffer_size)));
         Self {
             state: RefCell::new(state),
             render_ctx,
@@ -95,7 +95,7 @@ impl GameEngine {
         self.drag_manager.render(render_ctx)?;
 
         if let Some(debug_hud) = &self.debug_hud {
-            debug_hud.render(render_ctx)?;
+            debug_hud.borrow().render(render_ctx)?;
         }
 
         Ok(())
@@ -110,9 +110,17 @@ impl GameEngine {
         let buffer_refs: Vec<&dyn DraggableCardBuffer> =
             vec![&self.cards_row_widget, &self.audio_graph_widget];
         self.drag_manager.snap(&buffer_refs);
-        
+
         // Update TON wallet status
         self.ton_wallet.borrow_mut().update();
+
+        // Update debug HUD with wallet information
+        if let Some(debug_hud) = &self.debug_hud {
+            let wallet = self.ton_wallet.borrow();
+            if let Some(vault_address) = wallet.user_vault_address() {
+                debug_hud.borrow_mut().update_vault_addr(vault_address);
+            }
+        }
     }
 
     fn handle_input(&mut self) {
@@ -172,10 +180,10 @@ impl GameEngine {
                         &audio_graph,
                         &self.config.audio,
                     )?;
-                    
+
                     // Update playing_graph after we've used audio_graph
                     self.state.borrow_mut().playing_graph = Some(audio_graph.clone());
-                    
+
                     Ok(vec![])
                 } else {
                     Ok(vec![(GameEvent::StopAudioGraph, None)])

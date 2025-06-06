@@ -16,6 +16,8 @@ pub struct DebugHud {
     latency_queue: RefCell<VecDeque<f64>>,
     buffer_window_size: Cell<usize>,
     previous_time: Cell<f64>,
+    // TON
+    vault_address: Option<String>,
 }
 
 impl DebugHud {
@@ -29,7 +31,11 @@ impl DebugHud {
             latency_queue,
             buffer_window_size,
             previous_time,
+            vault_address: None,
         }
+    }
+    pub fn update_vault_addr(&mut self, addr: &str) {
+        self.vault_address = Some(addr.to_string());
     }
 }
 
@@ -43,8 +49,12 @@ impl Render for DebugHud {
                 &mut self.latency_queue.borrow_mut(),
                 100,
             )) as i32;
+
+        // let addr = self.vault_address.clone().get().unwrap_or("None".to_string());
+        let addr = self.vault_address.clone().unwrap_or("None".to_string());
+
         draw_text(
-            &format!("FPS avg: {fps} | Latency avg: {latency_ms}ms",),
+            &format!("FPS avg: {fps} | Latency avg: {latency_ms}ms | Vault address: {addr}",),
             20.0,
             40.0,
             30.0,
