@@ -20,6 +20,7 @@ use crate::debug::hud::DebugHud;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::render::widgets::audio_graph_widget::AudioGraphWidget;
 use crate::render::widgets::cards_row_widget::CardsRowWidget;
+use crate::render::widgets::error_popup_widget::ErrorPopupWidget;
 use crate::render::widgets::piece_library_widget::PieceLibraryWidget;
 use crate::render::widgets::settings_widget::SettingsWidget;
 use crate::render::Render;
@@ -47,6 +48,7 @@ pub struct GameEngine {
     debug_hud: Option<RefCell<DebugHud>>,
     settings_widget: SettingsWidget,
     piece_library_widget: PieceLibraryWidget,
+    error_popup_widget: ErrorPopupWidget,
     ton_wallet: RefCell<TonWallet>,
 }
 
@@ -73,6 +75,7 @@ impl GameEngine {
         let audio_engine = AudioEngine::new()?;
         let settings_widget = SettingsWidget::from_settings(settings);
         let piece_library_widget = PieceLibraryWidget::new();
+        let error_popup_widget = ErrorPopupWidget::new();
 
         Ok(Self {
             state: RefCell::new(state),
@@ -86,6 +89,7 @@ impl GameEngine {
             debug_hud,
             settings_widget,
             piece_library_widget,
+            error_popup_widget,
             ton_wallet: RefCell::new(TonWallet::new()),
         })
     }
@@ -120,6 +124,8 @@ impl GameEngine {
         self.piece_library_widget
             .render(render_ctx, &piece_addresses)?;
 
+        self.error_popup_widget.render(render_ctx)?;
+
         Ok(())
     }
 
@@ -148,6 +154,12 @@ impl GameEngine {
     async fn handle_input(&mut self) -> GameResult<()> {
         let mouse_pos: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
+
+        if self.error_popup_widget.is_visible() {
+            // The error popup is modal. It handles its own dismissal via the OK button.
+            // No other input should be processed while it's visible.
+            return Ok(());
+        }
 
         if is_key_pressed(KeyCode::Escape) {
             // As requested, Escape closes any open window.
@@ -235,8 +247,19 @@ impl GameEngine {
 
         if self.settings_widget.handle_create_piece() {
             let state = self.state.borrow();
-            if let Some(cards) = &state.playing_cards {
-                let piece_data = TonWallet::serialize_cards(cards.as_slice());
+            if state.current_graph.is_none() {
+                self.error_popup_widget.show(
+                    "Invalid audio graph. A valid graph needs at least one note generator and one oscillator.".to_string(),
+                );
+            } else {
+                let cards_to_save = self
+                    .audio_graph_widget
+                    .cards()
+                    .iter()
+                    .map(|card| card.borrow().card_type())
+                    .collect::<Vec<_>>();
+
+                let piece_data = TonWallet::serialize_cards(&cards_to_save);
                 let remixed_from = state.remixed_from_address.as_deref();
                 self.ton_wallet
                     .borrow_mut()

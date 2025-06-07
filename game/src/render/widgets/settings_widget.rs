@@ -117,23 +117,19 @@ impl Render for SettingsWidget {
 
             if settings.is_connected {
                 let button_spacing = 10.0;
+                let init_text = "Init".to_string();
+                let init_size = ui.calc_size(&init_text);
 
-                // Calculate the size of the button from its text content.
-                // The button widget itself will add some internal padding.
-                let new_piece_size = ui.calc_size("Init");
-                let save_piece_size = ui.calc_size("Save Piece");
+                let save_text = "Save".to_string();
+                let save_size = ui.calc_size(&save_text);
 
-                // The actual button width will be larger due to internal padding.
-                // We can get this from the style, or use a reasonable estimate.
-                // Let's assume the button adds about 20px horizontally.
                 let button_padding_x = 20.0;
-                let new_piece_button_width = new_piece_size.x + button_padding_x;
-                let save_piece_button_width = save_piece_size.x + button_padding_x;
-                let button_height = new_piece_size.y.max(save_piece_size.y) + 10.0;
+                let new_piece_button_width = init_size.x + button_padding_x;
+                let save_piece_button_width = save_size.x + button_padding_x;
+                let button_height = init_size.y.max(save_size.y) + 10.0;
 
                 let total_width = new_piece_button_width + button_spacing + save_piece_button_width;
 
-                // Calculate positions for the buttons at the bottom of the window.
                 let bottom_padding = 20.0;
                 let button_y = size.y - button_height - bottom_padding;
                 let start_x = (size.x - total_width) / 2.0;
@@ -141,13 +137,11 @@ impl Render for SettingsWidget {
                 let new_piece_pos = vec2(start_x, button_y);
                 let save_piece_pos = vec2(start_x + new_piece_button_width + button_spacing, button_y);
 
-                // The `button` function takes an absolute position within the window's content area.
-                // This bypasses the flow layout for these specific widgets.
-                if ui.button(Some(new_piece_pos), "Init") {
+                if ui.button(Some(new_piece_pos), init_text) {
                     self.new_piece_clicked.set(true);
                 }
 
-                if ui.button(Some(save_piece_pos), "Save Piece") {
+                if ui.button(Some(save_piece_pos), save_text) {
                     self.create_piece_clicked.set(true);
                 }
             }
