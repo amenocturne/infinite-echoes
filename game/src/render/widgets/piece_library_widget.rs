@@ -72,21 +72,30 @@ impl PieceLibraryWidget {
         };
 
         root_ui().push_skin(&dark_skin);
-        root_ui().window(hash!(), top_left, size, |ui| {
-            ui.label(None, "Your Pieces");
-            ui.separator();
+        root_ui().window(
+            hash!(
+                "library",
+                render_ctx.screen_size.x.to_bits(),
+                render_ctx.screen_size.y.to_bits()
+            ),
+            top_left,
+            size,
+            |ui| {
+                ui.label(None, "Your Pieces");
+                ui.separator();
 
-            if piece_addresses.is_empty() {
-                ui.label(None, "You don't have any pieces yet.");
-            } else {
-                for address in piece_addresses {
-                    let short_addr = make_short(address, 8);
-                    if ui.button(None, &*short_addr) {
-                        self.selected_address.set(Some(address.clone()));
+                if piece_addresses.is_empty() {
+                    ui.label(None, "You don't have any pieces yet.");
+                } else {
+                    for address in piece_addresses {
+                        let short_addr = make_short(address, 8);
+                        if ui.button(None, &*short_addr) {
+                            self.selected_address.set(Some(address.clone()));
+                        }
                     }
                 }
-            }
-        });
+            },
+        );
         root_ui().pop_skin();
 
         let border_thickness = 2.0;

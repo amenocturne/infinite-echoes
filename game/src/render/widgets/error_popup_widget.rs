@@ -77,27 +77,36 @@ impl ErrorPopupWidget {
         };
 
         root_ui().push_skin(&dark_skin);
-        root_ui().window(hash!(), top_left, size, |ui| {
-            ui.label(None, "Error");
-            ui.separator();
-            ui.label(None, &message);
-            
-            let button_size = ui.calc_size("OK");
+        root_ui().window(
+            hash!(
+                "error",
+                render_ctx.screen_size.x.to_bits(),
+                render_ctx.screen_size.y.to_bits()
+            ),
+            top_left,
+            size,
+            |ui| {
+                ui.label(None, "Error");
+                ui.separator();
+                ui.label(None, &message);
 
-            // The window has a margin of 10px on each side.
-            // The content area size is `size - vec2(20.0, 20.0)`.
-            // The button position is relative to this content area.
-            let margin_x = 20.0;
-            let margin_y = 20.0;
-            let content_area_size = size - vec2(margin_x, margin_y);
+                let button_size = ui.calc_size("OK");
 
-            let button_x = (content_area_size.x - button_size.x) / 2.0;
-            let button_y = content_area_size.y - button_size.y - 10.0; // 10px padding from bottom
+                // The window has a margin of 10px on each side.
+                // The content area size is `size - vec2(20.0, 20.0)`.
+                // The button position is relative to this content area.
+                let margin_x = 20.0;
+                let margin_y = 20.0;
+                let content_area_size = size - vec2(margin_x, margin_y);
 
-            if ui.button(Some(vec2(button_x, button_y)), "OK") {
-                self.hide();
-            }
-        });
+                let button_x = (content_area_size.x - button_size.x) / 2.0;
+                let button_y = content_area_size.y - button_size.y - 10.0; // 10px padding from bottom
+
+                if ui.button(Some(vec2(button_x, button_y)), "OK") {
+                    self.hide();
+                }
+            },
+        );
         root_ui().pop_skin();
 
         let border_thickness = 2.0;
