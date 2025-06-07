@@ -20,6 +20,7 @@ use crate::debug::hud::DebugHud;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::render::widgets::audio_graph_widget::AudioGraphWidget;
 use crate::render::widgets::cards_row_widget::CardsRowWidget;
+use crate::render::widgets::piece_library_widget::PieceLibraryWidget;
 use crate::render::widgets::settings_widget::SettingsWidget;
 use crate::render::Render;
 use crate::render::RenderCtx;
@@ -45,6 +46,7 @@ pub struct GameEngine {
     cards_row_widget: CardsRowWidget,
     debug_hud: Option<RefCell<DebugHud>>,
     settings_widget: SettingsWidget,
+    piece_library_widget: PieceLibraryWidget,
     ton_wallet: RefCell<TonWallet>,
 }
 
@@ -70,6 +72,7 @@ impl GameEngine {
 
         let audio_engine = AudioEngine::new()?;
         let settings_widget = SettingsWidget::from_settings(settings);
+        let piece_library_widget = PieceLibraryWidget::new();
 
         Ok(Self {
             state: RefCell::new(state),
@@ -82,6 +85,7 @@ impl GameEngine {
             cards_row_widget,
             debug_hud,
             settings_widget,
+            piece_library_widget,
             ton_wallet: RefCell::new(TonWallet::new()),
         })
     }
@@ -108,6 +112,12 @@ impl GameEngine {
         }
 
         self.settings_widget.render(render_ctx)?;
+
+        let wallet = self.ton_wallet.borrow();
+        let piece_addresses: Vec<String> =
+            wallet.contract_info().piece_cards.keys().cloned().collect();
+        self.piece_library_widget
+            .render(render_ctx, &piece_addresses)?;
 
         Ok(())
     }
@@ -143,6 +153,10 @@ impl GameEngine {
 
         if is_key_pressed(KeyCode::Escape) {
             self.settings_widget.toggle();
+        }
+
+        if is_key_pressed(KeyCode::L) {
+            self.piece_library_widget.toggle();
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
@@ -191,7 +205,7 @@ impl GameEngine {
         Ok(())
     }
 
-    fn process_events(&mut self) -> GameResult<()> {
+    fn process_events(&self) -> GameResult<()> {
         self.audio_scheduler
             .process_events(&mut |event| self.process_event(event));
         Ok(())
