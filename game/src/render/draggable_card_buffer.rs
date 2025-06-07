@@ -7,7 +7,7 @@ use crate::nodes::AudioNodeType;
 use super::{
     hover::Hover,
     rectangle_boundary::{is_inside_rectangle, RectangleBoundary},
-    widgets::card_widget::Card,
+    widgets::card_widget::{Card, CardType},
 };
 
 pub trait DraggableCardBuffer {
@@ -19,6 +19,7 @@ pub trait DraggableCardBuffer {
     fn card_centers(&self) -> Vec<Vec2>;
     fn drag_in_regions(&self, node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)>;
     fn organize_cards(&mut self);
+    fn set_cards(&mut self, card_types: Vec<CardType>);
 
     fn try_start_dragging(&mut self, mouse_pos: Vec2) -> Option<(usize, RefCell<Card>)> {
         let mut result = None;

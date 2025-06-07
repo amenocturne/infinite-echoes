@@ -107,6 +107,22 @@ impl DraggableCardBuffer for CardsRowWidget {
             })
             .collect::<Vec<()>>();
     }
+
+    fn set_cards(&mut self, card_types: Vec<CardType>) {
+        self.cards = card_types
+            .iter()
+            .map(|t| {
+                RefCell::new(Card::new(
+                    vec2(0.0, 0.0),
+                    self.card_size,
+                    WHITE,
+                    BLACK,
+                    *t,
+                ))
+            })
+            .collect();
+        self.organize_cards();
+    }
 }
 
 impl RectangleBoundary for CardsRowWidget {

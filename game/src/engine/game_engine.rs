@@ -145,9 +145,6 @@ impl GameEngine {
     }
 
     async fn handle_input(&mut self) {
-        let mut buffers: Vec<&mut dyn DraggableCardBuffer> =
-            vec![&mut self.cards_row_widget, &mut self.audio_graph_widget];
-
         let mouse_pos: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
 
@@ -158,6 +155,24 @@ impl GameEngine {
         if is_key_pressed(KeyCode::L) {
             self.piece_library_widget.toggle();
         }
+
+        if let Some(address) = self.piece_library_widget.handle_load_selection() {
+            let wallet = self.ton_wallet.borrow();
+            if let Some(cards) = wallet.get_piece_cards(&address) {
+                // Load the new cards into the audio graph widget
+                self.audio_graph_widget.set_cards(cards.clone());
+
+                // Update game state to track the remix source
+                self.state.borrow_mut().remixed_from_address = Some(address);
+
+                // Schedule a graph update and hide the library
+                self.audio_scheduler.schedule(GameEvent::UpdateGraph, None);
+                self.piece_library_widget.toggle();
+            }
+        }
+
+        let mut buffers: Vec<&mut dyn DraggableCardBuffer> =
+            vec![&mut self.cards_row_widget, &mut self.audio_graph_widget];
 
         if is_mouse_button_pressed(MouseButton::Left) {
             self.drag_manager
@@ -186,11 +201,13 @@ impl GameEngine {
         }
 
         if self.settings_widget.handle_create_piece() {
-            if let Some(cards) = &self.state.borrow().playing_cards {
+            let state = self.state.borrow();
+            if let Some(cards) = &state.playing_cards {
                 let piece_data = TonWallet::serialize_cards(cards.as_slice());
+                let remixed_from = state.remixed_from_address.as_deref();
                 self.ton_wallet
                     .borrow_mut()
-                    .set_pending_piece_data(&piece_data, None);
+                    .set_pending_piece_data(&piece_data, remixed_from);
             }
         }
 

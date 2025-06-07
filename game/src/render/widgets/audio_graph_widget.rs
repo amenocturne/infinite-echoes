@@ -10,7 +10,7 @@ use crate::render::rectangle_boundary::RectangleBoundary;
 use crate::render::Render;
 use crate::render::RenderCtx;
 
-use super::card_widget::Card;
+use super::card_widget::{Card, CardType};
 use super::grid_widget::GridWidget;
 
 pub struct AudioGraphWidget {
@@ -105,6 +105,23 @@ impl DraggableCardBuffer for AudioGraphWidget {
                 card.borrow_mut().center = center;
             })
             .collect::<Vec<()>>();
+    }
+
+    fn set_cards(&mut self, card_types: Vec<CardType>) {
+        use macroquad::color::{BLACK, WHITE};
+        self.cards = card_types
+            .iter()
+            .map(|t| {
+                RefCell::new(Card::new(
+                    vec2(0.0, 0.0),
+                    self.card_size,
+                    WHITE,
+                    BLACK,
+                    *t,
+                ))
+            })
+            .collect();
+        self.organize_cards();
     }
 }
 

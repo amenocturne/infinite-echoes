@@ -9,6 +9,7 @@ pub struct GameState {
     pub playing_graph: Option<AudioGraph>,
     pub card_deck: Vec<CardType>,
     pub playing_cards: Option<Vec<CardType>>,
+    pub remixed_from_address: Option<String>,
 }
 
 impl GameState {
@@ -18,6 +19,7 @@ impl GameState {
             playing_graph: None,
             card_deck: initial_deck,
             playing_cards: None,
+            remixed_from_address: None,
         }
     }
 }
