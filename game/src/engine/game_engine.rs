@@ -126,11 +126,6 @@ impl GameEngine {
         settings.vault_address = ton_wallet.user_vault_address().map(|s| s.to_string());
         settings.wallet_address = ton_wallet.user_address().map(|s| s.to_string());
         settings.registry_address = ton_wallet.registry_address().map(|s| s.to_string());
-        if let Some(debug_hud) = &self.debug_hud {
-            if let Some(vault_address) = ton_wallet.user_vault_address() {
-                debug_hud.borrow_mut().update_vault_addr(vault_address);
-            }
-        }
 
         let vol = settings.volume;
         self.audio_engine.borrow().set_volume(vol);

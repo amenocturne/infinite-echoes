@@ -7,29 +7,23 @@ import { errorHandler } from '../services/error_handler';
  * Service for handling TON-related UI updates
  */
 export class TonUIService {
-  private walletStatusElement: HTMLElement | null = null;
-  private contractInfoElement: HTMLElement | null = null;
   private connectButton: HTMLButtonElement | null = null;
 
   /**
    * Initializes the UI service
    */
   initialize(): void {
-    this.walletStatusElement = document.getElementById('wallet-status');
-    this.contractInfoElement = document.getElementById('contract-info');
-
     this.setupConnectButton();
 
     tonStateStore.subscribe(() => {
-      this.updateContractInfoDisplay();
+      // No longer updating contract info display here
     });
 
     walletService.subscribeToWalletStatus((connected) => {
-      this.updateWalletStatus(connected);
+      this.updateConnectButtonText(connected);
     });
 
-    this.updateWalletStatus(walletService.isConnected());
-    this.updateContractInfoDisplay();
+    this.updateConnectButtonText(walletService.isConnected());
   }
 
   /**
@@ -50,7 +44,6 @@ export class TonUIService {
       try {
         if (walletService.isConnected()) {
           await walletService.disconnect();
-          this.connectButton!.textContent = 'Connect TON Wallet';
         } else {
           await walletService.openModal();
         }
@@ -81,75 +74,16 @@ export class TonUIService {
   }
 
   /**
-   * Updates the wallet connection status in the UI
+   * Updates the connect button text based on wallet connection status
    */
-  private updateWalletStatus(connected: boolean): void {
-    if (!this.walletStatusElement || !this.connectButton) return;
+  private updateConnectButtonText(connected: boolean): void {
+    if (!this.connectButton) return;
 
     if (connected) {
-      const address = walletService.getWalletAddress();
-      if (address) {
-        const formattedAddress = walletService.formatAddress(address);
-        this.walletStatusElement.textContent = `Connected: ${formattedAddress}`;
-        this.walletStatusElement.classList.add('connected');
-        this.connectButton.textContent = 'Disconnect Wallet';
-      }
+      this.connectButton.textContent = 'Disconnect Wallet';
     } else {
-      this.walletStatusElement.textContent = 'Not connected';
-      this.walletStatusElement.classList.remove('connected');
       this.connectButton.textContent = 'Connect TON Wallet';
     }
-  }
-
-  /**
-   * Updates the contract info display in the UI
-   */
-  private updateContractInfoDisplay(): void {
-    if (!this.contractInfoElement) {
-      return;
-    }
-
-    if (tonStateStore.isStateLoading()) {
-      this.contractInfoElement.innerHTML =
-        '<div>Loading contract info... <span class="loading-spinner"></span></div>';
-      return;
-    }
-
-    const contractInfo = tonStateStore.getState();
-    let html = ``;
-
-    if (walletService.isConnected()) {
-      if (contractInfo.userVaultAddress) {
-        const shortAddress = walletService.formatAddress(contractInfo.userVaultAddress);
-        html += `<div>Your Vault: ${shortAddress}</div>`;
-
-        if (contractInfo.pieceCount !== null) {
-          html += `<div>Your Pieces: ${contractInfo.pieceCount}</div>`;
-        }
-
-        if (contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0) {
-          html += `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
-          const maxToShow = Math.min(3, contractInfo.pieceAddresses.length);
-          for (let i = 0; i < maxToShow; i++) {
-            const address = contractInfo.pieceAddresses[i];
-            html += `<div>- ${walletService.formatAddress(address)}`;
-
-            if (contractInfo.pieceData && contractInfo.pieceData[address]) {
-              html += ` (Base64 Data: ${contractInfo.pieceData[address]!.substring(0, 10)}...)`;
-            }
-
-            html += `</div>`;
-          }
-          if (contractInfo.pieceAddresses.length > maxToShow) {
-            html += `<div>...and ${contractInfo.pieceAddresses.length - maxToShow} more</div>`;
-          }
-        }
-      } else {
-        html += `<div>Your Vault: Not created yet</div>`;
-      }
-    }
-
-    this.contractInfoElement.innerHTML = html;
   }
 }
 

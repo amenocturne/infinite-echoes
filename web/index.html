@@ -24,10 +24,7 @@
   </div>
 
   <div id="wallet-ui">
-    <div id="wallet-status">Not connected</div>
     <div id="ton-connect-ui" style="margin-top: 10px; min-height: 40px; min-width: 180px;"></div>
-    <div id="contract-info" style="margin-top: 10px; font-size: 12px;"></div>
-    <button id="create-piece-btn" style="margin-top: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Sample Piece</button>
   </div>
 
   <canvas id="glcanvas" tabindex="1"></canvas>
@@ -40,7 +37,6 @@
       const startButton = document.getElementById('start-button');
       const loadingSpinner = document.getElementById('loading-spinner');
       const canvas = document.getElementById('glcanvas');
-      const createPieceButton = document.getElementById('create-piece-btn');
       
       setInterval(async () => {
         if (window.tonBridge && window.tonBridge.getPendingPieceData) {
@@ -77,16 +73,6 @@
             }
           }, 500);
         }, 100);
-      });
-
-      createPieceButton.addEventListener('click', async () => {
-        if (window.tonBridge && window.tonBridge.createNewPiece) {
-          const samplePieceData = "SGVsbG8=";
-          await window.tonBridge.createNewPiece(samplePieceData);
-        } else {
-          console.error('tonBridge.createNewPiece is not available.');
-          alert('TON wallet integration not fully loaded or connected.');
-        }
       });
     });
 
