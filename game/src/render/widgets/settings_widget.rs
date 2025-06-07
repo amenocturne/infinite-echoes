@@ -123,8 +123,10 @@ impl Render for SettingsWidget {
                 ui.label(None, "Settings:");
                 ui.slider(hash!(), "Volume", 0.0..1.0, &mut settings.volume);
 
-                ui.label(None, "Piece Name:");
-                ui.editbox(hash!(), vec2(size.x * 0.8, 30.0), &mut settings.piece_name);
+                if settings.is_connected {
+                    ui.label(None, "Piece Name:");
+                    ui.editbox(hash!(), vec2(size.x * 0.8, 30.0), &mut settings.piece_name);
+                }
 
                 let button_spacing = 10.0;
                 let init_text = "Init".to_string();
