@@ -50,7 +50,7 @@ impl Render for SettingsWidget {
         }
         let center = render_ctx.screen_size * self.position;
         let size = self.size * render_ctx.screen_size;
-        let position = center - 0.5 * size;
+        let top_left = center - 0.5 * size;
 
         let dark_skin = {
             let label_style = root_ui()
@@ -77,7 +77,7 @@ impl Render for SettingsWidget {
         let mut settings = self.settings.borrow_mut();
 
         root_ui().push_skin(&dark_skin);
-        root_ui().window(hash!(), position, size, |ui| {
+        root_ui().window(hash!(), top_left, size, |ui| {
             let mut opt_short_label = |name: &'static str, str: Option<String>| {
                 ui.label(
                     None,
@@ -95,19 +95,25 @@ impl Render for SettingsWidget {
             opt_short_label("Registry", settings.registry_address.clone());
             opt_short_label("Vault", settings.vault_address.clone());
 
-            let button_clicked = ui.button(vec2(0.0, 0.0), "Button");
-            self.create_piece_clicked.set(button_clicked);
-
             ui.label(None, "");
             ui.label(None, "Settings:");
             ui.slider(hash!(), "Volume", 0.0..1.0, &mut settings.volume);
+
+            if settings.is_connected {
+                let button_height = 40.0;
+                let button_width = 8.0 * 10.0;
+                let button_y = size.y - button_height - 10.0;
+                let button_x = (size.x - button_width) * 0.5;
+                let button_clicked = ui.button(vec2(button_x, button_y), "Save Piece");
+                self.create_piece_clicked.set(button_clicked);
+            }
         });
         root_ui().pop_skin();
 
         let border_thickness = 2.0;
         draw_rectangle_lines(
-            position.x - border_thickness,
-            position.y - border_thickness,
+            top_left.x - border_thickness,
+            top_left.y - border_thickness,
             size.x + 2.0 * border_thickness,
             size.y + 2.0 * border_thickness,
             border_thickness,

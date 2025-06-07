@@ -3,6 +3,7 @@ pub struct GameSettings {
     pub vault_address: Option<String>,
     pub registry_address: Option<String>,
     pub wallet_address: Option<String>,
+    pub is_connected: bool
 }
 
 impl Default for GameSettings {
@@ -12,6 +13,7 @@ impl Default for GameSettings {
             vault_address: None,
             registry_address: None,
             wallet_address: None,
+            is_connected: false
         }
     }
 }
