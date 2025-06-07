@@ -4,6 +4,7 @@ use macroquad::math::vec2;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::engine::game_config::CardColorConfig;
 use crate::nodes::AudioNodeType;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::rectangle_boundary::RectangleBoundary;
@@ -19,10 +20,16 @@ pub struct AudioGraphWidget {
     cards: Vec<RefCell<Card>>,
     card_size: Vec2,
     grid: GridWidget,
+    card_colors: CardColorConfig,
 }
 
 impl AudioGraphWidget {
-    pub fn new(center: Vec2, size: Vec2, card_size: Vec2) -> Self {
+    pub fn new(
+        center: Vec2,
+        size: Vec2,
+        card_size: Vec2,
+        card_colors: CardColorConfig,
+    ) -> Self {
         let grid = GridWidget::new(center, size, 0, 1);
         let mut result = Self {
             center,
@@ -30,6 +37,7 @@ impl AudioGraphWidget {
             cards: vec![],
             card_size,
             grid,
+            card_colors,
         };
         result.organize_cards();
         result
@@ -108,14 +116,14 @@ impl DraggableCardBuffer for AudioGraphWidget {
     }
 
     fn set_cards(&mut self, card_types: Vec<CardType>) {
-        use macroquad::color::{BLACK, WHITE};
+        use macroquad::color::BLACK;
         self.cards = card_types
             .iter()
             .map(|t| {
                 RefCell::new(Card::new(
                     vec2(0.0, 0.0),
                     self.card_size,
-                    WHITE,
+                    t.get_color(&self.card_colors),
                     BLACK,
                     *t,
                 ))

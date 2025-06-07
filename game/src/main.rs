@@ -7,6 +7,7 @@ mod render;
 use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_config::AudioConfig;
+use engine::game_config::CardColorConfig;
 use engine::game_config::CardsRowWidgetConfig;
 use engine::game_config::DebugHudConfig;
 use engine::game_config::GameConfig;
@@ -56,6 +57,12 @@ async fn run() -> GameResult<()> {
             release_time: 0.002,
             max_schedule_ahead: 120.0,
             output_gain: 0.8,
+        },
+        card_colors: CardColorConfig {
+            note_generator: Color::from_hex(0xF7567C),
+            note_effect: Color::from_hex(0xFCBA04),
+            oscillator: Color::from_hex(0x99E1D9),
+            audio_effect: Color::from_hex(0xC2AED6)
         },
     };
 

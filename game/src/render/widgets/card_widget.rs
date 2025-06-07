@@ -3,6 +3,7 @@ use macroquad::color::GRAY;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::engine::game_config::CardColorConfig;
 use crate::nodes::audio_effect::FilterType;
 use crate::nodes::note_effect::ChangeLenType;
 use crate::nodes::note_effect::ScaleType;
@@ -46,7 +47,7 @@ impl CardType {
         match self {
             // NoteGenerator: 0-11 (12 values for each note)
             CardType::NoteGenerator(note) => note.to_int() as u16,
-            
+
             // NoteEffect: 100-123 (12 notes * 2 scale types = 24 values)
             CardType::NoteEffect(note, scale) => {
                 100 + note.to_int() as u16 * 2 + match scale {
@@ -54,7 +55,7 @@ impl CardType {
                     ScaleType::Minor => 1,
                 }
             }
-            
+
             // ChangeLen: 200-201 (2 values)
             CardType::ChangeLen(change_type) => {
                 200 + match change_type {
@@ -62,7 +63,7 @@ impl CardType {
                     ChangeLenType::Half => 1,
                 }
             }
-            
+
             // Oscillator: 300-301 (2 values)
             CardType::Oscillator(wave) => {
                 300 + match wave {
@@ -70,7 +71,7 @@ impl CardType {
                     WaveShape::Square => 1,
                 }
             }
-            
+
             // Filter: 400-402 (3 values)
             CardType::Filter(filter) => {
                 400 + match filter {
@@ -79,10 +80,10 @@ impl CardType {
                     FilterType::Notch => 2,
                 }
             }
-            
+
             // Distortion: 500 (1 value)
             CardType::Distortion => 500,
-            
+
             // Reverb: 600 (1 value)
             CardType::Reverb => 600,
         }
@@ -93,35 +94,39 @@ impl CardType {
         match id {
             // NoteGenerator: 0-11
             0..=11 => Some(CardType::NoteGenerator(NoteName::from_int(id as u32))),
-            
+
             // NoteEffect: 100-123
             100..=123 => {
                 let note_id = (id - 100) / 2;
                 let scale_id = (id - 100) % 2;
                 let note = NoteName::from_int(note_id as u32);
-                let scale = if scale_id == 0 { ScaleType::Major } else { ScaleType::Minor };
+                let scale = if scale_id == 0 {
+                    ScaleType::Major
+                } else {
+                    ScaleType::Minor
+                };
                 Some(CardType::NoteEffect(note, scale))
             }
-            
+
             // ChangeLen: 200-201
             200 => Some(CardType::ChangeLen(ChangeLenType::Double)),
             201 => Some(CardType::ChangeLen(ChangeLenType::Half)),
-            
+
             // Oscillator: 300-301
             300 => Some(CardType::Oscillator(WaveShape::Sine)),
             301 => Some(CardType::Oscillator(WaveShape::Square)),
-            
+
             // Filter: 400-402
             400 => Some(CardType::Filter(FilterType::LowPass)),
             401 => Some(CardType::Filter(FilterType::HighPass)),
             402 => Some(CardType::Filter(FilterType::Notch)),
-            
+
             // Distortion: 500
             500 => Some(CardType::Distortion),
-            
+
             // Reverb: 600
             600 => Some(CardType::Reverb),
-            
+
             // Invalid ID
             _ => None,
         }
@@ -160,6 +165,15 @@ impl CardType {
         match self {
             CardType::NoteGenerator(note_name) => Some(*note_name),
             _ => None,
+        }
+    }
+
+    pub fn get_color(&self, colors: &CardColorConfig) -> Color {
+        match self.as_type() {
+            AudioNodeType::NoteGenerator => colors.note_generator,
+            AudioNodeType::NoteEffect => colors.note_effect,
+            AudioNodeType::Oscillator => colors.oscillator,
+            AudioNodeType::AudioEffect => colors.audio_effect,
         }
     }
 }

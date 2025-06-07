@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 
 use macroquad::color::BLACK;
-use macroquad::color::WHITE;
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
 
 use crate::engine::errors::GameResult;
+use crate::engine::game_config::CardColorConfig;
 use crate::nodes::AudioNodeType;
 use crate::render::draggable_card_buffer::DraggableCardBuffer;
 use crate::render::rectangle_boundary::RectangleBoundary;
@@ -23,15 +23,30 @@ pub struct CardsRowWidget {
     cards: Vec<RefCell<Card>>,
     card_size: Vec2,
     grid: GridWidget,
+    card_colors: CardColorConfig,
 }
 
 impl CardsRowWidget {
-    pub fn new(center: Vec2, size: Vec2, card_size: Vec2, card_types: Vec<CardType>) -> Self {
+    pub fn new(
+        center: Vec2,
+        size: Vec2,
+        card_size: Vec2,
+        card_types: Vec<CardType>,
+        card_colors: CardColorConfig,
+    ) -> Self {
         let default_pos = vec2(0.0, 0.0);
 
         let cards: Vec<RefCell<Card>> = card_types
             .iter()
-            .map(|t| RefCell::new(Card::new(default_pos, card_size, WHITE, BLACK, t.clone())))
+            .map(|t| {
+                RefCell::new(Card::new(
+                    default_pos,
+                    card_size,
+                    t.get_color(&card_colors),
+                    BLACK,
+                    t.clone(),
+                ))
+            })
             .collect();
 
         let grid = GridWidget::new(center, size, cards.len() as u32, 1);
@@ -41,6 +56,7 @@ impl CardsRowWidget {
             cards,
             card_size,
             grid,
+            card_colors,
         };
         res.organize_cards();
         res
@@ -115,7 +131,7 @@ impl DraggableCardBuffer for CardsRowWidget {
                 RefCell::new(Card::new(
                     vec2(0.0, 0.0),
                     self.card_size,
-                    WHITE,
+                    t.get_color(&self.card_colors),
                     BLACK,
                     *t,
                 ))

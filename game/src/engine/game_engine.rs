@@ -60,12 +60,14 @@ impl GameEngine {
             config.graph_widget.location,
             config.graph_widget.size,
             config.card_size,
+            config.card_colors.clone(),
         );
         let cards_row_widget = CardsRowWidget::new(
             config.cards_widget.location,
             config.cards_widget.size,
             config.card_size,
             state.card_deck.clone(),
+            config.card_colors.clone(),
         );
         let debug_hud = config
             .debug_hud

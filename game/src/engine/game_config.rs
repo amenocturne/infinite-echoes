@@ -1,3 +1,4 @@
+use macroquad::color::Color;
 use macroquad::math::Vec2;
 
 use crate::render::widgets::card_widget::CardType;
@@ -12,6 +13,15 @@ pub struct GameConfig {
     pub cards_widget: CardsRowWidgetConfig,
     pub debug_hud: Option<DebugHudConfig>,
     pub audio: AudioConfig,
+    pub card_colors: CardColorConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct CardColorConfig {
+    pub note_generator: Color,
+    pub note_effect: Color,
+    pub oscillator: Color,
+    pub audio_effect: Color,
 }
 
 #[derive(Clone)]
