@@ -153,7 +153,7 @@ impl GameEngine {
             self.settings_widget.toggle();
         }
 
-        if is_key_pressed(KeyCode::L) {
+        if is_key_pressed(KeyCode::Tab) {
             self.piece_library_widget.toggle();
         }
 
