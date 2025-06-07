@@ -73,8 +73,8 @@ impl Render for GridWidget {
         ];
         let columns = (1..(self.columns)).map(|i| {
             LineWidget::new(
-                vec2((i as f32) * cell_size.x, 0.0) + self.left_center(),
-                vec2((i as f32) * cell_size.x, self.size.y) + self.left_center(),
+                vec2((i as f32) * cell_size.x, 0.0) + self.top_left(),
+                vec2((i as f32) * cell_size.x, self.size.y) + self.top_left(),
                 2.0,
                 WHITE,
             )
@@ -82,8 +82,8 @@ impl Render for GridWidget {
 
         let rows = (1..(self.rows)).map(|i| {
             LineWidget::new(
-                vec2(0.0, (i as f32) * cell_size.y) + self.left_center(),
-                vec2(self.size.x, (i as f32) * cell_size.y) + self.left_center(),
+                vec2(0.0, (i as f32) * cell_size.y) + self.top_left(),
+                vec2(self.size.x, (i as f32) * cell_size.y) + self.top_left(),
                 2.0,
                 WHITE,
             )

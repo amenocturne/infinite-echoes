@@ -45,7 +45,7 @@ pub trait RectangleBoundary {
     }
 
     fn left_center_from(center: Vec2, size: Vec2) -> Vec2 {
-        center - size / 2.0
+        center - vec2(size.x / 2.0, 0.0)
     }
 
     fn top_left_from(center: Vec2, size: Vec2) -> Vec2 {
