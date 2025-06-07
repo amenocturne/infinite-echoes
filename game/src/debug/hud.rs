@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 use std::ops::Add;
 
 use macroquad::color::WHITE;
-use macroquad::text::draw_text;
+use macroquad::text::draw_multiline_text;
 use macroquad::time::get_fps;
 use macroquad::time::get_time;
 
@@ -53,11 +53,12 @@ impl Render for DebugHud {
         // let addr = self.vault_address.clone().get().unwrap_or("None".to_string());
         let addr = self.vault_address.clone().unwrap_or("None".to_string());
 
-        draw_text(
-            &format!("FPS avg: {fps} | Latency avg: {latency_ms}ms | Vault address: {addr}",),
+        draw_multiline_text(
+            &format!("FPS avg: {fps} | Latency avg: {latency_ms}ms\nVault address: {addr}",),
             20.0,
             40.0,
             30.0,
+            Some(1.0),
             WHITE,
         );
         self.previous_time.set(time);

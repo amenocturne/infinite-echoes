@@ -33,6 +33,7 @@ pub enum AudioState {
 
 pub struct AudioEngine {
     audio_context: AudioContext,
+    master_gain: GainNode,
     oscillators: Vec<RefCell<GameOscillator>>,
     effects: Vec<RefCell<Box<dyn AudioEffectNode>>>,
     state: Cell<AudioState>,
@@ -42,12 +43,36 @@ impl AudioEngine {
     pub fn new() -> GameResult<AudioEngine> {
         let audio_context =
             AudioContext::new().map_err(GameError::js("Could not construct AudioContext"))?;
+
+        // Create master gain node
+        let master_gain = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create master gain node"))?;
+
+        // Connect master gain to destination
+        master_gain
+            .connect_with_audio_node(&audio_context.destination())
+            .map_err(GameError::js("Could not connect master gain to destination"))?;
+
+        // Set default volume
+        master_gain.gain().set_value(1.0);
+
         Ok(AudioEngine {
             audio_context,
+            master_gain,
             oscillators: vec![],
             effects: vec![],
             state: Cell::new(AudioState::NotPlaying),
         })
+    }
+
+    /// Set the volume (0.0 to 1.0)
+    pub fn set_volume(&self, volume: f32)  {
+        let clamped_volume = volume.clamp(0.0, 1.0);
+        let exponential_volume = clamped_volume.sqrt();
+        self.master_gain
+            .gain()
+            .set_value(exponential_volume);
     }
 
     pub fn is_playing(&self) -> bool {
@@ -99,7 +124,7 @@ impl AudioEngine {
 
         // Determine the final destination and connect effect chain
         let oscillator_destination: WebAudioNode = if effect_nodes.is_empty() {
-            self.audio_context.destination().into()
+            self.master_gain.clone().into()
         } else {
             // Connect effects in series
             for i in 1..effect_nodes.len() {
@@ -117,9 +142,9 @@ impl AudioEngine {
                 last_effect
                     .get_output_node()
                     .as_ref()
-                    .connect_with_audio_node(&self.audio_context.destination())
+                    .connect_with_audio_node(&self.master_gain)
                     .map_err(GameError::js(
-                        "Could not connect final effect to destination",
+                        "Could not connect final effect to master gain",
                     ))?;
             }
 

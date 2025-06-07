@@ -19,11 +19,13 @@ use crate::debug::hud::DebugHud;
 use crate::nodes::audio_graph::AudioGraph;
 use crate::render::widgets::audio_graph_widget::AudioGraphWidget;
 use crate::render::widgets::cards_row_widget::CardsRowWidget;
+use crate::render::widgets::settings_widget::SettingsWidget;
 use crate::render::Render;
 use crate::render::RenderCtx;
 use crate::render::{drag_manager::DragManager, draggable_card_buffer::DraggableCardBuffer};
 
 use super::errors::GameResult;
+use super::game_settings::GameSettings;
 use super::game_state::GameEvent;
 use super::ton_wallet::TonWallet;
 use super::{
@@ -38,16 +40,18 @@ pub struct GameEngine {
     audio_engine: RefCell<AudioEngine>,
     drag_manager: DragManager,
     audio_scheduler: Scheduler,
-    // TODO: Maybe put them into separate enum for different game states
+    // UI
     audio_graph_widget: AudioGraphWidget,
     cards_row_widget: CardsRowWidget,
     debug_hud: Option<RefCell<DebugHud>>,
+    settings_widget: SettingsWidget,
     // TON wallet integration
     ton_wallet: RefCell<TonWallet>,
 }
 
 impl GameEngine {
-    pub fn new(audio_engine: AudioEngine, render_ctx: RenderCtx, config: GameConfig) -> Self {
+    pub fn new(render_ctx: RenderCtx, config: GameConfig) -> GameResult<Self> {
+        let settings = GameSettings::default();
         let state = GameState::new(config.initial_deck.clone());
         let audio_graph_widget = AudioGraphWidget::new(
             config.graph_widget.location,
@@ -64,7 +68,11 @@ impl GameEngine {
             .debug_hud
             .clone()
             .map(|ref h| RefCell::new(DebugHud::new(h.buffer_size)));
-        Self {
+
+        let audio_engine = AudioEngine::new()?;
+        let settings_widget = SettingsWidget::from_settings(settings);
+
+        Ok(Self {
             state: RefCell::new(state),
             render_ctx,
             config,
@@ -74,8 +82,9 @@ impl GameEngine {
             audio_graph_widget,
             cards_row_widget,
             debug_hud,
+            settings_widget,
             ton_wallet: RefCell::new(TonWallet::new()),
-        }
+        })
     }
 
     pub fn update(&mut self) -> GameResult<()> {
@@ -83,6 +92,7 @@ impl GameEngine {
         self.update_state();
         self.process_events()?;
         self.render()?;
+
         Ok(())
     }
 
@@ -97,6 +107,8 @@ impl GameEngine {
         if let Some(debug_hud) = &self.debug_hud {
             debug_hud.borrow().render(render_ctx)?;
         }
+
+        self.settings_widget.render(render_ctx)?;
 
         Ok(())
     }
@@ -121,6 +133,9 @@ impl GameEngine {
                 debug_hud.borrow_mut().update_vault_addr(vault_address);
             }
         }
+
+        let vol = self.settings_widget.settings.borrow().volume;
+        self.audio_engine.borrow().set_volume(vol);
     }
 
     fn handle_input(&mut self) {
@@ -129,6 +144,10 @@ impl GameEngine {
 
         let mouse_pos: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
+
+        if is_key_pressed(KeyCode::Escape) {
+            self.settings_widget.toggle();
+        }
 
         if is_mouse_button_pressed(MouseButton::Left) {
             self.drag_manager

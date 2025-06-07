@@ -5,3 +5,4 @@ pub mod scheduler;
 pub mod game_engine;
 pub mod game_config;
 pub mod ton_wallet;
+pub mod game_settings;

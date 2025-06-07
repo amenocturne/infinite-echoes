@@ -4,7 +4,6 @@ mod engine;
 mod nodes;
 mod render;
 
-use engine::audio_engine::AudioEngine;
 use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_config::AudioConfig;
@@ -60,9 +59,8 @@ async fn run() -> GameResult<()> {
         },
     };
 
-    let audio_engine = AudioEngine::new()?;
     let render_ctx = RenderCtx::new(vec2(screen_width(), screen_height())).await?;
-    let mut game_engine = GameEngine::new(audio_engine, render_ctx, game_config);
+    let mut game_engine = GameEngine::new(render_ctx, game_config)?;
 
     loop {
         game_engine.update()?;
