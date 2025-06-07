@@ -37,6 +37,7 @@ pub enum CardType {
     NoteGenerator(NoteName),
     ChordInScale(NoteName, ScaleType),
     ChangeLen(ChangeLenType),
+    Blank,
     Oscillator(WaveShape),
     Filter(FilterType),
     Distortion,
@@ -52,10 +53,11 @@ impl CardType {
 
             // NoteEffect: 100-123 (12 notes * 2 scale types = 24 values)
             CardType::ChordInScale(note, scale) => {
-                100 + note.to_int() as u16 * 2 + match scale {
-                    ScaleType::Major => 0,
-                    ScaleType::Minor => 1,
-                }
+                100 + note.to_int() as u16 * 2
+                    + match scale {
+                        ScaleType::Major => 0,
+                        ScaleType::Minor => 1,
+                    }
             }
 
             // ChangeLen: 200-201 (2 values)
@@ -66,6 +68,9 @@ impl CardType {
                     ChangeLenType::Tripplets => 2,
                 }
             }
+
+            // Blank: 251 (1 values)
+            CardType::Blank => 251,
 
             // Oscillator: 300-301 (2 values)
             CardType::Oscillator(wave) => {
@@ -144,6 +149,7 @@ impl CardType {
             CardType::ChangeLen(ChangeLenType::Half) => Shape::FASTER,
             CardType::ChangeLen(ChangeLenType::Double) => Shape::SLOWER,
             CardType::ChangeLen(ChangeLenType::Tripplets) => Shape::FASTER,
+            CardType::Blank => Shape::BLANK,
             CardType::Oscillator(WaveShape::Sine) => Shape::SINE,
             CardType::Oscillator(WaveShape::Square) => Shape::SQUARE,
             CardType::Filter(FilterType::Notch) => Shape::NOTCH,
@@ -158,6 +164,7 @@ impl CardType {
             CardType::NoteGenerator(_) => AudioNodeType::NoteGenerator,
             CardType::ChordInScale(_, _) => AudioNodeType::NoteEffect,
             CardType::ChangeLen(_) => AudioNodeType::NoteEffect,
+            CardType::Blank => AudioNodeType::NoteEffect,
             CardType::Oscillator(_) => AudioNodeType::Oscillator,
             CardType::Filter(_) => AudioNodeType::AudioEffect,
             CardType::Distortion => AudioNodeType::AudioEffect,

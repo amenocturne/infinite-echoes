@@ -18,6 +18,7 @@ impl NoteEffect {
 
     pub fn apply(&self, generator: NoteGenerator) -> NoteGenerator {
         let (transformed_notes, new_loop_length) = match &self.effect_type {
+            NoteEffectType::Blank => (generator.notes, generator.loop_length),
             NoteEffectType::Chord => {
                 let notes = generator
                     .notes
@@ -95,6 +96,7 @@ pub enum NoteEffectType {
     Scale(Scale),
     ScaleChord(Scale),
     ChangeLen(ChangeLenType),
+    Blank,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

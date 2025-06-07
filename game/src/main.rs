@@ -44,6 +44,7 @@ async fn run() -> GameResult<()> {
             CardType::NoteGenerator(NoteName::D),
             CardType::ChangeLen(ChangeLenType::Tripplets),
             CardType::ChangeLen(ChangeLenType::Tripplets),
+            CardType::Blank,
             CardType::ChangeLen(ChangeLenType::Half),
             CardType::ChangeLen(ChangeLenType::Double),
             CardType::ChordInScale(NoteName::C, ScaleType::Major),

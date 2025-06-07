@@ -58,6 +58,9 @@ impl AudioNode {
             CardType::ChangeLen(amount) => {
                 Self::NoteEffect(NoteEffect::new(NoteEffectType::ChangeLen(*amount)))
             }
+            CardType::Blank => {
+                Self::NoteEffect(NoteEffect::new(NoteEffectType::Blank))
+            }
         }
     }
 
