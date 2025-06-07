@@ -28,6 +28,14 @@ impl PieceLibraryWidget {
         self.is_visible.set(!prev_value);
     }
 
+    pub fn hide(&self) {
+        self.is_visible.set(false);
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.is_visible.get()
+    }
+
     pub fn handle_load_selection(&self) -> Option<String> {
         self.selected_address.take()
     }

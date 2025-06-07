@@ -38,6 +38,14 @@ impl SettingsWidget {
         self.is_visible.set(!prev_value);
     }
 
+    pub fn hide(&self) {
+        self.is_visible.set(false);
+    }
+
+    pub fn is_visible(&self) -> bool {
+        self.is_visible.get()
+    }
+
     pub fn handle_create_piece(&self) -> bool {
         let prev = self.create_piece_clicked.get();
         self.create_piece_clicked.set(false);

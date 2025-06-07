@@ -150,10 +150,23 @@ impl GameEngine {
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
 
         if is_key_pressed(KeyCode::Escape) {
-            self.settings_widget.toggle();
+            // As requested, Escape closes any open window.
+            if self.settings_widget.is_visible() || self.piece_library_widget.is_visible() {
+                self.settings_widget.hide();
+                self.piece_library_widget.hide();
+            } else {
+                if !self.settings_widget.is_visible() {
+                    self.piece_library_widget.hide();
+                }
+                self.settings_widget.toggle();
+            }
         }
 
         if is_key_pressed(KeyCode::Tab) {
+            // If we are opening the library window, close the settings window.
+            if !self.piece_library_widget.is_visible() {
+                self.settings_widget.hide();
+            }
             self.piece_library_widget.toggle();
         }
 
@@ -169,7 +182,7 @@ impl GameEngine {
 
                 // Schedule a graph update and hide the library
                 self.audio_scheduler.schedule(GameEvent::UpdateGraph, None);
-                self.piece_library_widget.toggle();
+                self.piece_library_widget.hide();
             }
         }
 
