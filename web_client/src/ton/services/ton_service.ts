@@ -72,11 +72,11 @@ export class TonService extends BaseService implements Initializable {
             tonStateStore.updateState({ pieceCount });
 
             const pieceAddresses = await vaultService.getPieceAddresses(vaultAddress);
-            tonStateStore.updateState({ pieceAddresses });
+            // Update addresses and clear old piece data to start fresh
+            tonStateStore.updateState({ pieceAddresses, pieceData: {} });
 
             if (pieceAddresses && pieceAddresses.length > 0) {
-              const pieceData = await pieceService.getAllPieceData(pieceAddresses);
-              tonStateStore.updateState({ pieceData });
+              pieceService.fetchAllPieceData(pieceAddresses);
             }
           }
         }

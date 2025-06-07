@@ -1,6 +1,6 @@
 import { BaseService } from './base';
 import { apiService } from './api_service';
-import { errorHandler } from './error_handler';
+import { tonStateStore } from './state_store';
 
 /**
  * Service for interacting with EchoPiece contracts
@@ -44,35 +44,30 @@ export class PieceService extends BaseService {
   }
 
   /**
-   * Gets data for all pieces in the provided addresses array
+   * Fetches data for all pieces and updates the state store as each piece arrives.
+   * This method does not wait for all fetches to complete.
    * @param pieceAddresses Array of piece addresses
-   * @returns Object mapping addresses to piece data
    */
-  async getAllPieceData(
-    pieceAddresses: string[] | null,
-  ): Promise<{ [address: string]: string | null }> {
-    const pieceData: { [address: string]: string | null } = {};
-
+  fetchAllPieceData(pieceAddresses: string[] | null): void {
     if (!pieceAddresses || pieceAddresses.length === 0) {
-      return pieceData;
+      tonStateStore.updateState({ pieceData: {} });
+      return;
     }
 
-    for (let i = 0; i < pieceAddresses.length; i++) {
-      const address = pieceAddresses[i];
+    pieceAddresses.forEach(async (address) => {
       try {
         const data = await this.getPieceData(address);
-        pieceData[address] = data;
+        const currentState = tonStateStore.getState();
+        const newPieceData = { ...(currentState.pieceData || {}), [address]: data };
+        tonStateStore.updateState({ pieceData: newPieceData });
       } catch (error) {
         this.logError(`Processing piece ${address}`, error);
-        pieceData[address] = null;
+        const currentState = tonStateStore.getState();
+        // Store null to indicate a fetch attempt failed for this address
+        const newPieceData = { ...(currentState.pieceData || {}), [address]: null };
+        tonStateStore.updateState({ pieceData: newPieceData });
       }
-
-      if (i < pieceAddresses.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-    }
-
-    return pieceData;
+    });
   }
 }
 

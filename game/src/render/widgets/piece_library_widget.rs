@@ -40,7 +40,12 @@ impl PieceLibraryWidget {
         self.selected_address.take()
     }
 
-    pub fn render(&self, render_ctx: &RenderCtx, piece_addresses: &[String]) -> GameResult<()> {
+    pub fn render(
+        &self,
+        render_ctx: &RenderCtx,
+        piece_addresses: &[String],
+        is_loading: bool,
+    ) -> GameResult<()> {
         if !self.is_visible.get() {
             return Ok(());
         }
@@ -84,7 +89,7 @@ impl PieceLibraryWidget {
                 ui.label(None, "Your Pieces");
                 ui.separator();
 
-                if piece_addresses.is_empty() {
+                if piece_addresses.is_empty() && !is_loading {
                     ui.label(None, "You don't have any pieces yet.");
                 } else {
                     for address in piece_addresses {
@@ -93,6 +98,10 @@ impl PieceLibraryWidget {
                             self.selected_address.set(Some(address.clone()));
                         }
                     }
+                }
+
+                if is_loading {
+                    ui.label(None, "Loading pieces...");
                 }
             },
         );

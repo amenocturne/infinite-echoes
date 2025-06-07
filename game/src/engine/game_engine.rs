@@ -127,11 +127,18 @@ impl GameEngine {
         self.settings_widget.render(render_ctx)?;
 
         let wallet = self.ton_wallet.borrow();
-        let mut piece_addresses: Vec<String> =
-            wallet.contract_info().piece_cards.keys().cloned().collect();
-        piece_addresses.sort();
+        let contract_info = wallet.contract_info();
+
+        let mut loaded_piece_addresses: Vec<String> =
+            contract_info.piece_cards.keys().cloned().collect();
+        loaded_piece_addresses.sort();
+
+        let total_pieces_to_fetch = contract_info.piece_addresses.len();
+        let fetched_pieces_count = contract_info.piece_data.len();
+        let is_loading = total_pieces_to_fetch > fetched_pieces_count;
+
         self.piece_library_widget
-            .render(render_ctx, &piece_addresses)?;
+            .render(render_ctx, &loaded_piece_addresses, is_loading)?;
 
         self.error_popup_widget.render(render_ctx)?;
 
