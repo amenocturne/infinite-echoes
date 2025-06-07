@@ -4,6 +4,7 @@ use macroquad::ui::{hash, root_ui, Skin};
 use macroquad::prelude::*;
 
 use crate::engine::errors::GameResult;
+use crate::engine::ton_wallet::PieceData;
 use crate::render::RenderCtx;
 
 pub struct PieceLibraryWidget {
@@ -43,7 +44,7 @@ impl PieceLibraryWidget {
     pub fn render(
         &self,
         render_ctx: &RenderCtx,
-        piece_addresses: &[String],
+        pieces: &[(&String, &PieceData)],
         is_loading: bool,
     ) -> GameResult<()> {
         if !self.is_visible.get() {
@@ -89,13 +90,13 @@ impl PieceLibraryWidget {
                 ui.label(None, "Your Pieces");
                 ui.separator();
 
-                if piece_addresses.is_empty() && !is_loading {
+                if pieces.is_empty() && !is_loading {
                     ui.label(None, "You don't have any pieces yet.");
                 } else {
-                    for address in piece_addresses {
-                        let short_addr = make_short(address, 8);
-                        if ui.button(None, &*short_addr) {
-                            self.selected_address.set(Some(address.clone()));
+                    for (address, data) in pieces {
+                        let button_text = format!("{} ({} BPM)", data.name, data.bpm);
+                        if ui.button(None, button_text) {
+                            self.selected_address.set(Some((*address).clone()));
                         }
                     }
                 }
@@ -118,17 +119,5 @@ impl PieceLibraryWidget {
         );
 
         Ok(())
-    }
-}
-
-fn make_short(string: &str, num_chars: usize) -> String {
-    if string.len() <= num_chars * 2 + 3 {
-        string.to_string()
-    } else {
-        format!(
-            "{}...{}",
-            &string[..num_chars],
-            &string[string.len() - num_chars..]
-        )
     }
 }

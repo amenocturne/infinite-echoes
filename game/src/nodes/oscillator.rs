@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Oscillator {
     pub wave_shape: WaveShape,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WaveShape {
     Sine,
     Square,

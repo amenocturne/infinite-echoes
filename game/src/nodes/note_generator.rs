@@ -1,6 +1,7 @@
 use std::ops::{Add, Div, Mul};
 
 use crate::core::GameTime;
+use serde::{Deserialize, Serialize};
 
 /// Defines number of ticks in a quarter note
 const PULSES_PER_QUARTER_NOTE: u32 = 480;
@@ -182,7 +183,7 @@ impl Note {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum NoteName {
     C,
     CSharp,

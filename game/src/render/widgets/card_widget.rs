@@ -1,6 +1,7 @@
 use macroquad::color::Color;
 use macroquad::color::GRAY;
 use macroquad::math::Vec2;
+use serde::{Deserialize, Serialize};
 
 use crate::engine::errors::GameResult;
 use crate::engine::game_config::CardColorConfig;
@@ -30,7 +31,7 @@ pub struct Card {
     is_dragged: bool,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum CardType {
     NoteGenerator(NoteName),
     NoteEffect(NoteName, ScaleType),

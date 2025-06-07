@@ -2,6 +2,7 @@ use crate::nodes::note_generator::Note;
 use crate::nodes::note_generator::NoteEvent;
 use crate::nodes::note_generator::NoteGenerator;
 use crate::nodes::note_generator::NoteName;
+use serde::{Deserialize, Serialize};
 
 use super::note_generator::MusicTime;
 
@@ -234,7 +235,7 @@ impl Scale {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum ScaleType {
     Major,
     Minor,
@@ -249,7 +250,7 @@ impl ScaleType {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum ChangeLenType {
     Double,
     Half,

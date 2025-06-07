@@ -9,6 +9,7 @@ use macroquad::input::is_mouse_button_released;
 use macroquad::input::mouse_position;
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
+use macroquad::time::get_time;
 use macroquad::window::clear_background;
 use macroquad::window::screen_height;
 use macroquad::window::screen_width;
@@ -34,7 +35,7 @@ use super::game_settings::GameSettings;
 use super::game_state::GameEvent;
 use super::game_state::GameState;
 use super::scheduler::Scheduler;
-use super::ton_wallet::TonWallet;
+use super::ton_wallet::{PieceData, TonWallet};
 
 pub struct GameEngine {
     state: RefCell<GameState>,
@@ -129,16 +130,16 @@ impl GameEngine {
         let wallet = self.ton_wallet.borrow();
         let contract_info = wallet.contract_info();
 
-        let mut loaded_piece_addresses: Vec<String> =
-            contract_info.piece_cards.keys().cloned().collect();
-        loaded_piece_addresses.sort();
+        let mut pieces_with_metadata: Vec<(&String, &PieceData)> =
+            contract_info.piece_data_structs.iter().collect();
+        pieces_with_metadata.sort_by(|a, b| b.1.created_at.cmp(&a.1.created_at));
 
         let total_pieces_to_fetch = contract_info.piece_addresses.len();
         let fetched_pieces_count = contract_info.piece_data.len();
         let is_loading = total_pieces_to_fetch > fetched_pieces_count;
 
         self.piece_library_widget
-            .render(render_ctx, &loaded_piece_addresses, is_loading)?;
+            .render(render_ctx, &pieces_with_metadata, is_loading)?;
 
         self.error_popup_widget.render(render_ctx)?;
 
@@ -284,11 +285,25 @@ impl GameEngine {
                     .map(|card| card.borrow().card_type())
                     .collect::<Vec<_>>();
 
-                let piece_data = TonWallet::serialize_cards(&cards_to_save);
+                let piece_name = self.settings_widget.settings.borrow().piece_name.clone();
+
+                let piece_metadata = PieceData {
+                    version: 1,
+                    name: if piece_name.is_empty() {
+                        "Untitled Piece".to_string()
+                    } else {
+                        piece_name
+                    },
+                    created_at: get_time() as u64,
+                    bpm: self.config.bpm,
+                    cards: cards_to_save,
+                };
+
+                let piece_data_str = TonWallet::serialize_piece_data(&piece_metadata);
                 let remixed_from = state.remixed_from_address.as_deref();
                 self.ton_wallet
                     .borrow_mut()
-                    .set_pending_piece_data(&piece_data, remixed_from);
+                    .set_pending_piece_data(&piece_data_str, remixed_from);
             }
         }
 

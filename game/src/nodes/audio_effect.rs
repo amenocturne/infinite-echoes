@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use web_sys::BiquadFilterType;
 
 #[derive(Clone, PartialEq)]
@@ -28,7 +29,7 @@ pub struct ReverbParameters {
     pub dry_level: f32,  // Amount of original signal
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FilterType {
     LowPass,
     HighPass,

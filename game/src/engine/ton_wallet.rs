@@ -2,12 +2,22 @@ use base64;
 use base64::prelude::*;
 use bincode;
 use miniquad::info;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::js_sys::{self, Promise};
 
 use crate::engine::contract_info::{ContractInfo, FeeParams, SecurityParams};
 use crate::render::widgets::card_widget::CardType;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PieceData {
+    pub version: u16,
+    pub name: String,
+    pub created_at: u64,
+    pub bpm: u32,
+    pub cards: Vec<CardType>,
+}
 
 #[wasm_bindgen]
 extern "C" {
@@ -129,11 +139,14 @@ fn parse_contract_info(js_value: &JsValue) -> ContractInfo {
                                     value.as_str().map(|s| s.to_string())
                                 };
                                 contract_info.piece_data.insert(key.clone(), val.clone());
-                                
+
                                 // Try to deserialize the card data
                                 if let Some(data_str) = &val {
-                                    if let Some(cards) = TonWallet::deserialize_cards(data_str) {
-                                        contract_info.piece_cards.insert(key.clone(), cards);
+                                    if let Some(data) = TonWallet::deserialize_piece_data(data_str)
+                                    {
+                                        contract_info
+                                            .piece_data_structs
+                                            .insert(key.clone(), data);
                                     }
                                 }
                             }
@@ -311,20 +324,14 @@ impl TonWallet {
         setPendingPieceData(piece_raw_data, remixed_from_js);
     }
 
-    pub fn serialize_cards(cards: &[CardType]) -> String {
-        let card_ids: Vec<u16> = cards.iter().map(|card| card.to_id()).collect();
-        BASE64_STANDARD.encode(bincode::serialize(&card_ids).unwrap_or_default())
+    pub fn serialize_piece_data(data: &PieceData) -> String {
+        BASE64_STANDARD.encode(bincode::serialize(data).unwrap_or_default())
     }
 
-    pub fn deserialize_cards(data: &str) -> Option<Vec<CardType>> {
+    pub fn deserialize_piece_data(data: &str) -> Option<PieceData> {
         if let Ok(bytes) = BASE64_STANDARD.decode(data) {
-            if let Ok(card_ids) = bincode::deserialize::<Vec<u16>>(&bytes) {
-                return Some(
-                    card_ids
-                        .iter()
-                        .filter_map(|&id| CardType::from_id(id))
-                        .collect(),
-                );
+            if let Ok(piece_data) = bincode::deserialize::<PieceData>(&bytes) {
+                return Some(piece_data);
             }
         }
         None
@@ -333,9 +340,12 @@ impl TonWallet {
     pub fn clear_pending_piece_data(&self) {
         clearPendingPieceData();
     }
-    
-    pub fn get_piece_cards(&self, piece_address: &str) -> Option<&Vec<CardType>> {
-        self.contract_info.piece_cards.get(piece_address)
+
+    pub fn get_piece_cards(&self, piece_address: &str) -> Option<Vec<CardType>> {
+        self.contract_info
+            .piece_data_structs
+            .get(piece_address)
+            .map(|data| data.cards.clone())
     }
 
     pub async fn create_new_piece(
