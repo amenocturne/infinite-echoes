@@ -126,34 +126,33 @@ impl Render for SettingsWidget {
                 ui.label(None, "Piece Name:");
                 ui.editbox(hash!(), vec2(size.x * 0.8, 30.0), &mut settings.piece_name);
 
+                let button_spacing = 10.0;
+                let init_text = "Init".to_string();
+                let init_size = ui.calc_size(&init_text);
+
+                let save_text = "Save".to_string();
+                let save_size = ui.calc_size(&save_text);
+
+                let button_padding_x = 20.0;
+                let new_piece_button_width = init_size.x + button_padding_x;
+                let save_piece_button_width = save_size.x + button_padding_x;
+                let button_height = init_size.y.max(save_size.y) + 10.0;
+
+                let total_width = new_piece_button_width + button_spacing + save_piece_button_width;
+
+                let bottom_padding = 20.0;
+                let button_y = size.y - button_height - bottom_padding;
+                let start_x = (size.x - total_width) / 2.0;
+
+                let new_piece_pos = vec2(start_x, button_y);
+                let save_piece_pos =
+                    vec2(start_x + new_piece_button_width + button_spacing, button_y);
+
+                if ui.button(Some(new_piece_pos), init_text) {
+                    self.new_piece_clicked.set(true);
+                }
+
                 if settings.is_connected {
-                    let button_spacing = 10.0;
-                    let init_text = "Init".to_string();
-                    let init_size = ui.calc_size(&init_text);
-
-                    let save_text = "Save".to_string();
-                    let save_size = ui.calc_size(&save_text);
-
-                    let button_padding_x = 20.0;
-                    let new_piece_button_width = init_size.x + button_padding_x;
-                    let save_piece_button_width = save_size.x + button_padding_x;
-                    let button_height = init_size.y.max(save_size.y) + 10.0;
-
-                    let total_width =
-                        new_piece_button_width + button_spacing + save_piece_button_width;
-
-                    let bottom_padding = 20.0;
-                    let button_y = size.y - button_height - bottom_padding;
-                    let start_x = (size.x - total_width) / 2.0;
-
-                    let new_piece_pos = vec2(start_x, button_y);
-                    let save_piece_pos =
-                        vec2(start_x + new_piece_button_width + button_spacing, button_y);
-
-                    if ui.button(Some(new_piece_pos), init_text) {
-                        self.new_piece_clicked.set(true);
-                    }
-
                     if ui.button(Some(save_piece_pos), save_text) {
                         self.create_piece_clicked.set(true);
                     }
