@@ -254,6 +254,7 @@ impl ScaleType {
 pub enum ChangeLenType {
     Double,
     Half,
+    Tripplets,
 }
 
 impl ChangeLenType {
@@ -261,6 +262,7 @@ impl ChangeLenType {
         match self {
             ChangeLenType::Double => time * 2,
             ChangeLenType::Half => time / 2,
+            ChangeLenType::Tripplets => time / 3,
         }
     }
 }

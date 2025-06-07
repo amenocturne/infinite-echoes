@@ -35,7 +35,7 @@ pub struct Card {
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum CardType {
     NoteGenerator(NoteName),
-    NoteEffect(NoteName, ScaleType),
+    ChordInScale(NoteName, ScaleType),
     ChangeLen(ChangeLenType),
     Oscillator(WaveShape),
     Filter(FilterType),
@@ -51,7 +51,7 @@ impl CardType {
             CardType::NoteGenerator(note) => note.to_int() as u16,
 
             // NoteEffect: 100-123 (12 notes * 2 scale types = 24 values)
-            CardType::NoteEffect(note, scale) => {
+            CardType::ChordInScale(note, scale) => {
                 100 + note.to_int() as u16 * 2 + match scale {
                     ScaleType::Major => 0,
                     ScaleType::Minor => 1,
@@ -63,6 +63,7 @@ impl CardType {
                 200 + match change_type {
                     ChangeLenType::Double => 0,
                     ChangeLenType::Half => 1,
+                    ChangeLenType::Tripplets => 2,
                 }
             }
 
@@ -107,7 +108,7 @@ impl CardType {
                 } else {
                     ScaleType::Minor
                 };
-                Some(CardType::NoteEffect(note, scale))
+                Some(CardType::ChordInScale(note, scale))
             }
 
             // ChangeLen: 200-201
@@ -139,9 +140,10 @@ impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
             CardType::NoteGenerator(_) => Shape::NOTE,
-            CardType::NoteEffect(_, _) => Shape::CHORD,
+            CardType::ChordInScale(_, _) => Shape::CHORD,
             CardType::ChangeLen(ChangeLenType::Half) => Shape::FASTER,
             CardType::ChangeLen(ChangeLenType::Double) => Shape::SLOWER,
+            CardType::ChangeLen(ChangeLenType::Tripplets) => Shape::FASTER,
             CardType::Oscillator(WaveShape::Sine) => Shape::SINE,
             CardType::Oscillator(WaveShape::Square) => Shape::SQUARE,
             CardType::Filter(FilterType::Notch) => Shape::NOTCH,
@@ -154,7 +156,7 @@ impl CardType {
     pub fn as_type(&self) -> AudioNodeType {
         match self {
             CardType::NoteGenerator(_) => AudioNodeType::NoteGenerator,
-            CardType::NoteEffect(_, _) => AudioNodeType::NoteEffect,
+            CardType::ChordInScale(_, _) => AudioNodeType::NoteEffect,
             CardType::ChangeLen(_) => AudioNodeType::NoteEffect,
             CardType::Oscillator(_) => AudioNodeType::Oscillator,
             CardType::Filter(_) => AudioNodeType::AudioEffect,
@@ -166,7 +168,7 @@ impl CardType {
     pub fn get_label(&self) -> Option<String> {
         match self {
             CardType::NoteGenerator(note_name) => Some(note_name.to_string()),
-            CardType::NoteEffect(note_name, scale_type) => {
+            CardType::ChordInScale(note_name, scale_type) => {
                 let scale_str = match scale_type {
                     ScaleType::Major => "Maj",
                     ScaleType::Minor => "Min",
@@ -176,6 +178,7 @@ impl CardType {
             CardType::ChangeLen(change_type) => match change_type {
                 ChangeLenType::Double => Some("x2".to_string()),
                 ChangeLenType::Half => Some("/2".to_string()),
+                ChangeLenType::Tripplets => Some("x3".to_string()),
             },
             _ => None,
         }
@@ -279,7 +282,7 @@ impl Render for Card {
         )?;
 
         if let Some(label) = self.card_type.get_label() {
-            let font_size = absolute_size.y * 0.3;
+            let font_size = absolute_size.y * 0.2;
             let text_dims = measure_text(&label, None, font_size as u16, 1.0);
 
             let text_x = absolute_center.x - text_dims.width / 2.0;

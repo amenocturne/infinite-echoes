@@ -52,7 +52,7 @@ impl AudioNode {
                 Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip))
             }
             CardType::Reverb => Self::AudioEffect(AudioEffect::new_reverb(1.0, 1.0, 1.0)),
-            CardType::NoteEffect(root, scale_type) => Self::NoteEffect(NoteEffect::new(
+            CardType::ChordInScale(root, scale_type) => Self::NoteEffect(NoteEffect::new(
                 NoteEffectType::Scale(Scale::new(*root, *scale_type)),
             )),
             CardType::ChangeLen(amount) => {
