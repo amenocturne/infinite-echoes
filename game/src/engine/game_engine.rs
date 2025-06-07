@@ -158,13 +158,13 @@ impl GameEngine {
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
 
         if self.error_popup_widget.is_visible() {
-            // The error popup is modal. It handles its own dismissal via the OK button.
-            // No other input should be processed while it's visible.
+            if is_key_pressed(KeyCode::Escape) {
+                self.error_popup_widget.hide();
+            }
             return Ok(());
         }
 
         if is_key_pressed(KeyCode::Escape) {
-            // As requested, Escape closes any open window.
             if self.settings_widget.is_visible() || self.piece_library_widget.is_visible() {
                 self.settings_widget.hide();
                 self.piece_library_widget.hide();
