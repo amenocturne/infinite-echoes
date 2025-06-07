@@ -13,6 +13,7 @@ import { walletService } from './wallet_service';
  */
 export class TonService extends BaseService implements Initializable {
   private isLoadingContractInfo = false;
+  private pollingTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Initializes the TON service
@@ -24,7 +25,9 @@ export class TonService extends BaseService implements Initializable {
       walletService.subscribeToWalletStatus(async (connected) => {
         if (connected) {
           await this.fetchContractInfo();
+          this.startPollingForNewPieces();
         } else {
+          this.stopPollingForNewPieces();
           tonStateStore.updateState({
             userVaultAddress: null,
             pieceCount: null,
@@ -35,9 +38,83 @@ export class TonService extends BaseService implements Initializable {
       });
 
       await this.fetchContractInfo();
+      if (walletService.isConnected()) {
+        this.startPollingForNewPieces();
+      }
     } catch (error) {
       this.logError('initialize', error);
       throw errorHandler.handleError(error, 'TonService.initialize');
+    }
+  }
+
+  /**
+   * Starts polling for new pieces.
+   */
+  private startPollingForNewPieces(): void {
+    this.stopPollingForNewPieces(); // Prevent multiple loops.
+    console.log('[TonService] Started polling for new pieces.');
+    this.scheduleNextPoll();
+  }
+
+  /**
+   * Schedules the next poll using a recursive setTimeout for safer async operations.
+   */
+  private scheduleNextPoll(): void {
+    const POLLING_INTERVAL_MS = 20000;
+    this.pollingTimeoutId = setTimeout(async () => {
+      await this.checkForNewPieces();
+      // If polling is still active (i.e., not stopped by disconnect), schedule the next one.
+      if (this.pollingTimeoutId !== null) {
+        this.scheduleNextPoll();
+      }
+    }, POLLING_INTERVAL_MS);
+  }
+
+  /**
+   * Stops the polling for new pieces.
+   */
+  private stopPollingForNewPieces(): void {
+    if (this.pollingTimeoutId) {
+      clearTimeout(this.pollingTimeoutId);
+      this.pollingTimeoutId = null;
+      console.log('[TonService] Stopped polling for new pieces.');
+    }
+  }
+
+  /**
+   * Checks for new pieces in the user's vault and fetches their data.
+   */
+  private async checkForNewPieces(): Promise<void> {
+    if (!walletService.isConnected()) {
+      this.stopPollingForNewPieces();
+      return;
+    }
+
+    const currentState = tonStateStore.getState();
+    const vaultAddress = currentState.userVaultAddress;
+
+    if (!vaultAddress) {
+      return; // Not fully initialized yet, will try again on next poll.
+    }
+
+    try {
+      const latestPieceAddresses = await vaultService.getPieceAddresses(vaultAddress);
+      if (!latestPieceAddresses) {
+        return;
+      }
+
+      const currentAddresses = new Set(currentState.pieceAddresses || []);
+      const newAddresses = latestPieceAddresses.filter((addr) => !currentAddresses.has(addr));
+
+      if (newAddresses.length > 0) {
+        console.log(`[TonService] Found ${newAddresses.length} new piece(s). Fetching...`);
+        // Update the main list of addresses in the state.
+        tonStateStore.updateState({ pieceAddresses: latestPieceAddresses });
+        // Fetch data only for the new pieces.
+        pieceService.fetchAllPieceData(newAddresses);
+      }
+    } catch (error) {
+      this.logError('checkForNewPieces', error);
     }
   }
 
