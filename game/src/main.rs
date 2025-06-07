@@ -4,6 +4,7 @@ mod engine;
 mod nodes;
 mod render;
 
+use crate::nodes::audio_effect::FilterType;
 use engine::errors::GameError;
 use engine::errors::GameResult;
 use engine::game_config::AudioConfig;
@@ -43,6 +44,7 @@ async fn run() -> GameResult<()> {
             CardType::Oscillator(WaveShape::Square),
             CardType::Distortion,
             CardType::Reverb,
+            CardType::Filter(FilterType::LowPass),
         ],
         graph_widget: GraphWidgetConfig {
             location: vec2(0.5, 0.5),
