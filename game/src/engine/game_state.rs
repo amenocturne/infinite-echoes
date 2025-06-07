@@ -8,6 +8,7 @@ pub struct GameState {
     pub current_graph: Option<AudioGraph>,
     pub playing_graph: Option<AudioGraph>,
     pub card_deck: Vec<CardType>,
+    pub playing_cards: Option<Vec<CardType>>,
 }
 
 impl GameState {
@@ -16,6 +17,7 @@ impl GameState {
             current_graph: None,
             playing_graph: None,
             card_deck: initial_deck,
+            playing_cards: None,
         }
     }
 }

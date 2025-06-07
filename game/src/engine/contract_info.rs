@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::render::widgets::card_widget::CardType;
 
 /// Represents the contract information from the TON blockchain
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,6 +27,10 @@ pub struct ContractInfo {
     /// Data associated with each piece
     #[serde(rename = "pieceData", default)]
     pub piece_data: std::collections::HashMap<String, Option<String>>,
+    
+    /// Deserialized cards for each piece
+    #[serde(skip)]
+    pub piece_cards: std::collections::HashMap<String, Vec<CardType>>,
 }
 
 /// Fee parameters for contract operations
@@ -61,6 +66,7 @@ impl Default for ContractInfo {
             piece_count: None,
             piece_addresses: Vec::new(),
             piece_data: std::collections::HashMap::new(),
+            piece_cards: std::collections::HashMap::new(),
         }
     }
 }

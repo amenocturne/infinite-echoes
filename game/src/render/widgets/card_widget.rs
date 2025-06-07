@@ -41,6 +41,94 @@ pub enum CardType {
 }
 
 impl CardType {
+    /// Converts a CardType to a unique u16 identifier
+    pub fn to_id(&self) -> u16 {
+        match self {
+            // NoteGenerator: 0-11 (12 values for each note)
+            CardType::NoteGenerator(note) => note.to_int() as u16,
+            
+            // NoteEffect: 100-123 (12 notes * 2 scale types = 24 values)
+            CardType::NoteEffect(note, scale) => {
+                100 + note.to_int() as u16 * 2 + match scale {
+                    ScaleType::Major => 0,
+                    ScaleType::Minor => 1,
+                }
+            }
+            
+            // ChangeLen: 200-201 (2 values)
+            CardType::ChangeLen(change_type) => {
+                200 + match change_type {
+                    ChangeLenType::Double => 0,
+                    ChangeLenType::Half => 1,
+                }
+            }
+            
+            // Oscillator: 300-301 (2 values)
+            CardType::Oscillator(wave) => {
+                300 + match wave {
+                    WaveShape::Sine => 0,
+                    WaveShape::Square => 1,
+                }
+            }
+            
+            // Filter: 400-402 (3 values)
+            CardType::Filter(filter) => {
+                400 + match filter {
+                    FilterType::LowPass => 0,
+                    FilterType::HighPass => 1,
+                    FilterType::Notch => 2,
+                }
+            }
+            
+            // Distortion: 500 (1 value)
+            CardType::Distortion => 500,
+            
+            // Reverb: 600 (1 value)
+            CardType::Reverb => 600,
+        }
+    }
+
+    /// Converts a u16 identifier back to a CardType
+    pub fn from_id(id: u16) -> Option<Self> {
+        match id {
+            // NoteGenerator: 0-11
+            0..=11 => Some(CardType::NoteGenerator(NoteName::from_int(id as u32))),
+            
+            // NoteEffect: 100-123
+            100..=123 => {
+                let note_id = (id - 100) / 2;
+                let scale_id = (id - 100) % 2;
+                let note = NoteName::from_int(note_id as u32);
+                let scale = if scale_id == 0 { ScaleType::Major } else { ScaleType::Minor };
+                Some(CardType::NoteEffect(note, scale))
+            }
+            
+            // ChangeLen: 200-201
+            200 => Some(CardType::ChangeLen(ChangeLenType::Double)),
+            201 => Some(CardType::ChangeLen(ChangeLenType::Half)),
+            
+            // Oscillator: 300-301
+            300 => Some(CardType::Oscillator(WaveShape::Sine)),
+            301 => Some(CardType::Oscillator(WaveShape::Square)),
+            
+            // Filter: 400-402
+            400 => Some(CardType::Filter(FilterType::LowPass)),
+            401 => Some(CardType::Filter(FilterType::HighPass)),
+            402 => Some(CardType::Filter(FilterType::Notch)),
+            
+            // Distortion: 500
+            500 => Some(CardType::Distortion),
+            
+            // Reverb: 600
+            600 => Some(CardType::Reverb),
+            
+            // Invalid ID
+            _ => None,
+        }
+    }
+}
+
+impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
             CardType::NoteGenerator(_) => Shape::NOTE,

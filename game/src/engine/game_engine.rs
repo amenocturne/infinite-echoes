@@ -12,6 +12,7 @@ use macroquad::math::Vec2;
 use macroquad::window::clear_background;
 use macroquad::window::screen_height;
 use macroquad::window::screen_width;
+use miniquad::info;
 use miniquad::KeyCode;
 use miniquad::MouseButton;
 
@@ -24,13 +25,14 @@ use crate::render::Render;
 use crate::render::RenderCtx;
 use crate::render::{drag_manager::DragManager, draggable_card_buffer::DraggableCardBuffer};
 
+use super::audio_engine::AudioEngine;
 use super::errors::GameResult;
+use super::game_config::GameConfig;
 use super::game_settings::GameSettings;
 use super::game_state::GameEvent;
+use super::game_state::GameState;
+use super::scheduler::Scheduler;
 use super::ton_wallet::TonWallet;
-use super::{
-    audio_engine::AudioEngine, game_config::GameConfig, game_state::GameState, scheduler::Scheduler,
-};
 
 pub struct GameEngine {
     state: RefCell<GameState>,
@@ -170,9 +172,16 @@ impl GameEngine {
         }
 
         if self.settings_widget.handle_create_piece() {
-            self.ton_wallet
-                .borrow_mut()
-                .set_pending_piece_data("hello", None);
+            if let Some(cards) = &self.state.borrow().playing_cards {
+                let piece_data = TonWallet::serialize_cards(cards.as_slice());
+                self.ton_wallet
+                    .borrow_mut()
+                    .set_pending_piece_data(&piece_data, None);
+            }
+        }
+
+        if is_key_pressed(KeyCode::A) {
+            info!("{:?}", self.ton_wallet.borrow().contract_info());
         }
     }
 
@@ -200,7 +209,17 @@ impl GameEngine {
                         &self.config.audio,
                     )?;
 
-                    self.state.borrow_mut().playing_graph = Some(audio_graph.clone());
+                    // Get the current cards from the audio graph widget
+                    let current_cards = self
+                        .audio_graph_widget
+                        .cards()
+                        .iter()
+                        .map(|card| card.borrow().card_type())
+                        .collect();
+
+                    let mut state = self.state.borrow_mut();
+                    state.playing_graph = Some(audio_graph.clone());
+                    state.playing_cards = Some(current_cards);
 
                     Ok(vec![])
                 } else {
