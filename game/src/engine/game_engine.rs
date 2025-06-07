@@ -91,7 +91,7 @@ impl GameEngine {
     }
 
     pub async fn update(&mut self) -> GameResult<()> {
-        self.handle_input().await;
+        self.handle_input().await?;
         self.update_state();
         self.process_events()?;
         self.render()?;
@@ -145,7 +145,7 @@ impl GameEngine {
         self.audio_engine.borrow().set_volume(vol);
     }
 
-    async fn handle_input(&mut self) {
+    async fn handle_input(&mut self) -> GameResult<()> {
         let mouse_pos: Vec2 = mouse_position().into();
         let mouse_pos = mouse_pos / self.render_ctx.screen_size;
 
@@ -158,6 +158,7 @@ impl GameEngine {
         }
 
         if let Some(address) = self.piece_library_widget.handle_load_selection() {
+            self.stop_audio_graph()?;
             let wallet = self.ton_wallet.borrow();
             if let Some(cards) = wallet.get_piece_cards(&address) {
                 // Load the new cards into the audio graph widget
@@ -170,6 +171,24 @@ impl GameEngine {
                 self.audio_scheduler.schedule(GameEvent::UpdateGraph, None);
                 self.piece_library_widget.toggle();
             }
+        }
+
+        if self.settings_widget.handle_new_piece() {
+            self.stop_audio_graph()?;
+
+            // Reset widgets
+            self.audio_graph_widget.set_cards(vec![]);
+            self.cards_row_widget
+                .set_cards(self.config.initial_deck.clone());
+
+            // Reset game state
+            let mut state = self.state.borrow_mut();
+            state.current_graph = None;
+            state.playing_graph = None;
+            state.playing_cards = None;
+            state.remixed_from_address = None;
+
+            self.audio_scheduler.schedule(GameEvent::UpdateGraph, None);
         }
 
         let mut buffers: Vec<&mut dyn DraggableCardBuffer> =
@@ -215,6 +234,8 @@ impl GameEngine {
         if is_key_pressed(KeyCode::A) {
             info!("{:?}", self.ton_wallet.borrow().contract_info());
         }
+
+        Ok(())
     }
 
     fn stop_audio_graph(&self) -> GameResult<()> {

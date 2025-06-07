@@ -18,6 +18,7 @@ pub struct SettingsWidget {
     position: Vec2,
     size: Vec2,
     create_piece_clicked: Cell<bool>,
+    new_piece_clicked: Cell<bool>,
 }
 
 impl SettingsWidget {
@@ -28,6 +29,7 @@ impl SettingsWidget {
             position: vec2(0.5, 0.5),
             size: vec2(0.5, 0.5),
             create_piece_clicked: Cell::new(false),
+            new_piece_clicked: Cell::new(false),
         }
     }
 
@@ -39,6 +41,12 @@ impl SettingsWidget {
     pub fn handle_create_piece(&self) -> bool {
         let prev = self.create_piece_clicked.get();
         self.create_piece_clicked.set(false);
+        return prev;
+    }
+
+    pub fn handle_new_piece(&self) -> bool {
+        let prev = self.new_piece_clicked.get();
+        self.new_piece_clicked.set(false);
         return prev;
     }
 }
@@ -101,11 +109,21 @@ impl Render for SettingsWidget {
 
             if settings.is_connected {
                 let button_height = 40.0;
-                let button_width = 8.0 * 10.0;
+                let button_width = ui.calc_size("Save Piece").x + 20.0;
+                let total_width = button_width * 2.0 + 10.0;
                 let button_y = size.y - button_height - 10.0;
-                let button_x = (size.x - button_width) * 0.5;
-                let button_clicked = ui.button(vec2(button_x, button_y), "Save Piece");
-                self.create_piece_clicked.set(button_clicked);
+                let start_x = (size.x - total_width) * 0.5;
+
+                if ui.button(vec2(start_x, button_y), "New Piece") {
+                    self.new_piece_clicked.set(true);
+                }
+                ui.same_line(0.0);
+                if ui.button(
+                    vec2(start_x + button_width + 10.0, button_y),
+                    "Save Piece",
+                ) {
+                    self.create_piece_clicked.set(true);
+                }
             }
         });
         root_ui().pop_skin();
