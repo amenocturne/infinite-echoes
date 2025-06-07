@@ -114,8 +114,9 @@ impl GameEngine {
         self.settings_widget.render(render_ctx)?;
 
         let wallet = self.ton_wallet.borrow();
-        let piece_addresses: Vec<String> =
+        let mut piece_addresses: Vec<String> =
             wallet.contract_info().piece_cards.keys().cloned().collect();
+        piece_addresses.sort();
         self.piece_library_widget
             .render(render_ctx, &piece_addresses)?;
 
