@@ -5,6 +5,7 @@ export * from './piece_service';
 export * from './rate_limiter';
 export * from './registry_service';
 export * from './state_store';
+export * from './storage_service';
 export * from './ton_service';
 export * from './vault_service';
 export * from './wallet_service';

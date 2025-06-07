@@ -4,6 +4,7 @@ import { BaseService, Initializable } from './base';
 import { errorHandler } from './error_handler';
 import { pieceService } from './piece_service';
 import { registryService } from './registry_service';
+import { storageService } from './storage_service';
 import { tonStateStore } from './state_store';
 import { vaultService } from './vault_service';
 import { walletService } from './wallet_service';
@@ -14,6 +15,7 @@ import { walletService } from './wallet_service';
 export class TonService extends BaseService implements Initializable {
   private isLoadingContractInfo = false;
   private pollingTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private currentUserAddress: string | null = null;
 
   /**
    * Initializes the TON service
@@ -24,10 +26,15 @@ export class TonService extends BaseService implements Initializable {
 
       walletService.subscribeToWalletStatus(async (connected) => {
         if (connected) {
+          this.currentUserAddress = walletService.getWalletAddress();
           await this.fetchContractInfo();
           this.startPollingForNewPieces();
         } else {
           this.stopPollingForNewPieces();
+          if (this.currentUserAddress) {
+            storageService.clearPieces(this.currentUserAddress);
+            this.currentUserAddress = null;
+          }
           tonStateStore.updateState({
             userVaultAddress: null,
             pieceCount: null,
@@ -37,6 +44,7 @@ export class TonService extends BaseService implements Initializable {
         }
       });
 
+      this.currentUserAddress = walletService.getWalletAddress();
       await this.fetchContractInfo();
       if (walletService.isConnected()) {
         this.startPollingForNewPieces();
@@ -85,7 +93,8 @@ export class TonService extends BaseService implements Initializable {
    * Checks for new pieces in the user's vault and fetches their data.
    */
   private async checkForNewPieces(): Promise<void> {
-    if (!walletService.isConnected()) {
+    const userAddress = this.currentUserAddress;
+    if (!userAddress) {
       this.stopPollingForNewPieces();
       return;
     }
@@ -111,7 +120,7 @@ export class TonService extends BaseService implements Initializable {
         // Update the main list of addresses in the state.
         tonStateStore.updateState({ pieceAddresses: latestPieceAddresses });
         // Fetch data only for the new pieces.
-        pieceService.fetchAllPieceData(newAddresses);
+        pieceService.fetchAllPieceData(userAddress, newAddresses);
       }
     } catch (error) {
       this.logError('checkForNewPieces', error);
@@ -138,23 +147,36 @@ export class TonService extends BaseService implements Initializable {
         securityParams,
       });
 
-      if (walletService.isConnected()) {
-        const userAddress = walletService.getWalletAddress();
-        if (userAddress) {
-          const vaultAddress = await registryService.getVaultAddress(userAddress);
-          tonStateStore.updateState({ userVaultAddress: vaultAddress });
+      const userAddress = this.currentUserAddress;
+      if (userAddress) {
+        // Load from cache first
+        const cachedPieces = storageService.loadPieces(userAddress);
+        if (cachedPieces) {
+          tonStateStore.updateState({ pieceData: cachedPieces });
+        }
 
-          if (vaultAddress) {
-            const pieceCount = await vaultService.getPieceCount(vaultAddress);
-            tonStateStore.updateState({ pieceCount });
+        const vaultAddress = await registryService.getVaultAddress(userAddress);
+        tonStateStore.updateState({ userVaultAddress: vaultAddress });
 
-            const pieceAddresses = await vaultService.getPieceAddresses(vaultAddress);
-            // Update addresses and clear old piece data to start fresh
-            tonStateStore.updateState({ pieceAddresses, pieceData: {} });
+        if (vaultAddress) {
+          const pieceCount = await vaultService.getPieceCount(vaultAddress);
+          tonStateStore.updateState({ pieceCount });
 
-            if (pieceAddresses && pieceAddresses.length > 0) {
-              pieceService.fetchAllPieceData(pieceAddresses);
+          const pieceAddresses = await vaultService.getPieceAddresses(vaultAddress);
+          tonStateStore.updateState({ pieceAddresses });
+
+          if (pieceAddresses && pieceAddresses.length > 0) {
+            const currentPieces = tonStateStore.getState().pieceData || {};
+            const addressesToFetch = pieceAddresses.filter(
+              (addr) => currentPieces[addr] === undefined,
+            );
+            if (addressesToFetch.length > 0) {
+              pieceService.fetchAllPieceData(userAddress, addressesToFetch);
             }
+          } else {
+            // No pieces in vault, ensure local state and storage are clean.
+            tonStateStore.updateState({ pieceData: {} });
+            storageService.savePieces(userAddress, {});
           }
         }
       }

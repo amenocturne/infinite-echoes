@@ -1,6 +1,7 @@
 import { BaseService } from './base';
 import { apiService } from './api_service';
 import { tonStateStore } from './state_store';
+import { storageService } from './storage_service';
 
 /**
  * Service for interacting with EchoPiece contracts
@@ -44,13 +45,12 @@ export class PieceService extends BaseService {
   }
 
   /**
-   * Fetches data for all pieces and updates the state store as each piece arrives.
-   * This method does not wait for all fetches to complete.
-   * @param pieceAddresses Array of piece addresses
+   * Fetches data for all pieces, updates the state store, and caches the result.
+   * @param userAddress The address of the current user for caching.
+   * @param pieceAddresses Array of piece addresses to fetch.
    */
-  fetchAllPieceData(pieceAddresses: string[] | null): void {
-    if (!pieceAddresses || pieceAddresses.length === 0) {
-      tonStateStore.updateState({ pieceData: {} });
+  fetchAllPieceData(userAddress: string, pieceAddresses: string[] | null): void {
+    if (!userAddress || !pieceAddresses || pieceAddresses.length === 0) {
       return;
     }
 
@@ -60,12 +60,14 @@ export class PieceService extends BaseService {
         const currentState = tonStateStore.getState();
         const newPieceData = { ...(currentState.pieceData || {}), [address]: data };
         tonStateStore.updateState({ pieceData: newPieceData });
+        storageService.savePieces(userAddress, newPieceData); // Cache the updated data
       } catch (error) {
         this.logError(`Processing piece ${address}`, error);
         const currentState = tonStateStore.getState();
         // Store null to indicate a fetch attempt failed for this address
         const newPieceData = { ...(currentState.pieceData || {}), [address]: null };
         tonStateStore.updateState({ pieceData: newPieceData });
+        storageService.savePieces(userAddress, newPieceData); // Also cache failures
       }
     });
   }
