@@ -5,7 +5,8 @@ use crate::render::widgets::card_widget::CardType;
 
 #[derive(Clone)]
 pub struct GameConfig {
-    pub card_size: Vec2,
+    pub card_height: f32,
+    pub card_aspect_ratio: f32, // width / height
     pub bpm: u32,
     pub look_ahead_secs: f64,
     pub initial_deck: Vec<CardType>,

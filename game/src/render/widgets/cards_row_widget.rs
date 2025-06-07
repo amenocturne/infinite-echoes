@@ -65,6 +65,13 @@ impl CardsRowWidget {
     fn update_grid(&mut self) {
         self.grid = GridWidget::new(self.center, self.size, self.cards.len() as u32, 1);
     }
+
+    pub fn update_card_size(&mut self, new_size: Vec2) {
+        self.card_size = new_size;
+        for card in &self.cards {
+            card.borrow_mut().size = new_size;
+        }
+    }
 }
 
 impl DraggableCardBuffer for CardsRowWidget {

@@ -56,16 +56,23 @@ impl GameEngine {
     pub fn new(render_ctx: RenderCtx, config: GameConfig) -> GameResult<Self> {
         let settings = GameSettings::default();
         let state = GameState::new(config.initial_deck.clone());
+
+        let screen_w = render_ctx.screen_size.x;
+        let screen_h = render_ctx.screen_size.y;
+        let card_height_abs = config.card_height * screen_h;
+        let card_width_abs = card_height_abs * config.card_aspect_ratio;
+        let card_size = vec2(card_width_abs / screen_w, card_height_abs / screen_h);
+
         let audio_graph_widget = AudioGraphWidget::new(
             config.graph_widget.location,
             config.graph_widget.size,
-            config.card_size,
+            card_size,
             config.card_colors.clone(),
         );
         let cards_row_widget = CardsRowWidget::new(
             config.cards_widget.location,
             config.cards_widget.size,
-            config.card_size,
+            card_size,
             state.card_deck.clone(),
             config.card_colors.clone(),
         );
@@ -97,8 +104,8 @@ impl GameEngine {
     }
 
     pub async fn update(&mut self) -> GameResult<()> {
-        self.handle_input().await?;
         self.update_state();
+        self.handle_input().await?;
         self.process_events()?;
         self.render()?;
 
@@ -132,8 +139,17 @@ impl GameEngine {
     }
 
     fn update_state(&mut self) {
-        let screen = vec2(screen_width(), screen_height());
-        self.render_ctx.screen_size = screen;
+        let screen_w = screen_width();
+        let screen_h = screen_height();
+        self.render_ctx.screen_size = vec2(screen_w, screen_h);
+
+        let card_height_abs = self.config.card_height * screen_h;
+        let card_width_abs = card_height_abs * self.config.card_aspect_ratio;
+        let card_size = vec2(card_width_abs / screen_w, card_height_abs / screen_h);
+
+        self.audio_graph_widget.update_card_size(card_size);
+        self.cards_row_widget.update_card_size(card_size);
+        self.drag_manager.update_dragged_card_size(card_size);
 
         let buffer_refs: Vec<&dyn DraggableCardBuffer> =
             vec![&self.cards_row_widget, &self.audio_graph_widget];

@@ -99,6 +99,12 @@ impl DragManager {
             buffer.snap();
         }
     }
+
+    pub fn update_dragged_card_size(&self, new_size: Vec2) {
+        if let Some(state) = &self.state {
+            state.dragged_card.borrow_mut().size = new_size;
+        }
+    }
 }
 
 impl Render for DragManager {

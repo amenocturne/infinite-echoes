@@ -28,7 +28,8 @@ fn handle_error(e: GameError) {
 
 async fn run() -> GameResult<()> {
     let game_config = GameConfig {
-        card_size: vec2(0.075, 0.1),
+        card_height: 0.1,
+        card_aspect_ratio: 0.75,
         bpm: 120,
         look_ahead_secs: 0.2,
         initial_deck: vec![
@@ -62,7 +63,7 @@ async fn run() -> GameResult<()> {
             note_generator: Color::from_hex(0xF7567C),
             note_effect: Color::from_hex(0xFCBA04),
             oscillator: Color::from_hex(0x99E1D9),
-            audio_effect: Color::from_hex(0xC2AED6)
+            audio_effect: Color::from_hex(0xC2AED6),
         },
     };
 
