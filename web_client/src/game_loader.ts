@@ -22,15 +22,12 @@ export async function runMiniquadGame(): Promise<void> {
     return;
   }
 
-  // Focus and click the canvas to ensure it captures input events
   canvas.focus();
   canvas.click();
 
   try {
-    // Initialize the WebAssembly module
     const wbg = await init();
 
-    // Register the plugin with Miniquad
     miniquad_add_plugin({
       register_plugin: (a: any) => (a.wbg = wbg),
       on_init: () => set_wasm(wasm_exports),
@@ -38,7 +35,6 @@ export async function runMiniquadGame(): Promise<void> {
       name: 'wbg',
     });
 
-    // Load the game WASM file
     load('../game_bg.wasm');
   } catch (error) {
     console.error('Failed to initialize game:', error);

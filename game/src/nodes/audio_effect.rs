@@ -1,4 +1,3 @@
-// ./game/src/nodes/audio_effect.rs
 use web_sys::BiquadFilterType;
 
 #[derive(Clone, PartialEq)]
@@ -91,12 +90,11 @@ impl AudioEffect {
     }
 
     pub fn default_distortion() -> Self {
-        // Changed default to SoftClip for a less harsh effect
         Self::new_distortion(0.5, DistortionCurve::SoftClip)
     }
 
     pub fn default_reverb() -> Self {
-        Self::new_reverb(2.0, 0.5, 0.5) // Default decay 2s, 50% wet/dry
+        Self::new_reverb(2.0, 0.5, 0.5)
     }
 
     // Helper methods to check effect type

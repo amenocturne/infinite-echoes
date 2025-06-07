@@ -67,7 +67,6 @@ export class PieceService extends BaseService {
         pieceData[address] = null;
       }
 
-      // Add a small delay between requests to avoid rate limiting
       if (i < pieceAddresses.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));
       }

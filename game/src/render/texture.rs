@@ -57,7 +57,7 @@ impl Render for Texture {
             self.position.y,
             self.color,
             params,
-        ); // Color's opacity regulates opacity
+        );
         Ok(())
     }
 }

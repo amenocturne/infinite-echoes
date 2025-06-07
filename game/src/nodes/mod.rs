@@ -1,12 +1,12 @@
 use audio_effect::AudioEffect;
-use note_effect::Scale;
-use note_effect::NoteEffectType;
 use note_effect::NoteEffect;
+use note_effect::NoteEffectType;
+use note_effect::Scale;
 use note_generator::NoteGenerator;
 use oscillator::Oscillator;
 
 use crate::nodes::audio_effect::DistortionCurve;
-use crate::render::widgets::card_widget::CardType; // Import DistortionCurve
+use crate::render::widgets::card_widget::CardType;
 
 pub mod audio_effect;
 pub mod audio_graph;
@@ -47,16 +47,17 @@ impl AudioNode {
             CardType::Oscillator(wave) => Self::Oscillator(Oscillator::new(*wave)),
             CardType::Filter(filter_type) => {
                 Self::AudioEffect(AudioEffect::new_filter(*filter_type, 1000.0, 1.0, 0.0))
-                // TODO: add parameters to cards on frequency and q
             }
             CardType::Distortion => {
                 Self::AudioEffect(AudioEffect::new_distortion(0.03, DistortionCurve::SoftClip))
             }
             CardType::Reverb => Self::AudioEffect(AudioEffect::new_reverb(1.0, 1.0, 1.0)),
-            CardType::ScaleEffect(root, scale_type) => Self::NoteEffect(
-                NoteEffect::new(NoteEffectType::Scale(Scale::new(*root, *scale_type)))
-            ),
-            CardType::ChangeLen(amount) => Self::NoteEffect(NoteEffect::new(NoteEffectType::ChangeLen(*amount))),
+            CardType::NoteEffect(root, scale_type) => Self::NoteEffect(NoteEffect::new(
+                NoteEffectType::Scale(Scale::new(*root, *scale_type)),
+            )),
+            CardType::ChangeLen(amount) => {
+                Self::NoteEffect(NoteEffect::new(NoteEffectType::ChangeLen(*amount)))
+            }
         }
     }
 
@@ -79,7 +80,6 @@ pub enum AudioNodeType {
 }
 
 impl AudioNodeType {
-    // Used in actual validation
     pub fn can_put_between_strict(
         &self,
         before: &Option<AudioNodeType>,
@@ -93,7 +93,6 @@ impl AudioNodeType {
         }
     }
 
-    // Used while building the graph, may lead to invalid graphs
     pub fn can_put_between_loose(
         &self,
         before: &Option<AudioNodeType>,
@@ -182,7 +181,6 @@ impl AudioNodeType {
         .is_some()
     }
 
-    // Can lead to invalid states, used only when building audio graph, not validating
     fn allowed_after_loose(&self, t: &AudioNodeType) -> bool {
         match self {
             AudioNodeType::NoteGenerator => {

@@ -65,7 +65,6 @@ impl DraggableCardBuffer for AudioGraphWidget {
         self.card_size / 2.0
     }
 
-    // can put only at positions where the resulting audio graph will be valid
     fn drag_in_regions(&self, node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)> {
         let mut allowed_places = vec![];
         let mut maybe_before = None;
@@ -88,7 +87,6 @@ impl DraggableCardBuffer for AudioGraphWidget {
             regions.push((*i, prev_top_left, *c + vec2(0.0, box_size.y / 2.0)));
             prev_top_left = *c - vec2(0.0, box_size.y / 2.0);
         }
-        // extends region for the last element to contain the rightmost boarder
         if let Some((i, _)) = allowed_places.last() {
             regions.push((*i, prev_top_left, self.bottom_right()));
         }

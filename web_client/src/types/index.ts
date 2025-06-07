@@ -34,7 +34,7 @@ export interface TonBridge {
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;
   createNewPiece: (pieceRawData: string, remixedFrom?: any) => Promise<boolean>;
   setPendingPieceData: (pieceRawData: string | null, remixedFrom?: string | null) => void;
-  getPendingPieceData: () => { pieceData: string | null, remixedFrom: string | null };
+  getPendingPieceData: () => { pieceData: string | null; remixedFrom: string | null };
   clearPendingPieceData: () => void;
 }
 

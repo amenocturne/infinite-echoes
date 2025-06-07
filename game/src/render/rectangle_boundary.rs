@@ -1,12 +1,9 @@
 use macroquad::math::vec2;
 use macroquad::math::Vec2;
 
-// TODO: organize functions here
 pub trait RectangleBoundary {
     fn center(&self) -> Vec2;
     fn size(&self) -> Vec2;
-
-    // Boundary Checks
 
     fn is_inside(&self, position: Vec2) -> bool {
         Self::is_inside_from(self.top_left(), self.bottom_right(), position)
@@ -18,8 +15,6 @@ pub trait RectangleBoundary {
             && top_left.y < position.y
             && position.y < bottom_right.y
     }
-
-    // Corners
 
     fn top_left(&self) -> Vec2 {
         Self::top_left_from(self.center(), self.size())
@@ -48,8 +43,6 @@ pub trait RectangleBoundary {
     fn grid_centers(&self, columns: u32, rows: u32) -> Vec<Vec2> {
         Self::grid_centers_from(self.center(), self.size(), columns, rows)
     }
-
-    // From functions
 
     fn left_center_from(center: Vec2, size: Vec2) -> Vec2 {
         center - size / 2.0

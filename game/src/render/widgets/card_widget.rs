@@ -17,7 +17,7 @@ use crate::render::RenderCtx;
 
 use super::rectangle_widget::RectangleWidget;
 
-const MARGIN_PERSENTAGE: f32 = 0.2; // TODO: move to config/constants
+const MARGIN_PERSENTAGE: f32 = 0.2;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Card {
@@ -32,12 +32,9 @@ pub struct Card {
 #[derive(Clone, Copy, Debug)]
 pub enum CardType {
     NoteGenerator(NoteName),
-    // Note Effects
-    ScaleEffect(NoteName, ScaleType),
+    NoteEffect(NoteName, ScaleType),
     ChangeLen(ChangeLenType),
-    // Oscillators
     Oscillator(WaveShape),
-    // Audio Effects
     Filter(FilterType),
     Distortion,
     Reverb,
@@ -47,14 +44,11 @@ impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
             CardType::NoteGenerator(_) => Shape::NOTE,
-            // Note Effects
-            CardType::ScaleEffect(_, _) => Shape::CHORD, // TODO:
+            CardType::NoteEffect(_, _) => Shape::CHORD,
             CardType::ChangeLen(ChangeLenType::Half) => Shape::FASTER,
             CardType::ChangeLen(ChangeLenType::Double) => Shape::SLOWER,
-            // Oscillators
             CardType::Oscillator(WaveShape::Sine) => Shape::SINE,
             CardType::Oscillator(WaveShape::Square) => Shape::SQUARE,
-            // Audio Effects
             CardType::Filter(FilterType::Notch) => Shape::NOTCH,
             CardType::Filter(FilterType::LowPass) => Shape::LOWPASS,
             CardType::Filter(FilterType::HighPass) => Shape::HIGHPASS,
@@ -65,12 +59,9 @@ impl CardType {
     pub fn as_type(&self) -> AudioNodeType {
         match self {
             CardType::NoteGenerator(_) => AudioNodeType::NoteGenerator,
-            // Note Effects
-            CardType::ScaleEffect(_, _) => AudioNodeType::NoteEffect,
+            CardType::NoteEffect(_, _) => AudioNodeType::NoteEffect,
             CardType::ChangeLen(_) => AudioNodeType::NoteEffect,
-            // Oscillators
             CardType::Oscillator(_) => AudioNodeType::Oscillator,
-            // Audio Effects
             CardType::Filter(_) => AudioNodeType::AudioEffect,
             CardType::Distortion => AudioNodeType::AudioEffect,
             CardType::Reverb => AudioNodeType::AudioEffect,
@@ -162,7 +153,7 @@ impl Render for Card {
             render_ctx,
             absolute_top_left + absolute_margin / 2.0,
             absolute_size * (1.0 - MARGIN_PERSENTAGE),
-            self.foreground_color, // self.color,
+            self.foreground_color,
         )?;
         Ok(())
     }

@@ -40,7 +40,6 @@ export class ApiRateLimiter {
 
     this.processing = true;
 
-    // Ensure minimum time between requests
     const now = Date.now();
     const timeToWait = Math.max(0, this.lastCallTime + this.minInterval - now);
 
@@ -58,7 +57,6 @@ export class ApiRateLimiter {
       }
     }
 
-    // Process next item in queue
     this.processQueue();
   }
 }

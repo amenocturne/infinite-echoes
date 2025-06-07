@@ -19,15 +19,10 @@ import { runMiniquadGame } from './game_loader';
  * Main application entry point
  */
 async function initializeApplication(): Promise<void> {
-  // Initialize background particles
   initParticles();
-
-  // Set up TON wallet integration
   await setupTonWalletIntegration();
 }
 
-// Expose the game loader function globally
 (window as any).runMiniquadGame = runMiniquadGame;
 
-// Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', initializeApplication);

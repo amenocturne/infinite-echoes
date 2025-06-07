@@ -16,7 +16,6 @@ pub struct DebugHud {
     latency_queue: RefCell<VecDeque<f64>>,
     buffer_window_size: Cell<usize>,
     previous_time: Cell<f64>,
-    // TON
     vault_address: Option<String>,
 }
 
@@ -50,7 +49,6 @@ impl Render for DebugHud {
                 100,
             )) as i32;
 
-        // let addr = self.vault_address.clone().get().unwrap_or("None".to_string());
         let addr = self.vault_address.clone().unwrap_or("None".to_string());
 
         draw_multiline_text(

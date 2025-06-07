@@ -27,7 +27,6 @@ pub struct CardsRowWidget {
 
 impl CardsRowWidget {
     pub fn new(center: Vec2, size: Vec2, card_size: Vec2, card_types: Vec<CardType>) -> Self {
-        // let max_cards = (size / (card_size + card_margin)).x.floor() as u32;
         let default_pos = vec2(0.0, 0.0);
 
         let cards: Vec<RefCell<Card>> = card_types
@@ -77,7 +76,6 @@ impl DraggableCardBuffer for CardsRowWidget {
         self.card_size / 2.0
     }
 
-    // Can put at any position in a deck
     fn drag_in_regions(&self, _node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)> {
         let box_size = self.grid.single_cell_size();
         let mut prev_top_left = self.top_left();

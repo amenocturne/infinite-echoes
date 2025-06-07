@@ -18,14 +18,13 @@ impl NoteEffect {
     pub fn apply(&self, generator: NoteGenerator) -> NoteGenerator {
         let (transformed_notes, new_loop_length) = match &self.effect_type {
             NoteEffectType::Chord => {
-                // Simple triad chord - add third and fifth
                 let notes = generator
                     .notes
                     .into_iter()
                     .flat_map(|event| {
                         let root = event.note;
-                        let third = root.shift(4); // Major third
-                        let fifth = root.shift(7); // Perfect fifth
+                        let third = root.shift(4);
+                        let fifth = root.shift(7);
 
                         vec![
                             event.clone(),
@@ -43,7 +42,6 @@ impl NoteEffect {
                     .flat_map(|event| {
                         let root = event.note;
 
-                        // Create a triad chord based on the scale
                         let chord_notes = scale.create_chord_for_note(&root);
 
                         chord_notes
@@ -59,10 +57,8 @@ impl NoteEffect {
                     .notes
                     .into_iter()
                     .flat_map(|event| {
-                        // Find the nearest scale note to the input note
                         let nearest_scale_note = scale.find_nearest_scale_note(&event.note);
 
-                        // Create a diatonic chord based on this scale degree
                         let chord_notes = scale.create_diatonic_chord(&nearest_scale_note);
 
                         chord_notes
@@ -80,7 +76,7 @@ impl NoteEffect {
                     .into_iter()
                     .map(|mut event| {
                         event.duration = amount.apply(event.duration);
-                        event.start = amount.apply(event.start); // Shift start time proportionally
+                        event.start = amount.apply(event.start);
                         event
                     })
                     .collect();
@@ -88,7 +84,6 @@ impl NoteEffect {
             }
         };
 
-        // Create a new generator with the potentially transformed loop length and notes
         NoteGenerator::new(new_loop_length, transformed_notes)
     }
 }
@@ -100,9 +95,6 @@ pub enum NoteEffectType {
     ScaleChord(Scale),
     ChangeLen(ChangeLenType),
 }
-
-// Removed NoteTransformer trait as it's no longer needed
-// The apply method now directly works with NoteGenerator
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Scale {
@@ -116,28 +108,23 @@ impl Scale {
     }
 
     pub fn create_chord_for_note(&self, note: &Note) -> Vec<Note> {
-        // Get the scale degrees (0-based)
         let scale_degrees = self.scale_type.scale_degrees();
 
-        // Calculate the position of the note in the scale
         let root_semitones = self.root.to_int();
         let note_semitones = note.note_name.to_int();
 
-        // Find the position of this note in the scale (0-based)
         let position_in_scale = scale_degrees
             .iter()
             .position(|&degree| (root_semitones + degree) % 12 == note_semitones % 12);
 
         if let Some(pos) = position_in_scale {
-            // Create a triad chord (1-3-5) based on this position
-            let chord_positions = [0, 2, 4]; // Positions in the scale for a triad (1-3-5)
+            let chord_positions = [0, 2, 4];
 
             let mut chord_notes = Vec::new();
             for offset in &chord_positions {
                 let scale_pos = (pos + offset) % scale_degrees.len();
                 let degree = scale_degrees[scale_pos];
 
-                // Calculate the actual note
                 let semitones_from_root = (root_semitones + degree) % 12;
                 let octave_adjustment = if semitones_from_root < note_semitones % 12 {
                     1
@@ -155,7 +142,6 @@ impl Scale {
 
             chord_notes
         } else {
-            // If the note is not in the scale, just return the original note
             vec![*note]
         }
     }
@@ -165,8 +151,7 @@ impl Scale {
         let root_semitones = self.root.to_int();
         let note_semitones = note.note_name.to_int();
 
-        // Find the closest note in the scale
-        let mut min_distance = 12; // Maximum semitone distance is 11
+        let mut min_distance = 12;
         let mut closest_degree = 0;
 
         for &degree in &scale_degrees {
@@ -181,7 +166,6 @@ impl Scale {
             }
         }
 
-        // Calculate the actual note
         let semitones_from_root = (root_semitones + closest_degree) % 12;
         let octave_adjustment = if semitones_from_root > note_semitones % 12
             && note_semitones % 12 < 6
@@ -208,21 +192,15 @@ impl Scale {
         let root_semitones = self.root.to_int();
         let note_semitones = note.note_name.to_int();
 
-        // Find the position of this note in the scale (0-based)
         let position_in_scale = scale_degrees
             .iter()
             .position(|&degree| (root_semitones + degree) % 12 == note_semitones % 12);
 
         if let Some(pos) = position_in_scale {
-            // Create a diatonic triad chord based on this scale degree
-            // For each scale degree, we need to use the appropriate chord quality
-            // (major, minor, diminished) based on the scale
             let mut chord_notes = Vec::new();
 
-            // Add the root note
             chord_notes.push(*note);
 
-            // Add the third (2 scale degrees up)
             let third_pos = (pos + 2) % scale_degrees.len();
             let third_degree = scale_degrees[third_pos];
             let third_semitones = (root_semitones + third_degree) % 12;
@@ -236,7 +214,6 @@ impl Scale {
                 NoteName::from_int(third_semitones as u32),
             ));
 
-            // Add the fifth (4 scale degrees up)
             let fifth_pos = (pos + 4) % scale_degrees.len();
             let fifth_degree = scale_degrees[fifth_pos];
             let fifth_semitones = (root_semitones + fifth_degree) % 12;
@@ -252,7 +229,6 @@ impl Scale {
 
             chord_notes
         } else {
-            // If the note is not in the scale, just return the original note
             vec![*note]
         }
     }
@@ -265,11 +241,10 @@ pub enum ScaleType {
 }
 
 impl ScaleType {
-    // Returns the semitone offsets from the root for each scale degree
     fn scale_degrees(&self) -> Vec<i32> {
         match self {
-            ScaleType::Major => vec![0, 2, 4, 5, 7, 9, 11], // W-W-H-W-W-W-H
-            ScaleType::Minor => vec![0, 2, 3, 5, 7, 8, 10], // W-H-W-W-H-W-W (natural minor)
+            ScaleType::Major => vec![0, 2, 4, 5, 7, 9, 11],
+            ScaleType::Minor => vec![0, 2, 3, 5, 7, 8, 10],
         }
     }
 }

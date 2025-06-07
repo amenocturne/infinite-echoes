@@ -6,23 +6,23 @@ pub struct ContractInfo {
     /// Fee parameters for contract operations
     #[serde(rename = "feeParams")]
     pub fee_params: Option<FeeParams>,
-    
+
     /// Security parameters for contract operations
     #[serde(rename = "securityParams")]
     pub security_params: Option<SecurityParams>,
-    
+
     /// User's vault address
     #[serde(rename = "userVaultAddress")]
     pub user_vault_address: Option<String>,
-    
+
     /// Count of pieces owned by the user
     #[serde(rename = "pieceCount")]
     pub piece_count: Option<u32>,
-    
+
     /// Addresses of pieces owned by the user
     #[serde(rename = "pieceAddresses", default)]
     pub piece_addresses: Vec<String>,
-    
+
     /// Data associated with each piece
     #[serde(rename = "pieceData", default)]
     pub piece_data: std::collections::HashMap<String, Option<String>>,
@@ -34,7 +34,7 @@ pub struct FeeParams {
     /// Value required for deployment
     #[serde(rename = "deployValue")]
     pub deploy_value: u64,
-    
+
     /// Value required for messages
     #[serde(rename = "messageValue")]
     pub message_value: u64,
@@ -46,7 +46,7 @@ pub struct SecurityParams {
     /// Minimum fee required for actions
     #[serde(rename = "minActionFee")]
     pub min_action_fee: u64,
-    
+
     /// Cooldown period in seconds
     #[serde(rename = "coolDownSeconds")]
     pub cool_down_seconds: u64,

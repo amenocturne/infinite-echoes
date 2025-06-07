@@ -17,11 +17,9 @@ impl NoteGenerator {
     }
 
     pub fn from_note_name(note_name: NoteName) -> NoteGenerator {
-        // Create a single note in the third octave with 1/4 length
         let note = Note::new(3, note_name);
         let note_event = NoteEvent::new(note, MusicTime::ZERO, NoteDuration::Quarter.into());
 
-        // Create a note generator with a loop length of one quarter note
         NoteGenerator::new(NoteDuration::Quarter.into(), vec![note_event])
     }
 
@@ -40,7 +38,6 @@ impl NoteGenerator {
                 combined_notes.push(note.shifted(acc_loop_start));
             }
 
-            // Update the accumulated start time and total loop length
             acc_loop_start = acc_loop_start + generator.loop_length;
             total_loop_length = total_loop_length + generator.loop_length;
         }
@@ -56,7 +53,6 @@ pub enum NoteDuration {
     Half = 1,
     Quarter = 2,
     Eighth = 3,
-    // Triplets
     Third = 4,
 }
 
@@ -122,8 +118,6 @@ impl Div<u32> for MusicTime {
         }
     }
 }
-
-// ---------------------------------- Note ------------------------------
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct NoteEvent {

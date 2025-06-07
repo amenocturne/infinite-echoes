@@ -42,17 +42,13 @@
       const canvas = document.getElementById('glcanvas');
       const createPieceButton = document.getElementById('create-piece-btn');
       
-      // Check for pending piece data every second
       setInterval(async () => {
         if (window.tonBridge && window.tonBridge.getPendingPieceData) {
           const pendingData = window.tonBridge.getPendingPieceData();
           if (pendingData && pendingData.pieceData) {
-            // Clear the pending data first to prevent multiple calls
             window.tonBridge.clearPendingPieceData();
             
-            console.log('Found pending piece data, creating piece:', pendingData.pieceData);
             try {
-              // Create the piece with the pending data
               await window.tonBridge.createNewPiece(pendingData.pieceData, pendingData.remixedFrom);
             } catch (error) {
               console.error('Error creating piece from pending data:', error);
@@ -79,16 +75,13 @@
             if (titleScreen.parentNode) {
               titleScreen.parentNode.removeChild(titleScreen);
             }
-            console.log('Title screen removed, game should be interactive');
           }, 500);
         }, 100);
       });
 
       createPieceButton.addEventListener('click', async () => {
         if (window.tonBridge && window.tonBridge.createNewPiece) {
-          // Pass a binary string as raw data
-          const samplePieceData = "SGVsbG8="; // "Hello"
-          console.log('Attempting to create new piece with sample data:', samplePieceData);
+          const samplePieceData = "SGVsbG8=";
           await window.tonBridge.createNewPiece(samplePieceData);
         } else {
           console.error('tonBridge.createNewPiece is not available.');

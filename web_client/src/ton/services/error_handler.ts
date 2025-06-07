@@ -34,22 +34,18 @@ export class ErrorHandler {
    * @returns Standardized TonError
    */
   handleError(error: unknown, context: string): TonError {
-    // If it's already a TonError, just return it
     if (error instanceof TonError) {
       return error;
     }
 
-    // Convert to string message
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Create a standardized error
     const tonError = new TonError(
       `Error in ${context}: ${errorMessage}`,
       ErrorCode.UNKNOWN_ERROR,
       error instanceof Error ? error : undefined,
     );
 
-    // Log the error
     console.error(tonError);
 
     return tonError;

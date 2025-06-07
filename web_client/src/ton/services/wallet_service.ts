@@ -35,7 +35,6 @@ export class WalletService extends BaseService implements Initializable {
           : {}),
       });
 
-      // Set up status change listener
       this.tonConnectUI.onStatusChange((wallet: Wallet | null) => {
         const isConnected = wallet !== null;
         this.notifyWalletStatusListeners(isConnected);
@@ -116,18 +115,15 @@ export class WalletService extends BaseService implements Initializable {
     }
 
     try {
-      // Construct the Cell from the raw data
       const buffer = Buffer.from(pieceRawData);
       const pieceDataCell = beginCell().storeBuffer(buffer).endCell();
 
-      // Use the generated message wrapper to construct the payload
       const createPieceMessage: CreatePiece = {
         $$type: 'CreatePiece',
         pieceData: pieceDataCell,
         remixedFrom: remixedFrom,
       };
 
-      // Generate payload using storeCreatePiece
       const payloadCell = beginCell();
       storeCreatePiece(createPieceMessage)(payloadCell);
       const finalPayload = payloadCell.endCell().toBoc().toString('base64');
@@ -143,23 +139,16 @@ export class WalletService extends BaseService implements Initializable {
         ],
       };
 
-      console.log('Opening transaction modal...');
-      
       try {
-        // This will open a modal and wait for user confirmation
         const result = await this.tonConnectUI.sendTransaction(finalTransaction);
         console.log('Transaction sent successfully:', result);
         return true;
       } catch (error: any) {
-        // Check if the user rejected the transaction
         if (error && error.message && error.message.includes('User rejected')) {
           console.log('User cancelled the transaction');
-          // We still return true to indicate the Promise resolved successfully
-          // but with a cancelled transaction
           return false;
         }
-        
-        // For other errors, rethrow
+
         console.error('Transaction error:', error);
         throw error;
       }
@@ -177,10 +166,8 @@ export class WalletService extends BaseService implements Initializable {
   subscribeToWalletStatus(listener: (connected: boolean) => void): () => void {
     this.walletStatusListeners.push(listener);
 
-    // Call listener immediately with current status
     listener(this.isConnected());
 
-    // Return unsubscribe function
     return () => {
       this.walletStatusListeners = this.walletStatusListeners.filter((l) => l !== listener);
     };

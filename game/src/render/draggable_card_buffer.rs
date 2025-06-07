@@ -18,10 +18,8 @@ pub trait DraggableCardBuffer {
     fn snapping_margin(&self) -> Vec2;
     fn card_centers(&self) -> Vec<Vec2>;
     fn drag_in_regions(&self, node_type: AudioNodeType) -> Vec<(usize, Vec2, Vec2)>;
-    // Should put cards into their default locations
     fn organize_cards(&mut self);
 
-    // Starts card dragging if mouse_pos is over a card
     fn try_start_dragging(&mut self, mouse_pos: Vec2) -> Option<(usize, RefCell<Card>)> {
         let mut result = None;
         for (i, c) in self.cards().iter().enumerate() {
@@ -53,7 +51,6 @@ pub trait DraggableCardBuffer {
         }
     }
 
-    // Aborts dragging cards and puts all of them back
     fn abort_dragging(&mut self) {
         for c in self.cards() {
             if c.borrow().is_dragged() {

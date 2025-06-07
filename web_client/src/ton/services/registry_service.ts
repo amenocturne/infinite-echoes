@@ -20,7 +20,6 @@ export class RegistryService extends BaseService {
       const result = (await apiService.callContractGetter(REGISTRY_ADDRESS, 'getFeeParams')) as any;
 
       if (result && result.success && result.stack[0] && result.stack[1]) {
-        // The result is a tuple with deployValue and messageValue
         const deployValue = parseInt(result.stack[0].num, 16);
         const messageValue = parseInt(result.stack[1].num, 16);
         return {
@@ -71,7 +70,6 @@ export class RegistryService extends BaseService {
    */
   async getVaultAddress(userAddress: string): Promise<string | null> {
     try {
-      // Make sure the address is in the correct format (0:...)
       const formattedAddress = userAddress.startsWith('0:') ? userAddress : `0:${userAddress}`;
 
       const result = (await apiService.callContractGetter(REGISTRY_ADDRESS, 'getVaultAddress', [
@@ -83,8 +81,8 @@ export class RegistryService extends BaseService {
         const cell = apiService.parseCell(cellData);
         const slice = cell.beginParse();
         const addr = slice.loadAddress().toString({
-          testOnly: false, // Set to true for testnet
-          bounceable: true, // Set to false for non-bounceable
+          testOnly: false,
+          bounceable: true,
         });
         return addr;
       }

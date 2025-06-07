@@ -15,24 +15,19 @@ export class TonUIService {
    * Initializes the UI service
    */
   initialize(): void {
-    // Find UI elements
     this.walletStatusElement = document.getElementById('wallet-status');
     this.contractInfoElement = document.getElementById('contract-info');
 
-    // Create and set up connect button
     this.setupConnectButton();
 
-    // Subscribe to state changes
     tonStateStore.subscribe(() => {
       this.updateContractInfoDisplay();
     });
 
-    // Subscribe to wallet status changes
     walletService.subscribeToWalletStatus((connected) => {
       this.updateWalletStatus(connected);
     });
 
-    // Initial UI update
     this.updateWalletStatus(walletService.isConnected());
     this.updateContractInfoDisplay();
   }
@@ -123,27 +118,22 @@ export class TonUIService {
     const contractInfo = tonStateStore.getState();
     let html = ``;
 
-    // Add vault address if available
     if (walletService.isConnected()) {
       if (contractInfo.userVaultAddress) {
         const shortAddress = walletService.formatAddress(contractInfo.userVaultAddress);
         html += `<div>Your Vault: ${shortAddress}</div>`;
 
-        // Add piece count if available
         if (contractInfo.pieceCount !== null) {
           html += `<div>Your Pieces: ${contractInfo.pieceCount}</div>`;
         }
 
-        // Add piece addresses if available
         if (contractInfo.pieceAddresses && contractInfo.pieceAddresses.length > 0) {
           html += `<div>Piece Addresses: ${contractInfo.pieceAddresses.length} found</div>`;
-          // Optionally show the first few addresses
           const maxToShow = Math.min(3, contractInfo.pieceAddresses.length);
           for (let i = 0; i < maxToShow; i++) {
             const address = contractInfo.pieceAddresses[i];
             html += `<div>- ${walletService.formatAddress(address)}`;
 
-            // Add piece data if available
             if (contractInfo.pieceData && contractInfo.pieceData[address]) {
               html += ` (Base64 Data: ${contractInfo.pieceData[address]!.substring(0, 10)}...)`;
             }

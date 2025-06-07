@@ -49,7 +49,7 @@ impl Scheduler {
         &self,
         handler: &mut dyn Fn(GameEvent) -> GameResult<Vec<(GameEvent, Option<Duration>)>>,
     ) {
-        let mut queue = self.queue.borrow_mut(); // Get one mutable borrow
+        let mut queue = self.queue.borrow_mut();
         if self.clear_on_next.get() {
             queue.clear();
             self.clear_on_next.set(false);
@@ -57,12 +57,11 @@ impl Scheduler {
 
         while let Some(event) = queue.peek() {
             let current_time = get_time();
-            let trigger_time = event.trigger_time; // Copy trigger_time to avoid borrowing issues
+            let trigger_time = event.trigger_time;
 
             match trigger_time {
                 Some(t) => {
                     if t <= current_time {
-                        // Since we already have the mutable borrow, we can pop directly
                         let popped_event = queue.pop().unwrap().event;
                         match handler(popped_event) {
                             Ok(events) => {
@@ -79,7 +78,6 @@ impl Scheduler {
                     }
                 }
                 None => {
-                    // Since we already have the mutable borrow, we can pop directly
                     let popped_event = queue.pop().unwrap().event;
                     match handler(popped_event) {
                         Ok(events) => {
@@ -96,8 +94,6 @@ impl Scheduler {
         }
     }
 }
-
-// --------------- ScheduledEvent ----------------------
 
 pub struct ScheduledEvent {
     trigger_time: Option<GameTime>,

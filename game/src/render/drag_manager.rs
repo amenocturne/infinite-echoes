@@ -43,14 +43,13 @@ impl DragManager {
         buffers: &mut [&mut dyn DraggableCardBuffer],
     ) {
         if self.state.is_some() {
-            return; // Already dragging something
+            return;
         }
 
-        // Extract the dragged card if any buffer has one
         for (pos, buffer) in buffers.iter_mut().enumerate() {
             if let Some((loc, card)) = buffer.try_start_dragging(mouse_pos) {
                 self.state = Some(DragState::new(card, pos, loc));
-                break; // Found a card to drag, stop looking
+                break;
             }
         }
     }
@@ -68,7 +67,6 @@ impl DragManager {
         if let Some(ref state) = self.state {
             let mut placed = false;
 
-            // Try to place the card in any buffer
             for buffer in buffers.iter_mut() {
                 if buffer.drag_card_in(&state.dragged_card) {
                     placed = true;
@@ -91,7 +89,6 @@ impl DragManager {
             }
         }
 
-        // Clean up any remaining dragging state in buffers
         for buffer in buffers.iter_mut() {
             buffer.abort_dragging();
         }

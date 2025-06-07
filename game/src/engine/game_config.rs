@@ -7,7 +7,7 @@ pub struct GameConfig {
     pub card_size: Vec2,
     pub bpm: u32,
     pub look_ahead_secs: f64,
-    pub initial_deck: Vec<CardType>, // TODO: maybe should be moved to level config
+    pub initial_deck: Vec<CardType>,
     pub graph_widget: GraphWidgetConfig,
     pub cards_widget: CardsRowWidgetConfig,
     pub debug_hud: Option<DebugHudConfig>,
@@ -33,8 +33,8 @@ pub struct DebugHudConfig {
 
 #[derive(Clone)]
 pub struct AudioConfig {
-    pub attack_time: f64,    // Attack time in seconds
-    pub release_time: f64,   // Release time in seconds
-    pub max_schedule_ahead: f64, // Maximum time to schedule ahead in seconds
-    pub output_gain: f32,    // Default output gain (0.0 to 1.0)
+    pub attack_time: f64,
+    pub release_time: f64,
+    pub max_schedule_ahead: f64,
+    pub output_gain: f32,
 }

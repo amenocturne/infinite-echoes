@@ -22,7 +22,6 @@ export class ApiService extends BaseService {
   ): Promise<unknown | null> {
     return apiRateLimiter.schedule(async () => {
       try {
-        // Format arguments for URL
         const argsParam =
           args.length > 0 ? `?args=${args.map((arg) => encodeURIComponent(arg)).join(',')}` : '';
 

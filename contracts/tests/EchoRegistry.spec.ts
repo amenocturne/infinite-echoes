@@ -47,18 +47,15 @@ describe("EchoRegistry", () => {
       },
     );
 
-    // Check registry transaction success
     expect(result.transactions).toHaveTransaction({
       from: user.address,
       to: registry.address,
       success: true,
     });
 
-    // Verify vault was created
     const vaultAddress = await registry.getGetVaultAddress(user.address);
     expect(Address.isAddress(vaultAddress)).toBe(true);
 
-    // Verify piece was created and added to vault
     const vaultContract = await blockchain.getContract(vaultAddress!);
     const vaultState = await vaultContract.get("getPieceCount");
     expect((vaultState.stack[0] as TupleItemInt).value).toBeGreaterThan(0n);
@@ -69,7 +66,6 @@ describe("EchoRegistry", () => {
     const pieceData1 = beginCell().storeUint(111, 256).endCell();
     const pieceData2 = beginCell().storeUint(222, 256).endCell();
 
-    // First piece creates vault
     await registry.send(
       user.getSender(),
       { value: toNano("0.2") },
@@ -82,7 +78,6 @@ describe("EchoRegistry", () => {
 
     const firstVaultAddress = await registry.getGetVaultAddress(user.address);
 
-    // Second piece should reuse vault
     const result = await registry.send(
       user.getSender(),
       { value: toNano("0.2") },
@@ -93,13 +88,11 @@ describe("EchoRegistry", () => {
       },
     );
 
-    // Verify same vault address
     const secondVaultAddress = await registry.getGetVaultAddress(user.address);
     expect(secondVaultAddress!.toString()).toEqual(
       firstVaultAddress!.toString(),
     );
 
-    // Verify vault has 2 pieces
     const vaultContract = await blockchain.getContract(secondVaultAddress!);
     const vaultState = await vaultContract.get("getPieceCount");
     expect((vaultState.stack[0] as TupleItemInt).value).toBeGreaterThan(1n);
@@ -116,8 +109,6 @@ describe("EchoRegistry", () => {
       const user = await blockchain.treasury("remixUser");
       const originalPiece = await blockchain.treasury("originalPiece");
 
-      // Create original piece
-      // Create unique piece data for each test run
       const pieceData = beginCell().storeUint(Date.now(), 256).endCell();
       await registry.send(
         originalPiece.getSender(),
@@ -129,7 +120,6 @@ describe("EchoRegistry", () => {
         },
       );
 
-      // Create remix
       const remixData = beginCell().storeUint(456, 256).endCell();
       const result = await registry.send(
         user.getSender(),
@@ -154,7 +144,7 @@ describe("EchoRegistry", () => {
 
       const result = await registry.send(
         user.getSender(),
-        { value: toNano("0.004") }, // Below minActionFee of 0.005
+        { value: toNano("0.004") },
         {
           $$type: "CreatePiece",
           pieceData: pieceData,
@@ -176,7 +166,6 @@ describe("EchoRegistry", () => {
         blockchain.treasury("concurrent3"),
       ]);
 
-      // Process users sequentially to avoid race conditions in test environment
       const results = [];
       for (const user of users) {
         const result = await registry.send(
@@ -193,7 +182,6 @@ describe("EchoRegistry", () => {
         results.push(result);
       }
 
-      // Verify all transactions succeeded
       for (const [index, result] of results.entries()) {
         expect(result.transactions).toHaveTransaction({
           from: users[index].address,
@@ -202,7 +190,6 @@ describe("EchoRegistry", () => {
         });
       }
 
-      // Verify each user has their own vault
       const vaultAddresses = await Promise.all(
         users.map((user) => registry.getGetVaultAddress(user.address)),
       );

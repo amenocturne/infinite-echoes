@@ -17,7 +17,7 @@ pub struct SettingsWidget {
     is_visible: Cell<bool>,
     position: Vec2,
     size: Vec2,
-    create_piece_clicked: Cell<bool>
+    create_piece_clicked: Cell<bool>,
 }
 
 impl SettingsWidget {
@@ -27,7 +27,7 @@ impl SettingsWidget {
             is_visible: Cell::new(false),
             position: vec2(0.5, 0.5),
             size: vec2(0.5, 0.5),
-            create_piece_clicked: Cell::new(false)
+            create_piece_clicked: Cell::new(false),
         }
     }
 
@@ -36,7 +36,7 @@ impl SettingsWidget {
         self.is_visible.set(!prev_value);
     }
 
-    pub fn handle_create_piece(&self) -> bool{
+    pub fn handle_create_piece(&self) -> bool {
         let prev = self.create_piece_clicked.get();
         self.create_piece_clicked.set(false);
         return prev;
@@ -91,9 +91,9 @@ impl Render for SettingsWidget {
                 );
             };
 
-            opt_short_label( "Wallet", settings.wallet_address.clone());
-            opt_short_label( "Registry", settings.registry_address.clone());
-            opt_short_label( "Vault", settings.vault_address.clone());
+            opt_short_label("Wallet", settings.wallet_address.clone());
+            opt_short_label("Registry", settings.registry_address.clone());
+            opt_short_label("Vault", settings.vault_address.clone());
 
             let button_clicked = ui.button(vec2(0.0, 0.0), "Button");
             self.create_piece_clicked.set(button_clicked);

@@ -44,17 +44,16 @@ impl AudioEngine {
         let audio_context =
             AudioContext::new().map_err(GameError::js("Could not construct AudioContext"))?;
 
-        // Create master gain node
         let master_gain = audio_context
             .create_gain()
             .map_err(GameError::js("Could not create master gain node"))?;
 
-        // Connect master gain to destination
         master_gain
             .connect_with_audio_node(&audio_context.destination())
-            .map_err(GameError::js("Could not connect master gain to destination"))?;
+            .map_err(GameError::js(
+                "Could not connect master gain to destination",
+            ))?;
 
-        // Set default volume
         master_gain.gain().set_value(1.0);
 
         Ok(AudioEngine {
@@ -67,12 +66,10 @@ impl AudioEngine {
     }
 
     /// Set the volume (0.0 to 1.0)
-    pub fn set_volume(&self, volume: f32)  {
+    pub fn set_volume(&self, volume: f32) {
         let clamped_volume = volume.clamp(0.0, 1.0);
         let exponential_volume = clamped_volume.sqrt();
-        self.master_gain
-            .gain()
-            .set_value(exponential_volume);
+        self.master_gain.gain().set_value(exponential_volume);
     }
 
     pub fn is_playing(&self) -> bool {
@@ -103,7 +100,6 @@ impl AudioEngine {
 
         let when = self.audio_context.current_time();
 
-        // Create effect chain
         let mut effect_nodes: Vec<Box<dyn AudioEffectNode>> = vec![];
         for effect in &audio_effects {
             match effect {
@@ -122,11 +118,9 @@ impl AudioEngine {
             }
         }
 
-        // Determine the final destination and connect effect chain
         let oscillator_destination: WebAudioNode = if effect_nodes.is_empty() {
             self.master_gain.clone().into()
         } else {
-            // Connect effects in series
             for i in 1..effect_nodes.len() {
                 let prev_output = effect_nodes[i - 1].get_output_node();
                 let current_input = effect_nodes[i].get_input_node();
@@ -137,7 +131,6 @@ impl AudioEngine {
                     .map_err(GameError::js("Could not connect effects in chain"))?;
             }
 
-            // Connect the last effect to the destination
             if let Some(last_effect) = effect_nodes.last() {
                 last_effect
                     .get_output_node()
@@ -148,29 +141,24 @@ impl AudioEngine {
                     ))?;
             }
 
-            // Return the first effect's input as the destination for oscillators
             effect_nodes[0].get_input_node().as_ref().clone()
         };
 
-        // Store effects to prevent them from being dropped
         for effect in effect_nodes {
             self.effects.push(RefCell::new(effect));
         }
 
-        // Process note generators with their effects
         let generator = audio_graph.process_note_generators();
 
-        // Calculate total loop length in seconds
         let loop_length_seconds = generator.loop_length.to_seconds(bpm);
 
-        // Calculate how many loops to schedule based on max_schedule_ahead
         let loops_to_schedule =
             (audio_config.max_schedule_ahead / loop_length_seconds).ceil() as i32;
 
-        // Create and schedule oscillators for many loops ahead
         let mut notes_repeated = vec![];
         for i in 0..loops_to_schedule {
-            let shifted_notes: Vec<_> = generator.notes
+            let shifted_notes: Vec<_> = generator
+                .notes
                 .iter()
                 .map(|n: &_| n.shifted(generator.loop_length * i as u32))
                 .collect();
@@ -179,7 +167,6 @@ impl AudioEngine {
             }
         }
 
-        // Create and play oscillators
         for note_event in notes_repeated {
             let freq = note_event.note.to_frequancy();
             let start = when + note_event.start.to_seconds(bpm);
@@ -255,7 +242,6 @@ impl GameOscillator {
         self.osc.set_type(wave);
         self.osc.frequency().set_value(frequency);
 
-        // Connect oscillator -> gain -> destination
         self.osc
             .connect_with_audio_node(&self.gain)
             .map_err(GameError::js("Could not connect oscillator to gain"))?;
@@ -264,25 +250,21 @@ impl GameOscillator {
             .map_err(GameError::js("Could not connect gain to destination"))?;
 
         let start_time = start as f64;
-        let end_time = start_time + duration as f64; // Define end_time here
+        let end_time = start_time + duration as f64;
 
-        // Get attack and release times from config
         let attack_time = audio_config.attack_time;
         let release_time = audio_config.release_time;
 
-        // Set initial gain to 0 to avoid clicks
         self.gain
             .gain()
             .set_value_at_time(0.0, start_time)
             .map_err(GameError::js("Could not set initial gain"))?;
 
-        // Attack: ramp from 0 to output_gain over attack_time
         self.gain
             .gain()
             .linear_ramp_to_value_at_time(audio_config.output_gain, start_time + attack_time)
             .map_err(GameError::js("Could not schedule attack ramp"))?;
 
-        // Release: ramp from output_gain to 0 over release_time before stopping
         let release_start = end_time - release_time;
         self.gain
             .gain()
@@ -290,7 +272,7 @@ impl GameOscillator {
             .map_err(GameError::js("Could not set release start gain"))?;
         self.gain
             .gain()
-            .linear_ramp_to_value_at_time(0.0, end_time) // Use end_time here
+            .linear_ramp_to_value_at_time(0.0, end_time)
             .map_err(GameError::js("Could not schedule release ramp"))?;
 
         self.osc
@@ -318,7 +300,6 @@ impl GameOscillator {
         self.osc.set_type(wave);
         self.osc.frequency().set_value(frequency);
 
-        // Connect oscillator -> gain -> destination
         self.osc
             .connect_with_audio_node(&self.gain)
             .map_err(GameError::js("Could not connect oscillator to gain"))?;
@@ -330,16 +311,13 @@ impl GameOscillator {
         let note_duration = duration as f64;
         let loop_period_secs = loop_period as f64;
 
-        // Get attack and release times from config
         let attack_time = audio_config.attack_time;
         let release_time = audio_config.release_time;
 
-        // Start the oscillator - it will continue until explicitly stopped
         self.osc
             .start_with_when(start_time)
             .map_err(GameError::js("Could not start audio"))?;
 
-        // Schedule a large number of loops ahead
         let loops_to_schedule = (audio_config.max_schedule_ahead / loop_period_secs).ceil() as i32;
 
         for i in 0..loops_to_schedule {
@@ -347,19 +325,16 @@ impl GameOscillator {
             let note_start = loop_start;
             let note_end = note_start + note_duration;
 
-            // Set initial gain to 0 at the start of each note
             self.gain
                 .gain()
                 .set_value_at_time(0.0, note_start)
                 .map_err(GameError::js("Could not set initial gain"))?;
 
-            // Attack: ramp from 0 to output_gain over attack_time
             self.gain
                 .gain()
                 .linear_ramp_to_value_at_time(audio_config.output_gain, note_start + attack_time)
                 .map_err(GameError::js("Could not schedule attack ramp"))?;
 
-            // Release: ramp from output_gain to 0 over release_time before note end
             let release_start = note_end - release_time;
             self.gain
                 .gain()
@@ -406,14 +381,6 @@ impl GameFilter {
         filter.frequency().set_value(params.frequency);
         filter.q().set_value(params.q);
 
-        // Set gain for filters that support it
-        // if matches!(
-        //     params.filter_type,
-        //     FilterType::Peaking | FilterType::LowShelf | FilterType::HighShelf
-        // ) {
-        //     filter.gain().set_value(params.gain);
-        // }
-
         Ok(GameFilter {
             filter,
             parameters: params.clone(),
@@ -449,69 +416,42 @@ impl GameDistortion {
             "Could not create output gain node for distortion",
         ))?;
 
-        // Set input gain to drive the signal into distortion
-        // Amount parameter controls how hard we drive the signal
         input_gain.gain().set_value(1.0 + params.amount * 10.0);
 
-        // Declare samples here
         let samples = 44100;
         let curve: Vec<f32> = (0..samples)
             .map(|i| {
-                let x = (i as f32 / (samples - 1) as f32) * 2.0 - 1.0; // Map to [-1, 1]
+                let x = (i as f32 / (samples - 1) as f32) * 2.0 - 1.0;
 
                 match params.curve_type {
-                    DistortionCurve::SoftClip => {
-                        // Use a hyperbolic tangent (tanh) for soft clipping
-                        // The 'amount' parameter controls the intensity of the tanh curve
-                        x.tanh() * (1.0 + params.amount * 0.5) // Scale output slightly based on amount
-                    }
+                    DistortionCurve::SoftClip => x.tanh() * (1.0 + params.amount * 0.5),
                     DistortionCurve::HardClip => {
-                        // Original hard clipping logic (sigmoid with threshold)
-                        let k = params.amount * 100.0; // Drive amount
+                        let k = params.amount * 100.0;
                         let deg = std::f32::consts::PI / 180.0;
 
                         if x.abs() < 0.001 {
-                            // Avoid division by zero near zero
                             x
                         } else {
                             let distorted =
                                 ((3.0 + k) * x * 20.0 * deg) / (std::f32::consts::PI + k * x.abs());
 
-                            // Apply threshold as hard clipping
-                            // NOTE: The threshold parameter is removed from DistortionParameters,
-                            // so we'll use a fixed value or reintroduce it if needed for hard clip.
-                            // For now, let's use a simple hard clip if this curve type is selected.
-                            distorted.max(-1.0).min(1.0) // Simple hard clip to -1.0 to 1.0
+                            distorted.max(-1.0).min(1.0)
                         }
                     }
                 }
             })
             .collect();
 
-        // Create Float32Array for the curve
         wave_shaper.set_curve_opt_f32_array(Some(&Float32Array::from(curve.as_slice())));
 
-        // Set oversample for better quality
         wave_shaper.set_oversample(OverSampleType::N2x);
 
-        // Set output gain to compensate for level changes (reduce volume)
-        // NOTE: Adjusted gain compensation for a more balanced output
         let compensation_gain = match params.curve_type {
-            DistortionCurve::SoftClip => {
-                // For soft clipping, a less aggressive compensation is needed.
-                // This formula aims to keep the output level more consistent.
-                // It's an empirical value, can be tweaked.
-                1.0 / (1.0 + params.amount * 0.5) // Reduced impact of amount on compensation
-            }
-            DistortionCurve::HardClip => {
-                // For hard clipping, more aggressive compensation might be needed.
-                // This is similar to the previous logic but can be adjusted.
-                0.3 / (1.0 + params.amount)
-            }
+            DistortionCurve::SoftClip => 1.0 / (1.0 + params.amount * 0.5),
+            DistortionCurve::HardClip => 0.3 / (1.0 + params.amount),
         };
         output_gain.gain().set_value(compensation_gain);
 
-        // Connect the chain: input_gain -> wave_shaper -> output_gain
         input_gain
             .connect_with_audio_node(&wave_shaper)
             .map_err(GameError::js("Could not connect input gain to wave shaper"))?;
@@ -558,27 +498,22 @@ impl GameReverb {
             .create_gain()
             .map_err(GameError::js("Could not create output gain for reverb"))?;
 
-        // Generate a simple impulse response (decaying noise)
         let sample_rate = audio_context.sample_rate();
         let length = (sample_rate * params.decay_time) as usize;
         let mut impulse_data = vec![0.0f32; length];
 
-        // Parameters for impulse response generation
-        let pre_delay_samples = (sample_rate * 0.02) as usize; // 20ms pre-delay
-        let decay_exponent = 2.0; // Controls the steepness of the exponential decay
+        let pre_delay_samples = (sample_rate * 0.02) as usize;
+        let decay_exponent = 2.0;
 
-        // Fill with decaying random noise
         for i in 0..length {
             let mut sample_value = 0.0f32;
 
             if i >= pre_delay_samples {
-                // Apply exponential decay after pre-delay
                 let normalized_time =
                     (i - pre_delay_samples) as f32 / (length - pre_delay_samples) as f32;
                 let decay = (1.0 - normalized_time).powf(decay_exponent);
                 sample_value = (random() * 2.0 - 1.0) * decay;
             }
-            // Before pre_delay_samples, sample_value remains 0.0
 
             impulse_data[i] = sample_value;
         }
@@ -593,22 +528,9 @@ impl GameReverb {
 
         convolver.set_buffer(Some(&impulse_buffer));
 
-        // Set wet/dry levels
-        input_gain.gain().set_value(params.dry_level); // Dry signal passes through input_gain
-        output_gain.gain().set_value(params.wet_level); // Wet signal comes from convolver
+        input_gain.gain().set_value(params.dry_level);
+        output_gain.gain().set_value(params.wet_level);
 
-        // Connect: input_gain (dry) -> destination
-        //          input_gain -> convolver -> output_gain (wet) -> destination
-        // The input_gain will be connected to the main chain, and the convolver's output
-        // will be mixed in parallel.
-
-        // For the AudioEffectNode trait, we need a single input and output.
-        // We'll use input_gain as the input and output_gain as the output,
-        // and handle the dry signal path externally or by mixing internally.
-        // For simplicity, let's make the convolver the main path and use input/output gains
-        // for wet/dry mix.
-
-        // Connect input_gain -> convolver -> output_gain
         input_gain
             .connect_with_audio_node(&convolver)
             .map_err(GameError::js("Could not connect input gain to convolver"))?;
@@ -633,7 +555,6 @@ impl GameReverb {
     }
 }
 
-// Trait to unify different effect types
 trait AudioEffectNode {
     fn get_input_node(&self) -> &dyn AsRef<WebAudioNode>;
     fn get_output_node(&self) -> &dyn AsRef<WebAudioNode>;

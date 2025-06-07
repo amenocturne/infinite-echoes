@@ -27,7 +27,6 @@ impl AudioGraph {
             match &*node_ref.borrow() {
                 AudioNode::NoteGenerator(ng) => {
                     if !consuming_effects {
-                        // Add this generator to the current block
                         current_generators.push(ng.clone());
                     } else {
                         consuming_effects = false;
@@ -38,14 +37,11 @@ impl AudioGraph {
                     }
                 }
                 AudioNode::NoteEffect(effect) => {
-                    // Add this effect to the current block
                     consuming_effects = true;
                     current_effects.push(effect.clone());
                 }
                 AudioNode::Oscillator(_) | AudioNode::AudioEffect(_) => {
-                    // We've reached a processing boundary
                     if !current_generators.is_empty() {
-                        // Save the current block
                         blocks.push((current_generators, current_effects));
                         current_generators = Vec::new();
                         current_effects = Vec::new();
@@ -55,13 +51,11 @@ impl AudioGraph {
             }
         }
 
-        // Add any remaining block
         if !current_generators.is_empty() {
             blocks.push((current_generators, current_effects));
         }
 
         let mut result: Vec<NoteGenerator> = Vec::new();
-        // Second pass: process each block
         for (generators, effects) in blocks {
             if generators.is_empty() {
                 continue;
@@ -112,7 +106,6 @@ impl AudioGraph {
         AudioGraph { nodes }
     }
 
-
     pub fn from_cards(cards: Vec<CardType>) -> Option<Self> {
         if Self::is_valid(&cards) {
             let nodes = cards
@@ -160,7 +153,7 @@ impl AudioGraph {
 
             maybe_current = Some(card);
         }
-        valid && has_oscillator && has_note_generator // TODO: make error msg for the user on what is not ok
+        valid && has_oscillator && has_note_generator
     }
 
     pub fn note_generators(&self) -> Vec<NoteGenerator> {
@@ -204,8 +197,6 @@ impl AudioGraph {
             })
             .collect()
     }
-
-    // TODO: add function to validate state of the graph when adding/removing nodes
 }
 
 enum CheckingStage {

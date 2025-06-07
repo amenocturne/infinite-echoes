@@ -13,13 +13,11 @@ export class VaultService extends BaseService {
    * @returns Piece count
    */
   async getPieceCount(vaultAddress: string | null): Promise<number | null> {
-    // Check if vaultAddress is valid
     if (!vaultAddress) {
       return null;
     }
 
     try {
-      // First try with the raw address format
       const result = (await apiService.callContractGetter(vaultAddress, 'getPieceCount')) as any;
 
       if (
@@ -37,9 +35,7 @@ export class VaultService extends BaseService {
     } catch (error) {
       this.logError('getPieceCount', error);
 
-      // If direct approach fails, try with friendly address format
       try {
-        // Parse the raw address and convert to friendly format
         const parts = vaultAddress.split(':');
         if (parts.length !== 2) {
           return null;
@@ -52,10 +48,9 @@ export class VaultService extends BaseService {
           return null;
         }
 
-        // Create Address object and convert to friendly format
         const address = new Address(workchain, Buffer.from(addressPart, 'hex'));
         const friendlyAddress = address.toString({
-          testOnly: true, // Using testOnly: true for testnet
+          testOnly: true,
           bounceable: true,
         });
 
@@ -88,34 +83,28 @@ export class VaultService extends BaseService {
    * @returns Array of piece addresses
    */
   async getPieceAddresses(vaultAddress: string | null): Promise<string[] | null> {
-    // Check if vaultAddress is valid
     if (!vaultAddress) {
       return null;
     }
 
     try {
-      // First try with the raw address format
       const result = (await apiService.callContractGetter(vaultAddress, 'getPieces')) as any;
 
       if (result && result.success && result.stack && result.stack.length > 0) {
-        // The result is a dictionary of piece addresses
         const dictCell = result.stack[0].cell;
         if (!dictCell) {
           return [];
         }
 
         try {
-          // Parse the dictionary using Dictionary utility
           const cell = apiService.parseCell(dictCell);
 
-          // Load the dictionary with uint16 keys and Address values
           const dict = Dictionary.loadDirect(
             Dictionary.Keys.Uint(16),
             Dictionary.Values.Address(),
             cell,
           );
 
-          // Convert dictionary to array of addresses
           const addresses: string[] = [];
           for (const [_, value] of dict) {
             addresses.push(
@@ -137,9 +126,7 @@ export class VaultService extends BaseService {
     } catch (error) {
       this.logError('getPieceAddresses', error);
 
-      // If direct approach fails, try with friendly address format
       try {
-        // Parse the raw address and convert to friendly format
         const parts = vaultAddress.split(':');
         if (parts.length !== 2) {
           return null;
@@ -152,10 +139,9 @@ export class VaultService extends BaseService {
           return null;
         }
 
-        // Create Address object and convert to friendly format
         const address = new Address(workchain, Buffer.from(addressPart, 'hex'));
         const friendlyAddress = address.toString({
-          testOnly: true, // Using testOnly: true for testnet
+          testOnly: true,
           bounceable: true,
         });
 
@@ -168,22 +154,19 @@ export class VaultService extends BaseService {
           }
 
           try {
-            // Parse the dictionary using Dictionary utility
             const cell = apiService.parseCell(dictCell);
 
-            // Load the dictionary with uint16 keys and Address values
             const dict = Dictionary.loadDirect(
               Dictionary.Keys.Uint(16),
               Dictionary.Values.Address(),
               cell,
             );
 
-            // Convert dictionary to array of addresses
             const addresses: string[] = [];
             for (const [_, value] of dict) {
               addresses.push(
                 value.toString({
-                  testOnly: true, // Using testOnly: true for testnet
+                  testOnly: true,
                   bounceable: true,
                 }),
               );

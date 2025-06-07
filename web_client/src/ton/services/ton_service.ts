@@ -19,16 +19,12 @@ export class TonService extends BaseService implements Initializable {
    */
   async initialize(): Promise<void> {
     try {
-      // Initialize wallet service
       await walletService.initialize();
 
-      // Subscribe to wallet status changes
       walletService.subscribeToWalletStatus(async (connected) => {
         if (connected) {
-          // Refresh contract info when wallet connects
           await this.fetchContractInfo();
         } else {
-          // Clear user-specific data when wallet disconnects
           tonStateStore.updateState({
             userVaultAddress: null,
             pieceCount: null,
@@ -38,7 +34,6 @@ export class TonService extends BaseService implements Initializable {
         }
       });
 
-      // Fetch initial contract info
       await this.fetchContractInfo();
     } catch (error) {
       this.logError('initialize', error);
@@ -58,24 +53,20 @@ export class TonService extends BaseService implements Initializable {
       this.isLoadingContractInfo = true;
       tonStateStore.setLoading(true);
 
-      // Fetch basic contract info sequentially to respect rate limits
       const feeParams = await registryService.getFeeParams();
       const securityParams = await registryService.getSecurityParams();
 
-      // Update state with basic contract info
       tonStateStore.updateState({
         feeParams,
         securityParams,
       });
 
-      // Check if wallet is connected and fetch vault address
       if (walletService.isConnected()) {
         const userAddress = walletService.getWalletAddress();
         if (userAddress) {
           const vaultAddress = await registryService.getVaultAddress(userAddress);
           tonStateStore.updateState({ userVaultAddress: vaultAddress });
 
-          // Only try to get piece count and addresses if we have a valid vault address
           if (vaultAddress) {
             const pieceCount = await vaultService.getPieceCount(vaultAddress);
             tonStateStore.updateState({ pieceCount });
@@ -94,7 +85,6 @@ export class TonService extends BaseService implements Initializable {
       return tonStateStore.getState();
     } catch (error) {
       this.logError('fetchContractInfo', error);
-      // Retry after delay
       setTimeout(() => this.fetchContractInfo(), 3000);
       return null;
     } finally {
@@ -131,7 +121,6 @@ export class TonService extends BaseService implements Initializable {
     try {
       const result = await walletService.createNewPiece(pieceRawData, remixedFrom);
       if (result) {
-        // Refresh contract info after successful creation
         setTimeout(() => this.fetchContractInfo(), 5000);
       }
       return result;

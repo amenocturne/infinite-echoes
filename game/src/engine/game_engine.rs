@@ -12,7 +12,6 @@ use macroquad::math::Vec2;
 use macroquad::window::clear_background;
 use macroquad::window::screen_height;
 use macroquad::window::screen_width;
-use miniquad::info;
 use miniquad::KeyCode;
 use miniquad::MouseButton;
 
@@ -37,16 +36,13 @@ pub struct GameEngine {
     state: RefCell<GameState>,
     render_ctx: RenderCtx,
     config: GameConfig,
-    // engines
     audio_engine: RefCell<AudioEngine>,
     drag_manager: DragManager,
     audio_scheduler: Scheduler,
-    // UI
     audio_graph_widget: AudioGraphWidget,
     cards_row_widget: CardsRowWidget,
     debug_hud: Option<RefCell<DebugHud>>,
     settings_widget: SettingsWidget,
-    // TON wallet integration
     ton_wallet: RefCell<TonWallet>,
 }
 
@@ -115,16 +111,13 @@ impl GameEngine {
     }
 
     fn update_state(&mut self) {
-        // Render Ctx
         let screen = vec2(screen_width(), screen_height());
         self.render_ctx.screen_size = screen;
 
-        // Drag Manager
         let buffer_refs: Vec<&dyn DraggableCardBuffer> =
             vec![&self.cards_row_widget, &self.audio_graph_widget];
         self.drag_manager.snap(&buffer_refs);
 
-        // Update TON wallet status
         self.ton_wallet.borrow_mut().update();
 
         let mut settings = self.settings_widget.settings.borrow_mut();
@@ -133,7 +126,6 @@ impl GameEngine {
         settings.vault_address = ton_wallet.user_vault_address().map(|s| s.to_string());
         settings.wallet_address = ton_wallet.user_address().map(|s| s.to_string());
         settings.registry_address = ton_wallet.registry_address().map(|s| s.to_string());
-        // Update debug HUD with wallet information
         if let Some(debug_hud) = &self.debug_hud {
             if let Some(vault_address) = ton_wallet.user_vault_address() {
                 debug_hud.borrow_mut().update_vault_addr(vault_address);
@@ -182,35 +174,14 @@ impl GameEngine {
         }
 
         if self.settings_widget.handle_create_piece() {
-            info!("Setting pending piece data for frontend to process...");
-
-            // Set the pending piece data for the frontend to process
-            self.ton_wallet.borrow_mut().set_pending_piece_data("hello", None);
-
-            info!("Piece creation requested - frontend will handle the transaction");
-        }
-
-        if is_key_pressed(KeyCode::A){
-            let wallet = self.ton_wallet.borrow();
-            let contract_info = wallet.contract_info();
-            
-            // Log each field separately for better debugging
-            info!("Contract Info:");
-            info!("  Fee Params: {:?}", contract_info.fee_params);
-            info!("  Security Params: {:?}", contract_info.security_params);
-            info!("  User Vault Address: {:?}", contract_info.user_vault_address);
-            info!("  Piece Count: {:?}", contract_info.piece_count);
-            info!("  Piece Addresses: {:?} (length: {})", 
-                  contract_info.piece_addresses, 
-                  contract_info.piece_addresses.len());
-            info!("  Piece Data: {:?} (entries: {})", 
-                  contract_info.piece_data,
-                  contract_info.piece_data.len());
+            self.ton_wallet
+                .borrow_mut()
+                .set_pending_piece_data("hello", None);
         }
     }
 
     fn stop_audio_graph(&self) -> GameResult<()> {
-        self.audio_scheduler.clear(); // TODO: maybe should be removed
+        self.audio_scheduler.clear();
         self.audio_engine.borrow_mut().stop_all()?;
         Ok(())
     }
@@ -233,7 +204,6 @@ impl GameEngine {
                         &self.config.audio,
                     )?;
 
-                    // Update playing_graph after we've used audio_graph
                     self.state.borrow_mut().playing_graph = Some(audio_graph.clone());
 
                     Ok(vec![])

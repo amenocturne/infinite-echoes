@@ -11,7 +11,6 @@ use super::RenderCtx;
 #[derive(Clone, Copy)]
 pub enum Shape {
     BLANK,
-    //Others
     DISTORTION,
     FASTER,
     HIGHPASS,
