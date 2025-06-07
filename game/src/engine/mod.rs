@@ -1,4 +1,5 @@
 pub mod audio_engine;
+pub mod contract_info;
 pub mod errors;
 pub mod game_state;
 pub mod scheduler;

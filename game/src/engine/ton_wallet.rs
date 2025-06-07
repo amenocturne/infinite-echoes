@@ -1,7 +1,9 @@
 use miniquad::info;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::js_sys::Promise;
+use web_sys::js_sys::{self, Promise};
+
+use crate::engine::contract_info::{ContractInfo, FeeParams, SecurityParams};
 
 // JavaScript bindings for TON wallet functions
 #[wasm_bindgen]
@@ -38,15 +40,111 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn createNewPiece(pieceRawData: &str, remixedFrom: Option<String>) -> Promise;
-    
+
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn setPendingPieceData(pieceRawData: &str, remixedFrom: Option<String>);
-    
+
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn getPendingPieceData() -> JsValue;
-    
+
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn clearPendingPieceData();
+}
+
+/// Parse the JsValue into a ContractInfo struct
+fn parse_contract_info(js_value: &JsValue) -> ContractInfo {
+    if js_value.is_undefined() || js_value.is_null() {
+        info!("Contract info is null or undefined");
+        return ContractInfo::default();
+    }
+
+    let json_str = js_sys::JSON::stringify(js_value)
+        .ok()
+        .and_then(|v| v.as_string());
+
+    if let Some(json_str) = json_str {
+        if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(&json_str) {
+            let mut contract_info = ContractInfo::default();
+            if let Some(obj) = json_value.as_object() {
+                if let Some(addr) = obj.get("userVaultAddress").and_then(|v| v.as_str()) {
+                    contract_info.user_vault_address = Some(addr.to_string());
+                }
+                if let Some(count) = obj.get("pieceCount").and_then(|v| v.as_u64()) {
+                    contract_info.piece_count = Some(count as u32);
+                }
+
+                // Extract fee params
+                if let Some(fee_params) = obj.get("feeParams").and_then(|v| v.as_object()) {
+                    let deploy_value = fee_params.get("deployValue").and_then(|v| v.as_u64()).unwrap_or(0);
+                    let message_value = fee_params.get("messageValue").and_then(|v| v.as_u64()).unwrap_or(0);
+
+                    contract_info.fee_params = Some(FeeParams {
+                        deploy_value,
+                        message_value,
+                    });
+                }
+
+                // Extract security params
+                if let Some(security_params) = obj.get("securityParams").and_then(|v| v.as_object()) {
+                    let min_action_fee = security_params.get("minActionFee").and_then(|v| v.as_u64()).unwrap_or(0);
+                    let cool_down_seconds = security_params.get("coolDownSeconds").and_then(|v| v.as_u64()).unwrap_or(0);
+
+                    contract_info.security_params = Some(SecurityParams {
+                        min_action_fee,
+                        cool_down_seconds,
+                    });
+                }
+
+                // Extract piece addresses if not null
+                if let Some(addresses) = obj.get("pieceAddresses") {
+                    if !addresses.is_null() {
+                        if let Some(addr_array) = addresses.as_array() {
+                            for addr in addr_array {
+                                if let Some(addr_str) = addr.as_str() {
+                                    contract_info.piece_addresses.push(addr_str.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Extract piece data if not null
+                if let Some(piece_data) = obj.get("pieceData") {
+                    if !piece_data.is_null() {
+                        if let Some(data_obj) = piece_data.as_object() {
+                            for (key, value) in data_obj {
+                                let val = if value.is_null() {
+                                    None
+                                } else {
+                                    value.as_str().map(|s| s.to_string())
+                                };
+                                contract_info.piece_data.insert(key.clone(), val);
+                            }
+                        }
+                    }
+                }
+                return contract_info;
+            }
+
+            // If we couldn't parse it manually, try the automatic way
+            match serde_json::from_str::<ContractInfo>(&json_str) {
+                Ok(contract_info) => {
+                    info!("Successfully parsed contract info with serde");
+                    contract_info
+                },
+                Err(err) => {
+                    info!("Error parsing contract info with serde_json: {:?}", err);
+                    ContractInfo::default()
+                }
+            }
+        } else {
+            info!("Failed to parse JSON string as Value");
+            ContractInfo::default()
+        }
+    } else {
+        info!("Failed to stringify JS value");
+        ContractInfo::default()
+    }
 }
 
 /// TON wallet integration for the game
@@ -64,6 +162,7 @@ pub struct TonWallet {
     registry_address: Option<String>,
     transaction_state: TransactionState,
     transaction_data: Option<(String, Option<String>)>, // (piece_data, remixed_from)
+    contract_info: ContractInfo,
 }
 
 impl TonWallet {
@@ -77,6 +176,8 @@ impl TonWallet {
             None
         };
         let registry_address = registryAddress();
+        let js_contract_info = getContractInfo();
+        let contract_info = parse_contract_info(&js_contract_info);
 
         Self {
             connected,
@@ -85,6 +186,7 @@ impl TonWallet {
             registry_address,
             transaction_state: TransactionState::Idle,
             transaction_data: None,
+            contract_info,
         }
     }
 
@@ -102,9 +204,15 @@ impl TonWallet {
         } else {
             None
         };
-        
-        // We no longer need to process pending transactions here
-        // as we're using the frontend to handle transactions
+
+        // Only try to get contract info if connected
+        if self.connected {
+            let js_contract_info = getContractInfo();
+            self.contract_info = parse_contract_info(&js_contract_info);
+        } else {
+            // Use default contract info when not connected
+            self.contract_info = ContractInfo::default();
+        }
     }
 
     /// Check if wallet is connected
@@ -115,6 +223,9 @@ impl TonWallet {
     /// Get user's wallet address
     pub fn user_address(&self) -> Option<&str> {
         self.user_address.as_deref()
+    }
+    pub fn contract_info(&self) -> &ContractInfo {
+        &self.contract_info
     }
 
     /// Get user's vault address
@@ -195,37 +306,33 @@ impl TonWallet {
     pub fn is_transaction_in_progress(&self) -> bool {
         matches!(self.transaction_state, TransactionState::InProgress)
     }
-    
+
     /// Get the current transaction state
     pub fn transaction_state(&self) -> &TransactionState {
         &self.transaction_state
     }
-    
+
     /// Set pending piece data for the frontend to process
-    pub fn set_pending_piece_data(
-        &mut self,
-        piece_raw_data: &str,
-        remixed_from: Option<&str>,
-    ) {
+    pub fn set_pending_piece_data(&mut self, piece_raw_data: &str, remixed_from: Option<&str>) {
         if !self.connected {
             info!("Cannot set pending piece data: wallet not connected");
             return;
         }
-        
+
         let remixed_from_js = remixed_from.map(|s| s.to_string());
-        
+
         // Set the pending piece data in the JavaScript bridge
         setPendingPieceData(piece_raw_data, remixed_from_js);
-        
+
         info!("Pending piece data set for frontend processing");
     }
-    
+
     /// Clear any pending piece data
     pub fn clear_pending_piece_data(&self) {
         clearPendingPieceData();
         info!("Pending piece data cleared");
     }
-    
+
     /// Legacy method for backward compatibility
     pub async fn create_new_piece(
         &self,
@@ -239,14 +346,14 @@ impl TonWallet {
         let remixed_from_js = remixed_from.map(|s| s.to_string());
 
         info!("Starting transaction from Rust...");
-        
+
         // Create a Promise that won't resolve until the user completes the transaction
         let promise = createNewPiece(piece_raw_data, remixed_from_js);
-        
+
         // This will block until the Promise resolves or rejects
         info!("Waiting for transaction to complete...");
         let result = JsFuture::from(promise).await;
-        
+
         // Log the result for debugging
         info!("Transaction result received");
         info!("{:?}", result);

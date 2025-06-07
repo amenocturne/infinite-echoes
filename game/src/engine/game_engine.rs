@@ -183,11 +183,29 @@ impl GameEngine {
 
         if self.settings_widget.handle_create_piece() {
             info!("Setting pending piece data for frontend to process...");
-            
+
             // Set the pending piece data for the frontend to process
             self.ton_wallet.borrow_mut().set_pending_piece_data("hello", None);
-            
+
             info!("Piece creation requested - frontend will handle the transaction");
+        }
+
+        if is_key_pressed(KeyCode::A){
+            let wallet = self.ton_wallet.borrow();
+            let contract_info = wallet.contract_info();
+            
+            // Log each field separately for better debugging
+            info!("Contract Info:");
+            info!("  Fee Params: {:?}", contract_info.fee_params);
+            info!("  Security Params: {:?}", contract_info.security_params);
+            info!("  User Vault Address: {:?}", contract_info.user_vault_address);
+            info!("  Piece Count: {:?}", contract_info.piece_count);
+            info!("  Piece Addresses: {:?} (length: {})", 
+                  contract_info.piece_addresses, 
+                  contract_info.piece_addresses.len());
+            info!("  Piece Data: {:?} (entries: {})", 
+                  contract_info.piece_data,
+                  contract_info.piece_data.len());
         }
     }
 
