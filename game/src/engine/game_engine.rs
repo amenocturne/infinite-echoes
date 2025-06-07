@@ -12,6 +12,7 @@ use macroquad::math::Vec2;
 use macroquad::window::clear_background;
 use macroquad::window::screen_height;
 use macroquad::window::screen_width;
+use miniquad::info;
 use miniquad::KeyCode;
 use miniquad::MouseButton;
 
@@ -87,8 +88,8 @@ impl GameEngine {
         })
     }
 
-    pub fn update(&mut self) -> GameResult<()> {
-        self.handle_input();
+    pub async fn update(&mut self) -> GameResult<()> {
+        self.handle_input().await;
         self.update_state();
         self.process_events()?;
         self.render()?;
@@ -143,7 +144,7 @@ impl GameEngine {
         self.audio_engine.borrow().set_volume(vol);
     }
 
-    fn handle_input(&mut self) {
+    async fn handle_input(&mut self) {
         let mut buffers: Vec<&mut dyn DraggableCardBuffer> =
             vec![&mut self.cards_row_widget, &mut self.audio_graph_widget];
 
@@ -178,6 +179,15 @@ impl GameEngine {
         if is_key_pressed(KeyCode::Space) && !should_interpert {
             self.audio_scheduler
                 .schedule(GameEvent::StopAudioGraph, None);
+        }
+
+        if self.settings_widget.handle_create_piece() {
+            info!("Setting pending piece data for frontend to process...");
+            
+            // Set the pending piece data for the frontend to process
+            self.ton_wallet.borrow_mut().set_pending_piece_data("hello", None);
+            
+            info!("Piece creation requested - frontend will handle the transaction");
         }
     }
 

@@ -1,6 +1,7 @@
+use miniquad::info;
 use wasm_bindgen::prelude::*;
-use web_sys::js_sys::Promise;
 use wasm_bindgen_futures::JsFuture;
+use web_sys::js_sys::Promise;
 
 // JavaScript bindings for TON wallet functions
 #[wasm_bindgen]
@@ -37,14 +38,32 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn createNewPiece(pieceRawData: &str, remixedFrom: Option<String>) -> Promise;
+    
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn setPendingPieceData(pieceRawData: &str, remixedFrom: Option<String>);
+    
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn getPendingPieceData() -> JsValue;
+    
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn clearPendingPieceData();
 }
 
 /// TON wallet integration for the game
+pub enum TransactionState {
+    Idle,
+    InProgress,
+    Completed(bool), // bool indicates success or failure
+    Failed(String),
+}
+
 pub struct TonWallet {
     connected: bool,
     user_address: Option<String>,
     user_vault_address: Option<String>,
     registry_address: Option<String>,
+    transaction_state: TransactionState,
+    transaction_data: Option<(String, Option<String>)>, // (piece_data, remixed_from)
 }
 
 impl TonWallet {
@@ -63,7 +82,9 @@ impl TonWallet {
             connected,
             user_address,
             user_vault_address,
-            registry_address
+            registry_address,
+            transaction_state: TransactionState::Idle,
+            transaction_data: None,
         }
     }
 
@@ -81,6 +102,9 @@ impl TonWallet {
         } else {
             None
         };
+        
+        // We no longer need to process pending transactions here
+        // as we're using the frontend to handle transactions
     }
 
     /// Check if wallet is connected
@@ -148,7 +172,8 @@ impl TonWallet {
     }
 
     /// Save audio graph data to the blockchain
-    pub fn save_audio_graph(&self, data: &str) -> Promise { // TODO:
+    pub fn save_audio_graph(&self, data: &str) -> Promise {
+        // TODO:
         if !self.connected {
             // Create a resolved promise with false value
             return Promise::resolve(&JsValue::from_bool(false));
@@ -157,7 +182,8 @@ impl TonWallet {
     }
 
     /// Load audio graph data from the blockchain
-    pub fn load_audio_graph(&self, address: &str) -> Promise { // TODO:
+    pub fn load_audio_graph(&self, address: &str) -> Promise {
+        // TODO:
         if !self.connected {
             // Create a resolved promise with null value
             return Promise::resolve(&JsValue::null());
@@ -165,12 +191,66 @@ impl TonWallet {
         loadAudioGraph(address)
     }
 
-    pub async fn create_new_piece(&self, piece_raw_data: &str, remixed_from: Option<&str>) -> Result<JsValue, JsValue>  {
+    /// Check if a transaction is currently in progress
+    pub fn is_transaction_in_progress(&self) -> bool {
+        matches!(self.transaction_state, TransactionState::InProgress)
+    }
+    
+    /// Get the current transaction state
+    pub fn transaction_state(&self) -> &TransactionState {
+        &self.transaction_state
+    }
+    
+    /// Set pending piece data for the frontend to process
+    pub fn set_pending_piece_data(
+        &mut self,
+        piece_raw_data: &str,
+        remixed_from: Option<&str>,
+    ) {
+        if !self.connected {
+            info!("Cannot set pending piece data: wallet not connected");
+            return;
+        }
+        
+        let remixed_from_js = remixed_from.map(|s| s.to_string());
+        
+        // Set the pending piece data in the JavaScript bridge
+        setPendingPieceData(piece_raw_data, remixed_from_js);
+        
+        info!("Pending piece data set for frontend processing");
+    }
+    
+    /// Clear any pending piece data
+    pub fn clear_pending_piece_data(&self) {
+        clearPendingPieceData();
+        info!("Pending piece data cleared");
+    }
+    
+    /// Legacy method for backward compatibility
+    pub async fn create_new_piece(
+        &self,
+        piece_raw_data: &str,
+        remixed_from: Option<&str>,
+    ) -> Result<JsValue, JsValue> {
         if !self.connected {
             return Result::Err(JsValue::from_str("Wallet not connected"));
         }
 
         let remixed_from_js = remixed_from.map(|s| s.to_string());
-        JsFuture::from( createNewPiece(piece_raw_data, remixed_from_js)).await
+
+        info!("Starting transaction from Rust...");
+        
+        // Create a Promise that won't resolve until the user completes the transaction
+        let promise = createNewPiece(piece_raw_data, remixed_from_js);
+        
+        // This will block until the Promise resolves or rejects
+        info!("Waiting for transaction to complete...");
+        let result = JsFuture::from(promise).await;
+        
+        // Log the result for debugging
+        info!("Transaction result received");
+        info!("{:?}", result);
+
+        result
     }
 }

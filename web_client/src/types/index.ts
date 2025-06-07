@@ -33,6 +33,9 @@ export interface TonBridge {
   saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;
   createNewPiece: (pieceRawData: string, remixedFrom?: any) => Promise<boolean>;
+  setPendingPieceData: (pieceRawData: string | null, remixedFrom?: string | null) => void;
+  getPendingPieceData: () => { pieceData: string | null, remixedFrom: string | null };
+  clearPendingPieceData: () => void;
 }
 
 // Extend Window interface

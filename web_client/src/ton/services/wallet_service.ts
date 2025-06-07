@@ -143,9 +143,26 @@ export class WalletService extends BaseService implements Initializable {
         ],
       };
 
-      const result = await this.tonConnectUI.sendTransaction(finalTransaction);
-      console.log('Transaction sent:', result);
-      return true;
+      console.log('Opening transaction modal...');
+      
+      try {
+        // This will open a modal and wait for user confirmation
+        const result = await this.tonConnectUI.sendTransaction(finalTransaction);
+        console.log('Transaction sent successfully:', result);
+        return true;
+      } catch (error: any) {
+        // Check if the user rejected the transaction
+        if (error && error.message && error.message.includes('User rejected')) {
+          console.log('User cancelled the transaction');
+          // We still return true to indicate the Promise resolved successfully
+          // but with a cancelled transaction
+          return false;
+        }
+        
+        // For other errors, rethrow
+        console.error('Transaction error:', error);
+        throw error;
+      }
     } catch (error) {
       this.logError('createNewPiece', error);
       throw errorHandler.handleError(error, 'WalletService.createNewPiece');

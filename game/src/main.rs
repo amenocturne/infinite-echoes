@@ -63,7 +63,7 @@ async fn run() -> GameResult<()> {
     let mut game_engine = GameEngine::new(render_ctx, game_config)?;
 
     loop {
-        game_engine.update()?;
+        game_engine.update().await?;
         next_frame().await;
     }
 }

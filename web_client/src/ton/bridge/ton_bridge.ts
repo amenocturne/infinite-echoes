@@ -7,6 +7,12 @@ import { REGISTRY_ADDRESS, FRIENDLY_REGISTRY } from '../../config/constants';
  * Bridge for communication between Rust WASM and JavaScript
  */
 export class TonBridgeService {
+  // Store pending piece data that needs to be processed
+  private pendingPieceData: { pieceData: string | null, remixedFrom: string | null } = {
+    pieceData: null,
+    remixedFrom: null
+  };
+
   /**
    * Initializes the TON bridge
    */
@@ -53,7 +59,33 @@ export class TonBridgeService {
           }
         }
 
-        return tonService.createNewPiece(pieceRawData, remixedFromAddress);
+        console.log('Bridge: Creating new piece...');
+        // This will block until the user completes or cancels the transaction
+        const result = await tonService.createNewPiece(pieceRawData, remixedFromAddress);
+        console.log('Bridge: Transaction result:', result);
+        return result;
+      },
+
+      // Set pending piece data to be processed by the frontend
+      setPendingPieceData: (pieceRawData: string | null, remixedFrom: string | null = null): void => {
+        console.log('Setting pending piece data:', pieceRawData);
+        this.pendingPieceData = {
+          pieceData: pieceRawData,
+          remixedFrom: remixedFrom
+        };
+      },
+
+      // Get the current pending piece data
+      getPendingPieceData: (): { pieceData: string | null, remixedFrom: string | null } => {
+        return this.pendingPieceData;
+      },
+
+      // Clear the pending piece data
+      clearPendingPieceData: (): void => {
+        this.pendingPieceData = {
+          pieceData: null,
+          remixedFrom: null
+        };
       },
     };
 
