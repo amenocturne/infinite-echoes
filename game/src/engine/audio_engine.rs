@@ -480,23 +480,31 @@ impl GameDistortion {
 }
 
 pub struct GameReverb {
-    input_gain: GainNode,
+    input_node: GainNode,
+    output_node: GainNode,
+    dry_gain: GainNode,
+    wet_gain: GainNode,
     convolver: ConvolverNode,
-    output_gain: GainNode,
     parameters: ReverbParameters,
 }
 
 impl GameReverb {
     fn new(audio_context: &AudioContext, params: &ReverbParameters) -> GameResult<GameReverb> {
-        let input_gain = audio_context
+        let input_node = audio_context
             .create_gain()
             .map_err(GameError::js("Could not create input gain for reverb"))?;
+        let output_node = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create output gain for reverb"))?;
+        let dry_gain = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create dry gain for reverb"))?;
+        let wet_gain = audio_context
+            .create_gain()
+            .map_err(GameError::js("Could not create wet gain for reverb"))?;
         let convolver = audio_context
             .create_convolver()
             .map_err(GameError::js("Could not create convolver node"))?;
-        let output_gain = audio_context
-            .create_gain()
-            .map_err(GameError::js("Could not create output gain for reverb"))?;
 
         let sample_rate = audio_context.sample_rate();
         let length = (sample_rate * params.decay_time) as usize;
@@ -528,30 +536,38 @@ impl GameReverb {
 
         convolver.set_buffer(Some(&impulse_buffer));
 
-        input_gain.gain().set_value(params.dry_level);
-        output_gain.gain().set_value(params.wet_level);
+        // Set gain levels
+        dry_gain.gain().set_value(params.dry_level);
+        wet_gain.gain().set_value(params.wet_level);
 
-        input_gain
+        // Connect nodes in parallel
+        // Dry path: input -> dry_gain -> output
+        input_node
+            .connect_with_audio_node(&dry_gain)
+            .map_err(GameError::js("Could not connect input to dry gain"))?;
+        dry_gain
+            .connect_with_audio_node(&output_node)
+            .map_err(GameError::js("Could not connect dry gain to output"))?;
+
+        // Wet path: input -> convolver -> wet_gain -> output
+        input_node
             .connect_with_audio_node(&convolver)
-            .map_err(GameError::js("Could not connect input gain to convolver"))?;
+            .map_err(GameError::js("Could not connect input to convolver"))?;
         convolver
-            .connect_with_audio_node(&output_gain)
-            .map_err(GameError::js("Could not connect convolver to output gain"))?;
+            .connect_with_audio_node(&wet_gain)
+            .map_err(GameError::js("Could not connect convolver to wet gain"))?;
+        wet_gain
+            .connect_with_audio_node(&output_node)
+            .map_err(GameError::js("Could not connect wet gain to output"))?;
 
         Ok(GameReverb {
-            input_gain,
+            input_node,
+            output_node,
+            dry_gain,
+            wet_gain,
             convolver,
-            output_gain,
             parameters: params.clone(),
         })
-    }
-
-    fn get_input_node(&self) -> &GainNode {
-        &self.input_gain
-    }
-
-    fn get_output_node(&self) -> &GainNode {
-        &self.output_gain
     }
 }
 
@@ -582,10 +598,10 @@ impl AudioEffectNode for GameDistortion {
 
 impl AudioEffectNode for GameReverb {
     fn get_input_node(&self) -> &dyn AsRef<WebAudioNode> {
-        &self.input_gain
+        &self.input_node
     }
 
     fn get_output_node(&self) -> &dyn AsRef<WebAudioNode> {
-        &self.output_gain
+        &self.output_node
     }
 }

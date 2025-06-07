@@ -185,7 +185,7 @@ impl CardType {
             CardType::ChangeLen(change_type) => match change_type {
                 ChangeLenType::Double => Some("x2".to_string()),
                 ChangeLenType::Half => Some("/2".to_string()),
-                ChangeLenType::Tripplets => Some("x3".to_string()),
+                ChangeLenType::Tripplets => Some("/3".to_string()),
             },
             _ => None,
         }
