@@ -1,6 +1,7 @@
 use macroquad::color::Color;
 use macroquad::color::GRAY;
 use macroquad::math::Vec2;
+use macroquad::text::{draw_text, measure_text};
 use serde::{Deserialize, Serialize};
 
 use crate::engine::errors::GameResult;
@@ -162,6 +163,24 @@ impl CardType {
         }
     }
 
+    pub fn get_label(&self) -> Option<String> {
+        match self {
+            CardType::NoteGenerator(note_name) => Some(note_name.to_string()),
+            CardType::NoteEffect(note_name, scale_type) => {
+                let scale_str = match scale_type {
+                    ScaleType::Major => "Maj",
+                    ScaleType::Minor => "Min",
+                };
+                Some(format!("{} {}", note_name.to_string(), scale_str))
+            }
+            CardType::ChangeLen(change_type) => match change_type {
+                ChangeLenType::Double => Some("x2".to_string()),
+                ChangeLenType::Half => Some("/2".to_string()),
+            },
+            _ => None,
+        }
+    }
+
     pub fn get_note_name(&self) -> Option<NoteName> {
         match self {
             CardType::NoteGenerator(note_name) => Some(*note_name),
@@ -258,6 +277,18 @@ impl Render for Card {
             absolute_size * (1.0 - MARGIN_PERSENTAGE),
             self.foreground_color,
         )?;
+
+        if let Some(label) = self.card_type.get_label() {
+            let font_size = absolute_size.y * 0.3;
+            let text_dims = measure_text(&label, None, font_size as u16, 1.0);
+
+            let text_x = absolute_center.x - text_dims.width / 2.0;
+            // Position text at the bottom of the card with some padding.
+            let text_y = absolute_top_left.y + absolute_size.y - (font_size * 0.25);
+
+            draw_text(&label, text_x, text_y, font_size, self.foreground_color);
+        }
+
         Ok(())
     }
 }

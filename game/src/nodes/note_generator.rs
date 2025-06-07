@@ -233,4 +233,21 @@ impl NoteName {
             NoteName::B => 11,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            NoteName::C => "C".to_string(),
+            NoteName::CSharp => "C#".to_string(),
+            NoteName::D => "D".to_string(),
+            NoteName::DSharp => "D#".to_string(),
+            NoteName::E => "E".to_string(),
+            NoteName::F => "F".to_string(),
+            NoteName::FSharp => "F#".to_string(),
+            NoteName::G => "G".to_string(),
+            NoteName::GSharp => "G#".to_string(),
+            NoteName::A => "A".to_string(),
+            NoteName::ASharp => "A#".to_string(),
+            NoteName::B => "B".to_string(),
+        }
+    }
 }
