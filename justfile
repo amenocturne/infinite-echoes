@@ -56,7 +56,7 @@ download-runtime:
 # Pack all static content into a directory for deployment
 pack: build download-runtime web-install-dependencies copy-wrappers web-build copy-static-content
 
-pack-fast: build web-build copy-static-content
+pack-fast: build copy-static-content
 
 copy-static-content:
   mkdir -p {{deploy_dir}}

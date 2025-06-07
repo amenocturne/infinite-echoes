@@ -1,6 +1,7 @@
 import { Address } from '@ton/core';
 import { tonService } from '../services/ton_service';
 import { TonBridge } from '../../types';
+import { REGISTRY_ADDRESS, FRIENDLY_REGISTRY } from '../../config/constants';
 
 /**
  * Bridge for communication between Rust WASM and JavaScript
@@ -13,6 +14,8 @@ export class TonBridgeService {
     // Create the bridge object
     const bridge: TonBridge = {
       getContractInfo: () => tonService.getContractInfo(),
+
+      registryAddress: () => FRIENDLY_REGISTRY,
 
       isWalletConnected: (): boolean => tonService.isWalletConnected(),
 

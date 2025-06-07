@@ -9,6 +9,9 @@ extern "C" {
     fn isWalletConnected() -> bool;
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
+    fn registryAddress() -> Option<String>;
+
+    #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
     fn getUserAddress() -> Option<String>;
 
     #[wasm_bindgen(js_namespace = ["window", "tonBridge"])]
@@ -41,6 +44,7 @@ pub struct TonWallet {
     connected: bool,
     user_address: Option<String>,
     user_vault_address: Option<String>,
+    registry_address: Option<String>,
 }
 
 impl TonWallet {
@@ -53,11 +57,13 @@ impl TonWallet {
         } else {
             None
         };
+        let registry_address = registryAddress();
 
         Self {
             connected,
             user_address,
             user_vault_address,
+            registry_address
         }
     }
 
@@ -90,6 +96,11 @@ impl TonWallet {
     /// Get user's vault address
     pub fn user_vault_address(&self) -> Option<&str> {
         self.user_vault_address.as_deref()
+    }
+
+    /// Get user's vault address
+    pub fn registry_address(&self) -> Option<&str> {
+        self.registry_address.as_deref()
     }
 
     /// Format user address for display (truncated)

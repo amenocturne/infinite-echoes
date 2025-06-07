@@ -23,6 +23,7 @@ export interface Wallet {
 // TonBridge interface for global window object
 export interface TonBridge {
   getContractInfo: () => ContractInfo;
+  registryAddress: () => string | null;
   isWalletConnected: () => boolean;
   getUserAddress: () => string | null;
   getUserVaultAddress: () => string | null;

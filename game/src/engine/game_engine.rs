@@ -126,15 +126,20 @@ impl GameEngine {
         // Update TON wallet status
         self.ton_wallet.borrow_mut().update();
 
+        let mut settings = self.settings_widget.settings.borrow_mut();
+        let ton_wallet = self.ton_wallet.borrow();
+
+        settings.vault_address = ton_wallet.user_vault_address().map(|s| s.to_string());
+        settings.wallet_address = ton_wallet.user_address().map(|s| s.to_string());
+        settings.registry_address = ton_wallet.registry_address().map(|s| s.to_string());
         // Update debug HUD with wallet information
         if let Some(debug_hud) = &self.debug_hud {
-            let wallet = self.ton_wallet.borrow();
-            if let Some(vault_address) = wallet.user_vault_address() {
+            if let Some(vault_address) = ton_wallet.user_vault_address() {
                 debug_hud.borrow_mut().update_vault_addr(vault_address);
             }
         }
 
-        let vol = self.settings_widget.settings.borrow().volume;
+        let vol = settings.volume;
         self.audio_engine.borrow().set_volume(vol);
     }
 
