@@ -2,15 +2,17 @@ import { BaseService } from './base';
 import { apiService } from './api_service';
 import { tonStateStore } from './state_store';
 import { storageService } from './storage_service';
+import { Cell } from '@ton/core';
 
 /**
  * Service for interacting with EchoPiece contracts
  */
 export class PieceService extends BaseService {
   /**
-   * Gets data from a piece contract as raw base64 encoded data
+   * Gets data from a piece contract as raw base64 encoded data,
+   * traversing the linked list of cells if necessary.
    * @param pieceAddress Piece address
-   * @returns Piece data
+   * @returns Piece data as a single base64 string
    */
   async getPieceData(pieceAddress: string): Promise<string | null> {
     if (!pieceAddress) {
@@ -24,16 +26,28 @@ export class PieceService extends BaseService {
         return null;
       }
 
-      const cellData = result.stack[0].cell;
-      if (!cellData) {
+      const headCellData = result.stack[0].cell;
+      if (!headCellData) {
         return null;
       }
 
       try {
-        const cell = apiService.parseCell(cellData);
-        const slice = cell.beginParse();
-        const result = slice.loadStringTail();
-        return result;
+        let currentCell: Cell | null = apiService.parseCell(headCellData);
+        let fullDataBuffer = Buffer.alloc(0);
+
+        while (currentCell) {
+          const slice = currentCell.beginParse();
+          const chunk = slice.loadBuffer(slice.remainingBits / 8);
+          fullDataBuffer = Buffer.concat([fullDataBuffer, chunk]);
+
+          if (slice.remainingRefs > 0) {
+            currentCell = slice.loadRef();
+          } else {
+            currentCell = null;
+          }
+        }
+
+        return fullDataBuffer.toString('base64');
       } catch (parseError) {
         this.logError(`Processing piece data for ${pieceAddress}`, parseError);
         return null;

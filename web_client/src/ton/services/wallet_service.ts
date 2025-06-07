@@ -115,8 +115,33 @@ export class WalletService extends BaseService implements Initializable {
     }
 
     try {
-      const buffer = Buffer.from(pieceRawData);
-      const pieceDataCell = beginCell().storeBuffer(buffer).endCell();
+      // Decode the base64 string into a buffer.
+      const dataBuffer = Buffer.from(pieceRawData, 'base64');
+      const MAX_CHUNK_SIZE = 127; // Max bytes per cell to be safe (1023 bits / 8 bits/byte)
+      const chunks: Buffer[] = [];
+
+      // Split the buffer into chunks.
+      for (let i = 0; i < dataBuffer.length; i += MAX_CHUNK_SIZE) {
+        chunks.push(dataBuffer.subarray(i, i + MAX_CHUNK_SIZE));
+      }
+
+      // Build the linked list of cells from tail to head.
+      let nextCell: Cell | null = null;
+      for (let i = chunks.length - 1; i >= 0; i--) {
+        const chunk = chunks[i];
+        const currentCellBuilder = beginCell().storeBuffer(chunk);
+        if (nextCell) {
+          currentCellBuilder.storeRef(nextCell);
+        }
+        nextCell = currentCellBuilder.endCell();
+      }
+
+      // The head of the list is the last `nextCell` we created.
+      const pieceDataCell = nextCell;
+
+      if (!pieceDataCell) {
+        throw new TonError('Failed to create piece data cell.', ErrorCode.CONTRACT_ERROR);
+      }
 
       const createPieceMessage: CreatePiece = {
         $$type: 'CreatePiece',
