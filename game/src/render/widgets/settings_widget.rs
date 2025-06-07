@@ -120,7 +120,7 @@ impl Render for SettingsWidget {
 
                 // Calculate the size of the button from its text content.
                 // The button widget itself will add some internal padding.
-                let new_piece_size = ui.calc_size("New Piece");
+                let new_piece_size = ui.calc_size("Init");
                 let save_piece_size = ui.calc_size("Save Piece");
 
                 // The actual button width will be larger due to internal padding.
@@ -143,7 +143,7 @@ impl Render for SettingsWidget {
 
                 // The `button` function takes an absolute position within the window's content area.
                 // This bypasses the flow layout for these specific widgets.
-                if ui.button(Some(new_piece_pos), "New Piece") {
+                if ui.button(Some(new_piece_pos), "Init") {
                     self.new_piece_clicked.set(true);
                 }
 
