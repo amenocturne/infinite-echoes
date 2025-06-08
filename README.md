@@ -61,16 +61,43 @@ This will create a `deploy` directory with all the necessary files for deploymen
 
 ## Development
 
-The project is structured as a Rust application that compiles to WebAssembly, with a web frontend for user interactionstate
+The project is a monorepo managed with `just`, a command runner. The `justfile` at the root of the project contains all the necessary commands for building, testing, and running the different parts of the application.
 
-- `game/` - Core application logic and audio processing
-- `server/` - Development server for local testing
-- `web/` - Web frontend assets and integration code
-- `resources/` - Static assets like images and audio samples
+### Project Structure
 
-## License
+- `game/`: The core game logic written in Rust. It compiles to WebAssembly (WASM) and handles rendering, audio processing, and game state management.
+- `web_client/`: The TypeScript frontend application. It provides the user interface, manages the TON wallet connection, and communicates with both the WASM game module and the TON blockchain.
+- `contracts/`: The smart contracts written in Tact. These define the on-chain logic for creating and managing the audio pieces.
+- `resources/`: Static assets (images, icons) used by the game.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Common Commands
+
+Here are the most common commands you will use during development. Run them from the root of the project.
+
+- `just run`: Builds all parts of the application (contracts, game, web client) and starts a local development server. This is the primary command for local development.
+- `just pack`: Creates a production-ready build in the `deploy/` directory.
+- `just clean`: Removes all build artifacts and temporary directories (`dist/`, `deploy/`, `target/`, `node_modules`, etc.).
+
+### Component-Specific Commands
+
+If you are working on a specific part of the application, you can use these more granular commands:
+
+#### Contracts (`contracts/`)
+
+- `just build-contracts`: Compiles the Tact smart contracts.
+- `just test-contracts`: Runs the tests for the smart contracts.
+- `just deploy-contracts`: Runs the deployment script for the smart contracts.
+
+#### Game (`game/`)
+
+- `just build`: Compiles the Rust code into a WebAssembly module and runs `wasm-bindgen` to generate JavaScript bindings. This is a prerequisite for `pack` and `run`.
+
+#### Web Client (`web_client/`)
+
+- `just web-build`: Bundles the TypeScript frontend code using Webpack.
+- `just web-format`: Formats the TypeScript code using Prettier.
+- `just web-install-dependencies`: Installs the npm dependencies for the web client.
+
 
 ## How to Play
 
@@ -117,3 +144,7 @@ The game's audio is powered by the **Web Audio API**, a browser technology that 
 - When you press play, your card sequence in the Audio Graph is translated into a network of virtual audio nodes (oscillators, filters, etc.).
 - Note events are scheduled with precise timing based on the composition's BPM (beats per minute) to ensure a synchronized, musical loop.
 - This entire system runs directly in your browser, compiling from Rust to WebAssembly for high performance.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
