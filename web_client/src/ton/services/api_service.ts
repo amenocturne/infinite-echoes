@@ -64,7 +64,13 @@ export class ApiService extends BaseService {
    */
   parseCell(cellData: string): Cell {
     try {
-      return Cell.fromBase64(Buffer.from(cellData, 'hex').toString('base64'));
+      // The original implementation was a bit convoluted (hex -> buffer -> base64 -> cell).
+      // This is a more direct way: create a buffer from the hex string
+      // and then deserialize the BOC (Bag of Cells) from that buffer.
+      // `Cell.fromBoc` returns an array of root cells; for a single cell BOC, we take the first one.
+      const cellBoc = Buffer.from(cellData, 'hex');
+      const cells = Cell.fromBoc(cellBoc);
+      return cells[0];
     } catch (error) {
       throw errorHandler.handleError(error, 'parseCell');
     }

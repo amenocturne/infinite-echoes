@@ -147,7 +147,8 @@ impl CardType {
 impl CardType {
     pub fn as_shape(&self) -> Shape {
         match self {
-            CardType::NoteGenerator(_) => Shape::NOTE,
+            CardType::NoteGenerator(Some(_)) => Shape::NOTE,
+            CardType::NoteGenerator(None) => Shape::BLANK,
             CardType::ChordInScale(_, _) => Shape::CHORD,
             CardType::ChangeLen(ChangeLenType::Half) => Shape::FASTER,
             CardType::ChangeLen(ChangeLenType::Double) => Shape::SLOWER,

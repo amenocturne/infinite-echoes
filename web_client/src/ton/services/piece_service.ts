@@ -37,9 +37,13 @@ export class PieceService extends BaseService {
 
         while (currentCell) {
           const slice = currentCell.beginParse();
-          const chunk = slice.loadBuffer(slice.remainingBits / 8);
+
+          // The data is stored using `storeBuffer`, which writes the raw bytes without a length prefix.
+          // We need to read all the available bytes from the slice.
+          const chunk = slice.loadBuffer(Math.floor(slice.remainingBits / 8));
           fullDataBuffer = Buffer.concat([fullDataBuffer, chunk]);
 
+          // Move to the next cell in the linked list, if it exists.
           if (slice.remainingRefs > 0) {
             currentCell = slice.loadRef();
           } else {
