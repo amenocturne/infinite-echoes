@@ -17,6 +17,10 @@ impl NoteGenerator {
         NoteGenerator { loop_length, notes }
     }
 
+    pub fn empty() -> NoteGenerator {
+        NoteGenerator::new(NoteDuration::Quarter.into(), vec![])
+    }
+
     pub fn from_note_name(note_name: NoteName) -> NoteGenerator {
         let note = Note::new(3, note_name);
         let note_event = NoteEvent::new(note, MusicTime::ZERO, NoteDuration::Quarter.into());

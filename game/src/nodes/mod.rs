@@ -41,8 +41,11 @@ impl AudioNode {
 
     pub fn from_card(card: &CardType) -> Self {
         match card {
-            CardType::NoteGenerator(note_name) => {
+            CardType::NoteGenerator(Some(note_name)) => {
                 Self::NoteGenerator(NoteGenerator::from_note_name(*note_name))
+            }
+            CardType::NoteGenerator(None) => {
+                Self::NoteGenerator(NoteGenerator::empty())
             }
             CardType::Oscillator(wave) => Self::Oscillator(Oscillator::new(*wave)),
             CardType::Filter(filter_type) => {
@@ -58,7 +61,7 @@ impl AudioNode {
             CardType::ChangeLen(amount) => {
                 Self::NoteEffect(NoteEffect::new(NoteEffectType::ChangeLen(*amount)))
             }
-            CardType::Blank => Self::NoteEffect(NoteEffect::new(NoteEffectType::Blank)),
+            CardType::BlankNoteEffect => Self::NoteEffect(NoteEffect::new(NoteEffectType::Blank)),
         }
     }
 
