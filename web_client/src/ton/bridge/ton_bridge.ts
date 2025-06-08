@@ -31,6 +31,9 @@ export class TonBridgeService {
 
       getPieceData: (): { [address: string]: string | null } => tonService.getPieceData() || {},
 
+      getPieceRemixData: (): { [address: string]: string | null } | null =>
+        tonService.getPieceRemixData(),
+
       refreshVaultAddress: async (): Promise<string | null> => {
         return tonService.refreshVaultAddress();
       },

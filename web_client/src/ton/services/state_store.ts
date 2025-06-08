@@ -11,6 +11,7 @@ export class TonStateStore {
     pieceCount: null,
     pieceAddresses: null,
     pieceData: null,
+    pieceRemixData: null,
   };
 
   private listeners: Array<(state: ContractInfo) => void> = [];

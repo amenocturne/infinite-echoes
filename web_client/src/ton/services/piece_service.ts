@@ -63,6 +63,40 @@ export class PieceService extends BaseService {
   }
 
   /**
+   * Gets the "remixed from" address from a piece contract.
+   * @param pieceAddress Piece address
+   * @returns The address the piece was remixed from, or null.
+   */
+  async getRemixedFromAddress(pieceAddress: string): Promise<string | null> {
+    if (!pieceAddress) {
+      return null;
+    }
+
+    try {
+      const result = (await apiService.callContractGetter(pieceAddress, 'getRemixedFrom')) as any;
+
+      if (result && result.success && result.stack && result.stack.length > 0) {
+        const stackItem = result.stack[0];
+        // For Address?, a null value is represented by a 'null' type in the stack.
+        if (stackItem.type === 'null') {
+          return null;
+        }
+
+        // If it's not null, it should be a cell.
+        if (stackItem.type === 'cell' && stackItem.cell) {
+          const cell = apiService.parseCell(stackItem.cell);
+          const slice = cell.beginParse();
+          return slice.loadAddress().toString({ testOnly: false, bounceable: true });
+        }
+      }
+      return null;
+    } catch (error) {
+      this.logError(`Getting remixedFrom for ${pieceAddress}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Fetches data for all pieces, updates the state store, and caches the result.
    * @param userAddress The address of the current user for caching.
    * @param pieceAddresses Array of piece addresses to fetch.
@@ -74,18 +108,32 @@ export class PieceService extends BaseService {
 
     pieceAddresses.forEach(async (address) => {
       try {
-        const data = await this.getPieceData(address);
+        // Fetch both data and remix info in parallel
+        const [data, remixedFrom] = await Promise.all([
+          this.getPieceData(address),
+          this.getRemixedFromAddress(address),
+        ]);
+
         const currentState = tonStateStore.getState();
         const newPieceData = { ...(currentState.pieceData || {}), [address]: data };
-        tonStateStore.updateState({ pieceData: newPieceData });
-        storageService.savePieces(userAddress, newPieceData); // Cache the updated data
+        const newRemixData = { ...(currentState.pieceRemixData || {}), [address]: remixedFrom };
+
+        tonStateStore.updateState({ pieceData: newPieceData, pieceRemixData: newRemixData });
+        storageService.savePieces(userAddress, {
+          pieceData: newPieceData,
+          pieceRemixData: newRemixData,
+        }); // Cache the updated data
       } catch (error) {
         this.logError(`Processing piece ${address}`, error);
         const currentState = tonStateStore.getState();
         // Store null to indicate a fetch attempt failed for this address
         const newPieceData = { ...(currentState.pieceData || {}), [address]: null };
-        tonStateStore.updateState({ pieceData: newPieceData });
-        storageService.savePieces(userAddress, newPieceData); // Also cache failures
+        const newRemixData = { ...(currentState.pieceRemixData || {}), [address]: null };
+        tonStateStore.updateState({ pieceData: newPieceData, pieceRemixData: newRemixData });
+        storageService.savePieces(userAddress, {
+          pieceData: newPieceData,
+          pieceRemixData: newRemixData,
+        }); // Also cache failures
       }
     });
   }

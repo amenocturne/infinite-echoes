@@ -40,6 +40,7 @@ export class TonService extends BaseService implements Initializable {
             pieceCount: null,
             pieceAddresses: null,
             pieceData: null,
+            pieceRemixData: null,
           });
         }
       });
@@ -150,9 +151,12 @@ export class TonService extends BaseService implements Initializable {
       const userAddress = this.currentUserAddress;
       if (userAddress) {
         // Load from cache first
-        const cachedPieces = storageService.loadPieces(userAddress);
-        if (cachedPieces) {
-          tonStateStore.updateState({ pieceData: cachedPieces });
+        const cachedData = storageService.loadPieces(userAddress);
+        if (cachedData) {
+          tonStateStore.updateState({
+            pieceData: cachedData.pieceData,
+            pieceRemixData: cachedData.pieceRemixData,
+          });
         }
 
         const vaultAddress = await registryService.getVaultAddress(userAddress);
@@ -166,7 +170,8 @@ export class TonService extends BaseService implements Initializable {
           tonStateStore.updateState({ pieceAddresses });
 
           if (pieceAddresses && pieceAddresses.length > 0) {
-            const currentPieces = tonStateStore.getState().pieceData || {};
+            const currentState = tonStateStore.getState();
+            const currentPieces = currentState.pieceData || {};
             const addressesToFetch = pieceAddresses.filter(
               (addr) => currentPieces[addr] === undefined,
             );
@@ -175,8 +180,8 @@ export class TonService extends BaseService implements Initializable {
             }
           } else {
             // No pieces in vault, ensure local state and storage are clean.
-            tonStateStore.updateState({ pieceData: {} });
-            storageService.savePieces(userAddress, {});
+            tonStateStore.updateState({ pieceData: {}, pieceRemixData: {} });
+            storageService.savePieces(userAddress, { pieceData: {}, pieceRemixData: {} });
           }
         }
       }
@@ -270,6 +275,13 @@ export class TonService extends BaseService implements Initializable {
    */
   getPieceData(): { [address: string]: string | null } | null {
     return tonStateStore.getState().pieceData;
+  }
+
+  /**
+   * Gets remix data for all pieces
+   */
+  getPieceRemixData(): { [address: string]: string | null } | null {
+    return tonStateStore.getState().pieceRemixData || null;
   }
 
   /**

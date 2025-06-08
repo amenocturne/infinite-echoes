@@ -32,6 +32,10 @@ pub struct ContractInfo {
     /// Deserialized cards for each piece
     #[serde(skip)]
     pub piece_data_structs: std::collections::HashMap<String, PieceData>,
+
+    /// Remix data associated with each piece
+    #[serde(rename = "pieceRemixData", default)]
+    pub piece_remix_data: std::collections::HashMap<String, Option<String>>,
 }
 
 /// Fee parameters for contract operations
@@ -68,6 +72,7 @@ impl Default for ContractInfo {
             piece_addresses: Vec::new(),
             piece_data: std::collections::HashMap::new(),
             piece_data_structs: std::collections::HashMap::new(),
+            piece_remix_data: std::collections::HashMap::new(),
         }
     }
 }

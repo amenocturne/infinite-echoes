@@ -4,7 +4,7 @@ export const TON_TESTNET_API = 'https://testnet.tonapi.io/v2/blockchain/accounts
 export const TON_API_TOKEN =
   'AE4JXL6HYJ3COLAAAAANTD6QYMQT2HB363XPK4SUJDTAAC5T6T653PQZAR6OFKXM7T7VPGY';
 export const REGISTRY_ADDRESS =
-  '0:f1fa839dd70c72f2aa33dbad6a16804a97e0ede5abcc75d25981da66942b3d78';
+  '0:bd87ec62c3b57e1d6601948bd94eaaec3011b1b52510248219c9d54104b82b5b';
 export const MANIFEST_URL = 'https://infinite-echoes.app/tonconnect-manifest.json';
 
 export const FRIENDLY_REGISTRY = toFriendlyAddr(REGISTRY_ADDRESS);

@@ -1,7 +1,8 @@
-use std::cell::Cell;
 use macroquad::math::{vec2, Vec2};
-use macroquad::ui::{hash, root_ui, Skin};
 use macroquad::prelude::*;
+use macroquad::ui::{hash, root_ui, Skin};
+use std::cell::Cell;
+use std::collections::HashMap;
 
 use crate::engine::errors::GameResult;
 use crate::engine::ton_wallet::PieceData;
@@ -45,6 +46,7 @@ impl PieceLibraryWidget {
         &self,
         render_ctx: &RenderCtx,
         pieces: &[(&String, &PieceData)],
+        remix_data: &HashMap<String, Option<String>>,
         is_loading: bool,
     ) -> GameResult<()> {
         if !self.is_visible.get() {
@@ -94,7 +96,17 @@ impl PieceLibraryWidget {
                     ui.label(None, "You don't have any pieces yet.");
                 } else {
                     for (address, data) in pieces {
-                        let button_text = format!("{} ({} BPM)", data.name, data.bpm);
+                        let mut button_text = format!("{} ({} BPM)", data.name, data.bpm);
+                        if let Some(Some(remix_address)) = remix_data.get(*address) {
+                            let remix = pieces.iter().find(|(addr, _)| *addr == remix_address);
+                            if let Some((_, remix_data)) = remix {
+                                button_text.push_str(&format!(
+                                    "\n  (remix of \"{}\")",
+                                    remix_data.name // make_short(remix_address, 4)
+                                ));
+                            }
+                        }
+
                         if ui.button(None, button_text) {
                             self.selected_address.set(Some((*address).clone()));
                         }
@@ -119,5 +131,17 @@ impl PieceLibraryWidget {
         );
 
         Ok(())
+    }
+}
+
+fn make_short(string: &str, num_chars: usize) -> String {
+    if string.len() <= num_chars * 2 + 3 {
+        string.to_string()
+    } else {
+        format!(
+            "{}...{}",
+            &string[..num_chars],
+            &string[string.len() - num_chars..]
+        )
     }
 }

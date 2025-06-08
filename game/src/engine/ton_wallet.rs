@@ -153,6 +153,22 @@ fn parse_contract_info(js_value: &JsValue) -> ContractInfo {
                         }
                     }
                 }
+
+                if let Some(remix_data) = obj.get("pieceRemixData") {
+                    if !remix_data.is_null() {
+                        if let Some(data_obj) = remix_data.as_object() {
+                            for (key, value) in data_obj {
+                                let val = if value.is_null() {
+                                    None
+                                } else {
+                                    value.as_str().map(|s| s.to_string())
+                                };
+                                contract_info.piece_remix_data.insert(key.clone(), val);
+                            }
+                        }
+                    }
+                }
+
                 return contract_info;
             }
 

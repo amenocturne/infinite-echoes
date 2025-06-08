@@ -138,8 +138,12 @@ impl GameEngine {
         let fetched_pieces_count = contract_info.piece_data.len();
         let is_loading = total_pieces_to_fetch > fetched_pieces_count;
 
-        self.piece_library_widget
-            .render(render_ctx, &pieces_with_metadata, is_loading)?;
+        self.piece_library_widget.render(
+            render_ctx,
+            &pieces_with_metadata,
+            &contract_info.piece_remix_data,
+            is_loading,
+        )?;
 
         self.error_popup_widget.render(render_ctx)?;
 

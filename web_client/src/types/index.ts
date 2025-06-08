@@ -12,6 +12,7 @@ export interface ContractInfo {
   pieceCount: number | null;
   pieceAddresses: string[] | null;
   pieceData: { [address: string]: string | null } | null;
+  pieceRemixData?: { [address: string]: string | null } | null;
 }
 
 export interface Wallet {
@@ -29,6 +30,7 @@ export interface TonBridge {
   getUserVaultAddress: () => string | null;
   getPieceAddresses: () => string[] | null;
   getPieceData: () => { [address: string]: string | null };
+  getPieceRemixData: () => { [address: string]: string | null } | null;
   refreshVaultAddress: () => Promise<string | null>;
   saveAudioGraph: (audioGraphData: string) => Promise<boolean>;
   loadAudioGraph: (nftAddress: string) => Promise<string | null>;

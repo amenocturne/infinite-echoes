@@ -2,6 +2,11 @@ import { BaseService } from './base';
 
 const PIECE_DATA_KEY_PREFIX = 'echoes_pieces_';
 
+interface StoredPieceInfo {
+  pieceData: { [address: string]: string | null };
+  pieceRemixData: { [address: string]: string | null };
+}
+
 /**
  * Service for interacting with browser's localStorage
  */
@@ -13,13 +18,13 @@ export class StorageService extends BaseService {
   /**
    * Saves piece data for a specific user to localStorage.
    * @param userAddress The address of the user.
-   * @param pieces A map of piece addresses to their data.
+   * @param data The data to store.
    */
-  savePieces(userAddress: string, pieces: { [address: string]: string | null }): void {
+  savePieces(userAddress: string, data: StoredPieceInfo): void {
     if (!userAddress) return;
     try {
       const key = this.getStorageKey(userAddress);
-      const dataToStore = JSON.stringify(pieces);
+      const dataToStore = JSON.stringify(data);
       localStorage.setItem(key, dataToStore);
     } catch (error) {
       this.logError('savePieces', error);
@@ -30,9 +35,9 @@ export class StorageService extends BaseService {
   /**
    * Loads piece data for a specific user from localStorage.
    * @param userAddress The address of the user.
-   * @returns The map of piece data, or null if not found or on error.
+   * @returns The stored data, or null if not found or on error.
    */
-  loadPieces(userAddress: string): { [address: string]: string | null } | null {
+  loadPieces(userAddress: string): StoredPieceInfo | null {
     if (!userAddress) return null;
     try {
       const key = this.getStorageKey(userAddress);

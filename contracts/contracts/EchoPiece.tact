@@ -15,4 +15,12 @@ contract EchoPiece(
   get fun getData(): Cell {
     return self.data
   }
+
+  get fun getRemixedFrom(): Address? {
+    return self.remixedFrom
+  }
+
+  get fun getCreated(): Int {
+    return self.created
+  }
 }
