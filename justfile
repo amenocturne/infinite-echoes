@@ -107,3 +107,10 @@ copy-wrappers: build-contracts
   find {{contracts_build_dir}} -type f -name "*.ts" \
   | xargs -I {} bash -c \
   'mkdir -p "{{web_client_src_dir}}/$(dirname {})"; cp "{}" "{{web_client_src_dir}}/{}"'
+
+############################ Utils #############################
+
+# Calculate total lines of code in source files (.rs, .ts, .tact)
+# Do not forget to run `just clean` before
+loc:
+    @find . \( -path ./target -o -path ./dist -o -path ./deploy -o -path ./web_client/node_modules -o -path ./contracts/node_modules \) -prune -o \( -name "*.rs" -o -name "*.ts" -o -name "*.tact" \) -print0 | xargs -0 wc -l | tail -n1 | awk '{print "Total lines of source code: " $1}'
