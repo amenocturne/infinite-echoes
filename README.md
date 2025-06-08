@@ -7,6 +7,8 @@ create, save, and share unique audio compositions as NFTs on the TON blockchain.
 The application features a drag-and-drop interface for building audio graphs
 with various sound generators, effects, and modifiers.
 
+The application is designed to be entirely client-side and can be hosted on any static web server. It does not require a traditional backend; all persistent state, such as saving and sharing compositions, is handled directly on the TON blockchain.
+
 ### Key Features
 
 - Visual audio graph creation with intuitive drag-and-drop interface
