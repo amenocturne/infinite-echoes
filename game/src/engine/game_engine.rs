@@ -266,11 +266,12 @@ impl GameEngine {
         let is_playing = self.audio_engine.borrow().is_playing();
         let is_different = self.state.borrow().current_graph != self.state.borrow().playing_graph;
         let should_interpert = !is_playing || is_different;
-        if is_key_pressed(KeyCode::Space) && should_interpert {
+        let any_window_opened = self.settings_widget.is_visible() || self.error_popup_widget.is_visible() || self.piece_library_widget.is_visible();
+        if is_key_pressed(KeyCode::Space) && should_interpert && !any_window_opened {
             self.audio_scheduler
                 .schedule(GameEvent::InterpretGraph, None);
         }
-        if is_key_pressed(KeyCode::Space) && !should_interpert {
+        if is_key_pressed(KeyCode::Space) && !should_interpert && !any_window_opened {
             self.audio_scheduler
                 .schedule(GameEvent::StopAudioGraph, None);
         }
