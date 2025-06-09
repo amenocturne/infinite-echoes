@@ -24,10 +24,6 @@ message CreatePiece{
   remixedFrom: Address?
 }
 
-message RemoveVault{
-  user: Address
-}
-
 // ------------------------------ Vault ------------------------------------
 
 message AddPiece{

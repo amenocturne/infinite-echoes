@@ -51,10 +51,6 @@ contract EchoRegistry with Ownable{
       coolDownSeconds: msg.coolDownSeconds
     }
   }
-  receive(msg: RemoveVault) {
-    require(sender() == self.owner, "Only owner can remove vaults");
-    self.vaults.del(msg.user);
-  }
 
   // ------------------ Piece And Vault Creation ------------------------------
 
