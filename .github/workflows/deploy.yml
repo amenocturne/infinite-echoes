@@ -2,7 +2,7 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -26,18 +26,39 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v1
         with:
-          just-version: '1.13.0'
+          just-version: "1.13.0"
 
       - name: Build and pack
         run: just pack
 
-      - name: Set up SSH key
+      - name: Build Docker image
         run: |
+          cat > Dockerfile << EOF
+          FROM nginx:alpine
+          COPY deploy/ /usr/share/nginx/html/
+          EXPOSE 80
+          EOF
+          docker build -t infinite-echoes:latest .
+
+      - name: Save and transfer image
+        run: |
+          # Save image to compressed tar
+          docker save infinite-echoes:latest | gzip > infinite-echoes.tar.gz
+
+          # Setup SSH
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to server
-        run: |
-          rsync -avz --delete deploy/ deployer@${{ secrets.DEPLOY_SERVER_IP }}:/var/www/infinite-echoes/
+          # Transfer to VPS
+          scp infinite-echoes.tar.gz deployer@${{ secrets.DEPLOY_SERVER_IP }}:/tmp/
+
+          # Load and deploy on VPS
+          ssh deployer@${{ secrets.DEPLOY_SERVER_IP }} '
+            docker load < /tmp/infinite-echoes.tar.gz
+            docker stop infinite-echoes || true
+            docker rm infinite-echoes || true
+            docker run -d --name infinite-echoes --restart unless-stopped -p 8001:80 infinite-echoes:latest
+            rm /tmp/infinite-echoes.tar.gz
+          '
